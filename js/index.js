@@ -20,7 +20,7 @@ $(function(){
     
     // 一些计算所需的变量
     var seekT, seekLoc, seekBarPos, cM, ctMinutes, ctSeconds, curMinutes, curSeconds, durMinutes, durSeconds, playProgress, bTime, nTime = 0
-    var musicImgsData = ['img/bg.webp','img/bg1.webp','img/bg2.webp']    // 图片地址数组
+    var musicImgsData = ['img/bg.webp','img/bg1.webp','img/bg2.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp','img/null.webp']    // 图片地址数组
     var musicNameData = ['稻香','Symphony','Mood (Lofi)','一无所有+Mood','Dream It Possible','Fade','Fade（bass+drum）','致你','年轮','2018小恋曲','你是我的女朋友','微微','爱就一个字','王招君','落在生命里的光','大天蓬','青丝','第二杯半价','Waiting For Love','给你呀','阿拉斯加海湾','串烧','辞九门回忆','一路生花','圈住你','爱/存在'];                   // 歌曲名数组
     var artistNameData = ['周杰伦','One Voice/Rob Landes','Hloshit','马思唯','Delacey','Remix','Phil','yihuik苡慧','不是花火呀','丫蛋蛋/沈虫虫','余生哥哥','傅如乔','傲七爷','成蹊','汪珂楠','清水er','等什么君','纳豆nado','莫宏/南柯一梦','蒋小呢','蓝心羽','许天昱/陈旭辉','赵梓婷','轶心','阿兮同学','魏奇奇']            // 创作歌手数组
     var musicUrls=['mp3/music1.mp3','mp3/music2.mp3','mp3/music3.mp3','mp3/4.mp3','mp3/5.mp3','mp3/6.mp3','mp3/7.mp3','mp3/8.mp3','mp3/9.mp3','mp3/10.mp3','mp3/11.mp3','mp3/12.mp3','mp3/13.mp3','mp3/14.mp3','mp3/15.mp3','mp3/16.mp3','mp3/17.mp3','mp3/18.mp3','mp3/19.mp3','mp3/20.mp3','mp3/21.mp3','mp3/22.mp3','mp3/23.mp3','mp3/24.mp3','mp3/25.mp3','mp3/26.mp3'];// 歌曲mp3数组
