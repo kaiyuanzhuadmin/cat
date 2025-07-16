@@ -203,6 +203,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
+      position: relative; /* Crucial for absolute positioning of cat-path */
     }
 
     /* Display Area */
@@ -264,9 +265,41 @@
         opacity: 0; /* Fade out when matched */
     }
 
+    /* Cat Animation Path */
+    #cat-path {
+        position: absolute;
+        width: 100%; /* Spans the width of its parent (#main-area) */
+        height: 20px; /* Height of the gap */
+        left: 0; /* Align with parent's left edge */
+        /* top will be set by JS */
+        z-index: 100; /* Ensure it's visible */
+        pointer-events: none; /* Crucial: allows clicks to pass through to cards */
+        overflow: visible; /* Allow cat to overflow if it's larger than path height */
+        /* background-color: rgba(255, 0, 0, 0.1); /* For debugging positioning */
+    }
+
+    #walking-cat {
+        position: absolute; /* Position within #cat-path */
+        width: 35px; /* New size */
+        height: 35px; /* New size */
+        font-size: 35px; /* Match font size to element size for emoji */
+        line-height: 1; /* Ensure emoji sits correctly */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #5d4037; /* Cat color */
+        top: -7.5px; /* (20px - 35px) / 2 = -7.5px to center 35px cat in 20px path */
+        animation: cat-walk 4s linear infinite alternate; /* Animation */
+    }
+
+    @keyframes cat-walk {
+        0% { left: 0; }
+        100% { left: calc(100% - 35px); } /* Moves across the width of #cat-path */
+    }
+
     /* Card Stack Area */
     #card-stack-area {
-      margin-top: 20px;
+      margin-top: 20px; /* This margin creates the gap where the cat animates */
       width: 580px;
       height: 500px;
       position: relative;
@@ -999,6 +1032,10 @@
   <div id="main-area">
     <div id="display-area">
         </div>
+    <!-- Cat path element, positioned absolutely -->
+    <div id="cat-path">
+        <div id="walking-cat">🐾</div>
+    </div>
     <div id="card-stack-area"></div>
     <div id="temp-area">
       <div class="temp-slot"></div>
@@ -1035,8 +1072,8 @@
     <p> </p> <p>
       <button class="start-btn" id="start-btn">开始游戏</button>
     </p>
-    <p>收集卡牌，分数达标、全部清空过关<br>
-    <span style="color:#c0392b;">第二关难度大幅升级<br></span>可使用兑换码解锁道具</p>
+    <p>点击卡牌进行收集，收集分数并全部清空过关<br>
+    <span style="color:#c0392b;">第二关难度略微升级<br></span>可使用兑换码解锁道具</p>
     <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
   </div>
 
@@ -1108,7 +1145,7 @@
 <script>
 // Game configuration constants
 const CARD_ICONS = [
-  "🐈", "💐", "🪼", "👒", "🏵️", "🧸", "🍬", "🔮", "🎡", "🐈‍⬛", "🪭",
+  "🐈", "💐", "🪼", "👒", "🏵️", "🧸", "🍬", "🔮", "🎡", "🐈‍⬛", "🍫", "🪭",
   "🐖", "🧶", "🌻", "✂️", "🦋", "💎"
 ];
 const LEVELS = [
@@ -1163,6 +1200,7 @@ const targetScoreElement = document.getElementById('target-score');
 const levelInfoElement = document.getElementById('level-info');
 // const cardCountInfoElement = document.getElementById('card-count-info'); // 移除此行
 const displayArea = document.getElementById('display-area');
+const catPath = document.getElementById('cat-path'); // 获取小猫路径元素
 
 
 let confirmCallback = null; // Callback for confirm modal
@@ -1939,6 +1977,7 @@ function startGame(level){
       playBgm(true);
   }
   // MODIFICATION END
+  positionCatWalker(); // Position cat walker after game starts
 }
 
 /**
@@ -2061,6 +2100,7 @@ function renderAll(){
   renderDisplay(); // Render display cards
   renderProgressAndScore(); // Update progress and score
   updateToolButtons();
+  positionCatWalker(); // Ensure cat is positioned after all elements are rendered
 }
 
 /**
@@ -2233,6 +2273,9 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       }
     });
+
+    // Add event listener for window resize to reposition the cat walker
+    window.addEventListener('resize', positionCatWalker);
 });
 
 // Tool button click handlers
@@ -2417,6 +2460,30 @@ function attemptVideoAutoplay() {
             });
         }, false);
     }
+}
+
+/**
+ * Positions the cat walker animation element.
+ * This function should be called after the main game elements are rendered
+ * and whenever the window is resized to ensure correct positioning.
+ */
+function positionCatWalker() {
+    const displayArea = document.getElementById('display-area');
+    const catPath = document.getElementById('cat-path');
+    const mainArea = document.getElementById('main-area');
+
+    if (!displayArea || !catPath || !mainArea) {
+        console.warn("Missing elements for cat walker positioning.");
+        return;
+    }
+
+    // Calculate displayArea's bottom position relative to mainArea's top
+    const displayAreaBottomRelativeToMainArea = displayArea.offsetTop + displayArea.offsetHeight;
+
+    // Set catPath's top to be right below displayArea
+    catPath.style.top = `${displayAreaBottomRelativeToMainArea}px`;
+    // Ensure catPath spans the full width of mainArea for animation
+    catPath.style.width = `${mainArea.offsetWidth}px`;
 }
 </script>
 </body>
