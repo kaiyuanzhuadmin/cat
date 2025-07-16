@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>臭宝加载中...</title>
+  <title>老北鼻加载中...</title>
   <link rel="icon" type="image/png" sizes="96x96" href="me.png">
   <link rel="preload" href="mao3.webp" as="image">
   <link rel="preload" href="mao1.webp" as="image">
@@ -67,6 +67,34 @@
       0%, 100% { transform: translateX(0) rotate(0deg); }
       10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-1deg); }
       20%, 40%, 60%, 80% { transform: translateX(3px) rotate(1deg); }
+    }
+
+    /* New: Score Pop Animation */
+    @keyframes score-pop {
+      0% { opacity: 0; transform: translateY(0) scale(0.8); }
+      20% { opacity: 1; transform: translateY(-15px) scale(1.1); }
+      80% { opacity: 1; transform: translateY(-30px) scale(1); }
+      100% { opacity: 0; transform: translateY(-40px) scale(0.7); }
+    }
+    .score-animation {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #4CAF50; /* Green for positive score */
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      pointer-events: none; /* Make it non-interactive */
+      animation: score-pop 1s ease-out forwards;
+      z-index: 2000; /* Ensure it's above other elements */
+    }
+
+    /* New: Card Shuffle Out Animation */
+    @keyframes card-shuffle-out {
+      0% { opacity: 1; transform: scale(1) rotate(0deg); }
+      50% { opacity: 0; transform: scale(0.5) rotate(15deg); }
+      100% { opacity: 0; transform: scale(0.5) rotate(15deg); } /* Stay hidden */
+    }
+    .card-shuffling-out {
+      animation: card-shuffle-out 0.3s ease-in forwards;
     }
 
     /* Global body styles */
@@ -956,7 +984,7 @@
         <div id="progress-bar"></div>
       </div>
       <p id="loading-text">正在加载资源...</p>
-      <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
+      <small class="loading-footer">喵了个咪2 &copy; 2025 | Designed by 开元</small>
     </div>
   </div>
 
@@ -994,7 +1022,7 @@
     <div id="message-bar"></div>
   </div>
   <div id="footer">
-    喵了个咪 &copy; 2025 | Designed by 开元
+    喵了个咪2 &copy; 2025 | Designed by 开元
   </div>
 
   <div id="start-screen">
@@ -1003,13 +1031,13 @@
   <source src="mao.mp4" type="video/mp4">
   <img src="mao.webp" alt="背景图">
 </video>
-    <h1><span>喵</span><span>了</span><span>个</span><span>咪</span><span> 🐾</span></h1>
+    <h1><span>喵</span><span>了</span><span>个</span><span>咪</span><span> 2</span><span> 🐾</span></h1>
     <p> </p> <p>
       <button class="start-btn" id="start-btn">开始游戏</button>
     </p>
-    <p>点击卡牌进行收集，全部清空过关<br>
-    <span style="color:#c0392b;">第二关难度略微升级<br></span>可使用兑换码解锁道具</p>
-    <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
+    <p>收集卡牌，分数达标、全部清空过关<br>
+    <span style="color:#c0392b;">第二关难度大幅升级<br></span>可使用兑换码解锁道具</p>
+    <small class="loading-footer">喵了个咪2 &copy; 2025 | Designed by 开元</small>
   </div>
 
   <div id="level-finish" style="display:none;">
@@ -1099,7 +1127,7 @@ const INITIAL_DISPLAY_SETS_VISIBLE = 2; // Number of display sets visible at any
 const REDEMPTION_CODES = {
   "kaiyuan": { undo: 20, hint: 20, shuffle: 20 },
   "兑换码": { undo: 5, hint: 5, shuffle: 5 },
-  "喵了个咪": { undo: 50, hint: 50, shuffle: 50 },
+  "喵了个咪2": { undo: 50, hint: 50, shuffle: 50 },
   "不知道": { undo: 3, hint: 1, shuffle: 1 },
   "开元": { undo: 10, hint: 10, shuffle: 10 },
   "通关": { type: "skip_level" } // Added "skip_level" redemption code
@@ -1284,9 +1312,10 @@ confirmNo.onclick = hideConfirm;
 /**
  * Generates a single set of display cards (3 cards of the same icon).
  * The icon is chosen from the currently available unique icons on the board.
- * @returns {Array} An array of 3 card objects for display, or null if no icons are available.
+ * @param {Array<string>} excludeIcons - An array of icons to exclude from selection.
+ * @returns {Array} An array of 3 card objects for display, or null if no suitable icons are available.
  */
-function generateDisplayCardSet() {
+function generateDisplayCardSet(excludeIcons = []) {
     let chosenIcon = null;
 
     // 1. 优先尝试从当前棋盘或暂存区中寻找可立即匹配的图标
@@ -1295,6 +1324,9 @@ function generateDisplayCardSet() {
     game.temp.forEach(c => tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1);
 
     let potentialMatchableIcons = uniqueIconsOnBoard.filter(icon => {
+        // Exclude icons that are already in the excludeIcons list
+        if (excludeIcons.includes(icon)) return false;
+
         const countInTemp = tempIconCounts[icon] || 0;
         const countOnBoard = game.board.filter(c => !c.matched && c.icon === icon).length;
         // 确保棋盘和暂存区中的该图标总数 >= 3
@@ -1312,15 +1344,22 @@ function generateDisplayCardSet() {
         const allIconCounts = {};
         allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
 
-        const anyTripletIcons = Object.keys(allIconCounts).filter(icon => allIconCounts[icon] >= 3);
+        const anyTripletIcons = Object.keys(allIconCounts).filter(icon => {
+            // Exclude icons that are already in the excludeIcons list
+            if (excludeIcons.includes(icon)) return false;
+            return allIconCounts[icon] >= 3;
+        });
 
         if (anyTripletIcons.length > 0) {
             // 如果在整个卡片池中找到至少有3张的图标，随机选择一个
             chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
         } else {
             // 3. 最后的备用方案：如果连整个卡片池中都没有任何图标有3张（理论上不应发生，除非关卡生成有问题），
-            // 则选择任意一个存在的图标。
-            if (allIconsInGame.length > 0) {
+            // 则选择任意一个存在的图标，但仍尝试避开excludeIcons
+            const availableIconsWithoutExclusion = allIconsInGame.filter(icon => !excludeIcons.includes(icon));
+            if (availableIconsWithoutExclusion.length > 0) {
+                chosenIcon = availableIconsWithoutExclusion[Math.floor(Math.random() * availableIconsWithoutExclusion.length)];
+            } else if (allIconsInGame.length > 0) { // If all icons are in exclusion list, just pick any
                 chosenIcon = allIconsInGame[Math.floor(Math.random() * allIconsInGame.length)];
             } else {
                 return null; // 没有可用的卡片图标
@@ -1462,12 +1501,14 @@ function genLevel(levelIdx){
   board.sort((a, b) => a.z - b.z); // Sort by z-index for rendering order
   game.board = board; // Assign board to game state
 
-  // Generate initial display cards
+  // Generate initial display cards, ensuring unique icons
   game.displayCards = [];
+  const usedDisplayIconsForLevel = new Set(); // Keep track of icons used in display sets for this level
   for (let i = 0; i < INITIAL_DISPLAY_SETS_VISIBLE; i++) {
-      const newSet = generateDisplayCardSet();
+      const newSet = generateDisplayCardSet(Array.from(usedDisplayIconsForLevel));
       if (newSet) {
           game.displayCards.push({ id: `display-set-${i}`, cards: newSet, matched: false });
+          usedDisplayIconsForLevel.add(newSet[0].icon); // Add the icon of the newly generated set
           game.totalDisplaySetsGenerated++;
       }
   }
@@ -1618,6 +1659,23 @@ function clickCard(id) {
       // Mark matched cards in temp area
       game.temp.forEach(c => { if (c.icon === matchedIcon) c.matched = true; });
 
+      // Add score animation
+      const scoreAnimDiv = document.createElement('div');
+      scoreAnimDiv.className = 'score-animation';
+      scoreAnimDiv.textContent = `+${DISPLAY_CARD_MATCH_SCORE}`;
+      document.body.appendChild(scoreAnimDiv);
+
+      // Position the animation centrally above the display area
+      const displayAreaRect = displayArea.getBoundingClientRect();
+      scoreAnimDiv.style.left = `${displayAreaRect.left + displayAreaRect.width / 2}px`;
+      scoreAnimDiv.style.top = `${displayAreaRect.top + displayAreaRect.height / 2}px`;
+      scoreAnimDiv.style.transform = 'translateX(-50%)'; // Center horizontally
+
+      // Remove the element after animation
+      scoreAnimDiv.addEventListener('animationend', () => {
+          scoreAnimDiv.remove();
+      }, { once: true });
+
       // Check if the matched icon also matches any display cards
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
@@ -1628,18 +1686,14 @@ function clickCard(id) {
               // Replace the matched display set with a new one after a delay
               setTimeout(() => {
                   const currentLevelConfig = LEVELS[game.level - 1];
-                  if (game.totalDisplaySetsGenerated < currentLevelConfig.totalDisplaySets) {
-                      const newSet = generateDisplayCardSet();
-                      if (newSet) {
-                          displaySet.cards = newSet; // Replace content
-                          displaySet.matched = false; // Reset matched state
-                          game.totalDisplaySetsGenerated++;
-                      } else {
-                          // If no new set can be generated, remove this slot
-                          game.displayCards = game.displayCards.filter(ds => ds.id !== displaySet.id);
-                      }
+                  // Pass the currently used display icons to avoid duplicates if possible
+                  const newSet = generateDisplayCardSet(game.displayCards.map(ds => ds.cards[0].icon));
+                  if (newSet) {
+                      displaySet.cards = newSet; // Replace content
+                      displaySet.matched = false; // Reset matched state
+                      game.totalDisplaySetsGenerated++;
                   } else {
-                      // If all totalDisplaySets have been generated, just remove this one
+                      // If no new set can be generated, remove this slot
                       game.displayCards = game.displayCards.filter(ds => ds.id !== displaySet.id);
                   }
                   renderDisplay(); // Re-render display area
@@ -1718,15 +1772,28 @@ function undoStep(){
  * Shuffles the unmatched cards on the board.
  */
 function shuffleStep(){
-  let unmatched = game.board.filter(c=>!c.matched);
-  let icons = unmatched.map(c=>c.icon);
-  shuffle(icons); // Shuffle the icons
+  saveStep(); // Save state before shuffle for undo
+  game.lock = true; // Lock game during animation
 
-  unmatched.forEach((c,i)=>{
-      c.icon = icons[i]; // Assign new shuffled icons
+  let unmatchedCardsElements = document.querySelectorAll('#card-stack-area .card:not(.matched)');
+  unmatchedCardsElements.forEach(el => {
+      el.classList.add('card-shuffling-out');
   });
-  renderAll();
-  showMessage('已洗牌');
+
+  setTimeout(() => {
+      let unmatched = game.board.filter(c=>!c.matched);
+      let icons = unmatched.map(c=>c.icon);
+      shuffle(icons); // Shuffle the icons
+
+      unmatched.forEach((c,i)=>{
+          c.icon = icons[i]; // Assign new shuffled icons
+      });
+
+      // Re-render will create new elements, automatically applying card-entering animation
+      renderAll();
+      showMessage('已洗牌');
+      game.lock = false; // Release lock after re-render
+  }, 300); // Duration of card-shuffle-out animation
 }
 
 /**
@@ -2088,7 +2155,7 @@ function handleCloseGame(type) {
                 <div class="game-thankyou-screen" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">
                   ${messageHtml}
                   <br>
-                  <small class="loading-footer mt-8">喵了个咪 &copy; 2025 | Designed by 开元</small>
+                  <small class="loading-footer mt-8">喵了个咪2 &copy; 2025 | Designed by 开元</small>
                 </div>
             `;
 
@@ -2300,7 +2367,7 @@ function initializeLoadingScreen() {
                 loadingScreen.addEventListener('transitionend', () => {
                     loadingScreen.style.display = 'none';
                     // document.body.classList.remove('no-scroll'); // No longer needed
-                    document.title = "喵了个咪"; // Set final page title
+                    document.title = "喵了个咪2"; // Set final page title
                     initializeGame(); // Initialize the game
                 }, { once: true });
             }, 400); // Fade out duration
