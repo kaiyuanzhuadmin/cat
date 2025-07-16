@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>老北鼻加载中...</title>
+  <title>臭宝加载中...</title>
   <link rel="icon" type="image/png" sizes="96x96" href="me.png">
   <link rel="preload" href="mao3.webp" as="image">
   <link rel="preload" href="mao1.webp" as="image">
@@ -984,7 +984,7 @@
         <div id="progress-bar"></div>
       </div>
       <p id="loading-text">正在加载资源...</p>
-      <small class="loading-footer">喵了个咪2 &copy; 2025 | Designed by 开元</small>
+      <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
     </div>
   </div>
 
@@ -1022,7 +1022,7 @@
     <div id="message-bar"></div>
   </div>
   <div id="footer">
-    喵了个咪2 &copy; 2025 | Designed by 开元
+    喵了个咪 &copy; 2025 | Designed by 开元
   </div>
 
   <div id="start-screen">
@@ -1031,13 +1031,13 @@
   <source src="mao.mp4" type="video/mp4">
   <img src="mao.webp" alt="背景图">
 </video>
-    <h1><span>喵</span><span>了</span><span>个</span><span>咪</span><span> 2</span><span> 🐾</span></h1>
+    <h1><span>喵</span><span>了</span><span>个</span><span>咪</span><span> 🐾</span></h1>
     <p> </p> <p>
       <button class="start-btn" id="start-btn">开始游戏</button>
     </p>
-    <p>收集卡牌，分数达标、全部清空过关<br>
-    <span style="color:#c0392b;">第二关难度大幅升级<br></span>可使用兑换码解锁道具</p>
-    <small class="loading-footer">喵了个咪2 &copy; 2025 | Designed by 开元</small>
+    <p>点击卡牌进行收集，全部清空过关<br>
+    <span style="color:#c0392b;">第二关难度略微升级<br></span>可使用兑换码解锁道具</p>
+    <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
   </div>
 
   <div id="level-finish" style="display:none;">
@@ -1127,7 +1127,7 @@ const INITIAL_DISPLAY_SETS_VISIBLE = 2; // Number of display sets visible at any
 const REDEMPTION_CODES = {
   "kaiyuan": { undo: 20, hint: 20, shuffle: 20 },
   "兑换码": { undo: 5, hint: 5, shuffle: 5 },
-  "喵了个咪2": { undo: 50, hint: 50, shuffle: 50 },
+  "喵了个咪": { undo: 50, hint: 50, shuffle: 50 },
   "不知道": { undo: 3, hint: 1, shuffle: 1 },
   "开元": { undo: 10, hint: 10, shuffle: 10 },
   "通关": { type: "skip_level" } // Added "skip_level" redemption code
@@ -1659,29 +1659,33 @@ function clickCard(id) {
       // Mark matched cards in temp area
       game.temp.forEach(c => { if (c.icon === matchedIcon) c.matched = true; });
 
-      // Add score animation
-      const scoreAnimDiv = document.createElement('div');
-      scoreAnimDiv.className = 'score-animation';
-      scoreAnimDiv.textContent = `+${DISPLAY_CARD_MATCH_SCORE}`;
-      document.body.appendChild(scoreAnimDiv);
-
-      // Position the animation centrally above the display area
-      const displayAreaRect = displayArea.getBoundingClientRect();
-      scoreAnimDiv.style.left = `${displayAreaRect.left + displayAreaRect.width / 2}px`;
-      scoreAnimDiv.style.top = `${displayAreaRect.top + displayAreaRect.height / 2}px`;
-      scoreAnimDiv.style.transform = 'translateX(-50%)'; // Center horizontally
-
-      // Remove the element after animation
-      scoreAnimDiv.addEventListener('animationend', () => {
-          scoreAnimDiv.remove();
-      }, { once: true });
-
       // Check if the matched icon also matches any display cards
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
               displaySet.matched = true; // Mark display set as matched
               game.score += DISPLAY_CARD_MATCH_SCORE; // Add score
               renderProgressAndScore(); // Update score display immediately
+
+              // Add score animation next to the matched display group
+              const matchedDisplayGroupEl = document.querySelector(`#display-area .display-group[data-id='${displaySet.id}']`);
+              if (matchedDisplayGroupEl) {
+                  const groupRect = matchedDisplayGroupEl.getBoundingClientRect();
+                  const scoreAnimDiv = document.createElement('div');
+                  scoreAnimDiv.className = 'score-animation';
+                  scoreAnimDiv.textContent = `+${DISPLAY_CARD_MATCH_SCORE}`;
+                  document.body.appendChild(scoreAnimDiv);
+
+                  // Position the animation relative to the matched display group
+                  scoreAnimDiv.style.left = `${groupRect.left + groupRect.width / 2}px`;
+                  scoreAnimDiv.style.top = `${groupRect.top + groupRect.height / 2}px`;
+                  scoreAnimDiv.style.transform = 'translate(-50%, -50%)'; // Center horizontally and vertically
+
+                  // Remove the element after animation
+                  scoreAnimDiv.addEventListener('animationend', () => {
+                      scoreAnimDiv.remove();
+                  }, { once: true });
+              }
+
 
               // Replace the matched display set with a new one after a delay
               setTimeout(() => {
@@ -1693,7 +1697,7 @@ function clickCard(id) {
                       displaySet.matched = false; // Reset matched state
                       game.totalDisplaySetsGenerated++;
                   } else {
-                      // If no new set can be generated, remove this slot
+                      // If all totalDisplaySets have been generated, just remove this one
                       game.displayCards = game.displayCards.filter(ds => ds.id !== displaySet.id);
                   }
                   renderDisplay(); // Re-render display area
@@ -2002,6 +2006,7 @@ function renderDisplay() {
     game.displayCards.forEach(displaySet => {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'display-group';
+        groupDiv.dataset.id = displaySet.id; // Add data-id for selection
         displaySet.cards.forEach(card => {
             const cardDiv = document.createElement('div');
             cardDiv.className = 'display-card' + (displaySet.matched ? ' matched-display' : '');
@@ -2155,7 +2160,7 @@ function handleCloseGame(type) {
                 <div class="game-thankyou-screen" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">
                   ${messageHtml}
                   <br>
-                  <small class="loading-footer mt-8">喵了个咪2 &copy; 2025 | Designed by 开元</small>
+                  <small class="loading-footer mt-8">喵了个咪 &copy; 2025 | Designed by 开元</small>
                 </div>
             `;
 
@@ -2367,14 +2372,14 @@ function initializeLoadingScreen() {
                 loadingScreen.addEventListener('transitionend', () => {
                     loadingScreen.style.display = 'none';
                     // document.body.classList.remove('no-scroll'); // No longer needed
-                    document.title = "喵了个咪2"; // Set final page title
+                    document.title = "喵了个咪"; // Set final page title
                     initializeGame(); // Initialize the game
                 }, { once: true });
             }, 400); // Fade out duration
         } else {
             progressBar.style.width = progress + '%';
             const nextAssetThreshold = (assetIndex + 1) * 20;
-            if (progress > nextAssetThreshold && assetIndex < assets.length - 2) {
+            if (progress > nextAssetThreshold && assetIndex < assets.length - 1) { // Corrected condition
                 assetIndex++;
                 loadingText.textContent = assets[assetIndex]; // Update loading text
             }
