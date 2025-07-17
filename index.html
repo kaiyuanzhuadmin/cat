@@ -1118,6 +1118,21 @@
         height: 13vw;
         font-size: 4.5vw;
       }
+      /* New styles for level-finish and game-over on small screens */
+      #level-finish, #game-over {
+        font-size: 1.2rem; /* Reduce base font size */
+        padding: 20px; /* Add some padding */
+        box-sizing: border-box;
+      }
+
+      #level-finish button, #game-over button, #retry-btn {
+          font-size: 1rem; /* Reduce button font size */
+          padding: 10px 20px; /* Adjust padding */
+      }
+
+      #level-finish-text {
+          font-size: 1em; /* Make it relative to the parent's font-size */
+      }
     }
   </style>
   <link rel="stylesheet" href="font/iconfont.css">
@@ -2314,6 +2329,7 @@ function renderAll(){
  * @param {string} msg - 要在关卡完成屏幕上显示的消息。
  */
 function showLevelFinish(msg){
+  playBgm(false); // 关卡完成时暂停背景音乐
   // Clear any existing video timeout
   if (outroVideoTimeout) {
       clearTimeout(outroVideoTimeout);
@@ -2357,8 +2373,6 @@ function showLevelFinish(msg){
     restartGameBtn.style.display = 'inline-block';
     retryBtnLevelFinish.style.display = 'none';
   }
-
-  // playBgm(false); // Moved to playLevel2Outro
 }
 
 /**
