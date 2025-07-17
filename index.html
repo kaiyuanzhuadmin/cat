@@ -97,6 +97,22 @@
       animation: card-shuffle-out 0.3s ease-in forwards;
     }
 
+    /* New: Heart Animation */
+    @keyframes fade-in-out-heart {
+      0% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0; transform: scale(0.8); }
+    }
+    .heart-animation {
+      position: absolute;
+      font-size: 40px; /* User requested 40px */
+      color: #ff69b4; /* Pink color for heart */
+      pointer-events: none;
+      animation: fade-in-out-heart 1.5s ease-out infinite alternate; /* Changed to infinite alternate */
+      z-index: 1000; /* Ensure it's above cards but below cat wiggler if needed */
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    }
+
     /* Global body styles */
     body {
       margin: 0;
@@ -302,7 +318,7 @@
         position: absolute;
         width: 50px; /* Small width for wiggling */
         height: 20px; /* Height of the gap */
-        right: 40px; /* Position on the right side */
+        /* left will be set by JS */
         /* top will be set by JS */
         z-index: 1000; /* Higher z-index to be on top of cards/temp-area */
         pointer-events: none;
@@ -1064,12 +1080,12 @@
         </div>
     <!-- Cat path element, positioned absolutely -->
     <div id="cat-path">
-        <div id="walking-cat">🐾</div>
+        <div id="walking-cat">🌸</div>
     </div>
     <div id="card-stack-area"></div>
     <!-- New: Cat Wiggler Path (Right Cat) -->
     <div id="cat-wiggler-path">
-        <div id="wiggling-cat">💗</div>
+        <div id="wiggling-cat">🍟</div>
     </div>
     <div id="temp-area">
       <div class="temp-slot"></div>
@@ -1391,64 +1407,73 @@ confirmNo.onclick = hideConfirm;
 function generateDisplayCardSet(excludeIcons = []) {
     let chosenIcon = null;
 
-    // 1. 优先尝试从当前棋盘或暂存区中寻找可立即匹配的图标
-    const uniqueIconsOnBoard = [...new Set(game.board.filter(c => !c.matched).map(c => c.icon))];
-    const tempIconCounts = {};
-    game.temp.forEach(c => tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1);
+    // 1. Primary Source: Look for triplets from clickable cards in layers 1-4 (stack 0-3)
+    const topLayerClickableCards = game.board.filter(c =>
+        !c.matched && isCardClickable(c, game.board) && c.stack < 4
+    );
+    const topLayerClickableIconCounts = {};
+    topLayerClickableCards.forEach(c => topLayerClickableIconCounts[c.icon] = (topLayerClickableIconCounts[c.icon] || 0) + 1);
 
-    let potentialMatchableIcons = uniqueIconsOnBoard.filter(icon => {
-        // Exclude icons that are already in the excludeIcons list
+    let potentialTopLayerIcons = Object.keys(topLayerClickableIconCounts).filter(icon => {
         if (excludeIcons.includes(icon)) return false;
-
-        const countInTemp = tempIconCounts[icon] || 0;
-        const countOnBoard = game.board.filter(c => !c.matched && c.icon === icon).length;
-        // 确保棋盘和暂存区中的该图标总数 >= 3
-        return (countInTemp + countOnBoard) >= 3;
+        return topLayerClickableIconCounts[icon] >= 3;
     });
 
-    if (potentialMatchableIcons.length > 0) {
-        // 如果找到可立即匹配的图标，随机选择一个
-        chosenIcon = potentialMatchableIcons[Math.floor(Math.random() * potentialMatchableIcons.length)];
+    if (potentialTopLayerIcons.length > 0) {
+        chosenIcon = potentialTopLayerIcons[Math.floor(Math.random() * potentialTopLayerIcons.length)];
     } else {
-        // 2. 如果当前棋盘或暂存区没有可立即匹配的图标（例如，游戏刚开始，卡片可能被覆盖），
-        // 则从整个关卡的卡片池中寻找至少有3张的图标。
-        // 这确保了展示区在任何情况下都能生成卡片。
-        const allIconsInGame = game.cards.map(c => c.icon);
-        const allIconCounts = {};
-        allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
+        // 2. Secondary Source: If no triplets in top layers, look for triplets from ALL clickable cards on board + temp area
+        const allClickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+        const tempIconCounts = {};
+        game.temp.forEach(c => tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1);
 
-        const anyTripletIcons = Object.keys(allIconCounts).filter(icon => {
-            // Exclude icons that are already in the excludeIcons list
+        const combinedClickableIcons = [...allClickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
+        const combinedClickableIconCounts = {};
+        combinedClickableIcons.forEach(icon => combinedClickableIconCounts[icon] = (combinedClickableIconCounts[icon] || 0) + 1);
+
+        let potentialCombinedIcons = Object.keys(combinedClickableIconCounts).filter(icon => {
             if (excludeIcons.includes(icon)) return false;
-            return allIconCounts[icon] >= 3;
+            return combinedClickableIconCounts[icon] >= 3;
         });
 
-        if (anyTripletIcons.length > 0) {
-            // 如果在整个卡片池中找到至少有3张的图标，随机选择一个
-            chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
+        if (potentialCombinedIcons.length > 0) {
+            chosenIcon = potentialCombinedIcons[Math.floor(Math.random() * potentialCombinedIcons.length)];
         } else {
-            // 3. 最后的备用方案：如果连整个卡片池中都没有任何图标有3张（理论上不应发生，除非关卡生成有问题），
-            // 则选择任意一个存在的图标，但仍尝试避开excludeIcons
-            const availableIconsWithoutExclusion = allIconsInGame.filter(icon => !excludeIcons.includes(icon));
-            if (availableIconsWithoutExclusion.length > 0) {
-                chosenIcon = availableIconsWithoutExclusion[Math.floor(Math.random() * availableIconsWithoutExclusion.length)];
-            } else if (allIconsInGame.length > 0) { // If all icons are in exclusion list, just pick any
-                chosenIcon = allIconsInGame[Math.floor(Math.random() * allIconsInGame.length)];
+            // 3. Tertiary Source (Fallback): If still no triplets from clickable cards, look from all cards in the game (even if covered)
+            const allIconsInGame = game.cards.map(c => c.icon);
+            const allIconCounts = {};
+            allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
+
+            const anyTripletIcons = Object.keys(allIconCounts).filter(icon => {
+                if (excludeIcons.includes(icon)) return false;
+                return allIconCounts[icon] >= 3;
+            });
+
+            if (anyTripletIcons.length > 0) {
+                chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
             } else {
-                return null; // 没有可用的卡片图标
+                // Last resort: if no triplets at all, pick any icon that exists (should be rare)
+                const availableIconsWithoutExclusion = allIconsInGame.filter(icon => !excludeIcons.includes(icon));
+                if (availableIconsWithoutExclusion.length > 0) {
+                    chosenIcon = availableIconsWithoutExclusion[Math.floor(Math.random() * availableIconsWithoutExclusion.length)];
+                } else if (allIconsInGame.length > 0) { // If all icons are in exclusion list, just pick any
+                    chosenIcon = allIconsInGame[Math.floor(Math.random() * allIconsInGame.length)];
+                } else {
+                    return null; // No available card icons
+                }
             }
         }
     }
 
     if (chosenIcon) {
-        // 返回3张相同图标的卡片
+        // Return 3 card objects with the chosen icon
         return [
             { icon: chosenIcon, id: Date.now() + 1 },
             { icon: chosenIcon, id: Date.now() + 2 },
             { icon: chosenIcon, id: Date.now() + 3 }
         ];
     } else {
-        return null; // 不应到达此处，除非 game.cards 未正确初始化
+        return null; // Should not be reached if game.cards is properly initialized
     }
 }
 
@@ -2071,6 +2096,49 @@ function renderTemp(){
       slot.appendChild(el);
     }
   });
+
+  // --- Heart Animation Logic ---
+  let persistentHeart = document.getElementById('persistent-heart');
+
+  if (game.temp.length === 7) {
+    const seventhTempSlot = tempSlots[6]; // Get the 7th slot (index 6)
+    if (seventhTempSlot) {
+      const mainArea = document.getElementById('main-area');
+      const cardStackArea = document.getElementById('card-stack-area');
+
+      // Get bounding client rects for accurate absolute positions relative to the viewport
+      const seventhSlotRect = seventhTempSlot.getBoundingClientRect();
+      const cardStackRect = cardStackArea.getBoundingClientRect();
+      const mainAreaRect = mainArea.getBoundingClientRect();
+
+      // Calculate the vertical midpoint for the heart, between cardStackArea's bottom and the 7th temp slot's top
+      const heartVerticalMidpointAbsolute = cardStackRect.bottom + (seventhSlotRect.top - cardStackRect.bottom) / 2;
+
+      // Convert this absolute position to a position relative to mainArea's top
+      const heartTopRelativeToMainArea = heartVerticalMidpointAbsolute - mainAreaRect.top;
+
+      // Calculate horizontal center of the 7th slot relative to mainArea
+      const heartLeftRelativeToMainArea = (seventhSlotRect.left + seventhTempSlot.offsetWidth / 2) - mainAreaRect.left;
+
+      if (!persistentHeart) {
+        persistentHeart = document.createElement('div');
+        persistentHeart.id = 'persistent-heart'; // Assign a unique ID for persistent reference
+        persistentHeart.className = 'heart-animation';
+        persistentHeart.innerHTML = '❤';
+        mainArea.appendChild(persistentHeart);
+      }
+
+      persistentHeart.style.left = `${heartLeftRelativeToMainArea}px`;
+      persistentHeart.style.top = `${heartTopRelativeToMainArea}px`;
+      persistentHeart.style.transform = 'translate(-50%, -50%)'; // Center the heart icon itself
+      persistentHeart.style.display = 'block'; // Ensure it's visible
+    }
+  } else {
+    // If the 7th slot is not full, hide the heart
+    if (persistentHeart) {
+      persistentHeart.style.display = 'none';
+    }
+  }
 }
 
 /**
@@ -2533,20 +2601,33 @@ function positionWigglingCat() {
     const cardStackArea = document.getElementById('card-stack-area');
     const tempArea = document.getElementById('temp-area');
     const wigglingCatPath = document.getElementById('cat-wiggler-path');
+    const mainArea = document.getElementById('main-area');
+    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
 
-    if (!cardStackArea || !tempArea || !wigglingCatPath) {
-        console.warn("Missing elements for wiggling cat positioning.");
+    if (!cardStackArea || !tempArea || !wigglingCatPath || tempSlots.length === 0 || !mainArea) {
+        console.warn("Missing elements for wiggling cat positioning or no temp slots.");
         return;
     }
 
-    // Calculate the vertical midpoint of the gap between card-stack-area and temp-area
-    const cardStackBottom = cardStackArea.offsetTop + cardStackArea.offsetHeight;
-    const tempAreaTop = tempArea.offsetTop;
-    const gapMidpoint = cardStackBottom + (tempAreaTop - cardStackBottom) / 2;
+    const firstTempSlot = tempSlots[0];
 
-    // Position the cat path vertically centered in this gap
-    // Adjust by half of the catPath's height to truly center it
-    wigglingCatPath.style.top = `${gapMidpoint - (wigglingCatPath.offsetHeight / 2)}px`;
+    // Get bounding client rects for accurate absolute positions relative to the viewport
+    const cardStackRect = cardStackArea.getBoundingClientRect();
+    const firstTempSlotRect = firstTempSlot.getBoundingClientRect();
+    const mainAreaRect = mainArea.getBoundingClientRect();
+
+    // Calculate the vertical midpoint of the gap between cardStackArea's bottom and the first temp slot's top
+    const gapMidpointAbsolute = cardStackRect.bottom + (firstTempSlotRect.top - cardStackRect.bottom) / 2;
+
+    // Convert this absolute position to a position relative to mainArea's top
+    const topRelativeToMainArea = gapMidpointAbsolute - mainAreaRect.top;
+
+    // Calculate horizontal center of the first slot relative to mainArea
+    const leftRelativeToMainArea = (firstTempSlotRect.left + firstTempSlot.offsetWidth / 2) - mainAreaRect.left;
+
+    // Set wigglingCatPath's top and left, adjusting by half its height/width to center it
+    wigglingCatPath.style.top = `${topRelativeToMainArea - (wigglingCatPath.offsetHeight / 2)}px`;
+    wigglingCatPath.style.left = `${leftRelativeToMainArea - (wigglingCatPath.offsetWidth / 2)}px`;
 }
 </script>
 </body>
