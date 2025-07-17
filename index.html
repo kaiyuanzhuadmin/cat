@@ -311,6 +311,7 @@
         font-size: 40px; /* Match font size to element size for emoji */
         line-height: 1; /* Ensure emoji sits correctly */
         display: flex;
+        z-index: 1990;
         align-items: center;
         justify-content: center;
         color: #5d4037; /* Cat color */
@@ -333,7 +334,7 @@
         color: #5d4037;
         transform: translateX(-50%); /* Center horizontally within its position */
         animation: shake 1.8s ease-in-out infinite alternate; /* Use existing shake animation */
-        z-index: 1000; /* Higher z-index to be on top of cards/temp-area */
+        z-index: 1990; /* Higher z-index to be on top of cards/temp-area */
         pointer-events: none;
         display: none; /* Hidden by default, controlled by JS */
     }
