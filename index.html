@@ -365,8 +365,7 @@
 
     /* Individual Card Styles */
     .card {
-      width: 65px;
-      height: 85px;
+      /* Width, height, font-size will be set dynamically by JS */
       background: #fffdf7;
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
@@ -375,7 +374,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.6rem;
       cursor: pointer;
       user-select: none;
       transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.3s, border-color 0.15s;
@@ -475,8 +473,7 @@
       box-shadow: inset 0 1px 5px rgba(0,0,0,0.08);
     }
     .temp-slot {
-      width: 63px;
-      height: 80px;
+      /* Width, height, font-size will be set dynamically by JS */
       margin: 0 6px;
       background: #fdf5e6;
       border-radius: 9px;
@@ -484,7 +481,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2rem;
       color: #92776c;
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
       position: relative;
@@ -499,7 +495,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.2rem;
       box-shadow: 0 2px 8px rgba(160, 82, 45, 0.3);
       cursor: default;
       position: absolute;
@@ -513,8 +508,7 @@
 
     /* Flying Card Animation */
     .flying-card {
-      width: 65px;
-      height: 85px;
+      /* Width, height, font-size will be set dynamically by JS */
       background: #fffdf7;
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
@@ -523,7 +517,6 @@
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 2.6rem;
       user-select: none;
       z-index: 10000; /* Ensured it's on top */
       transition: top 0.3s ease-in-out, left 0.3s ease-in-out, transform 0.3s ease-in-out;
@@ -844,8 +837,8 @@
       text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
     }
 
-    /* Styles for Level 2 on ALL devices to reduce difficulty */
-    body.level-2-active .card {
+    /* REMOVED: Styles for Level 2 on ALL devices to reduce difficulty */
+    /* body.level-2-active .card {
       width: 50px;
       height: 65px;
       font-size: 2rem;
@@ -878,7 +871,7 @@
     }
     body.level-2-active #card-stack-area {
       height: 420px;
-    }
+    } */
 
     /* Hint Animation */
     .hinted-shake {
@@ -1141,7 +1134,8 @@
       .temp-card {
         font-size: 6vw;
       }
-      .card {
+      /* REMOVED: Fixed card sizes in media query */
+      /* .card {
         width: 15vw;
         height: 20vw;
         font-size: 8vw;
@@ -1155,7 +1149,7 @@
         width: 11vw;
         height: 15vw;
         margin: 0 0.8vw;
-      }
+      } */
       #code-bar input {
         width: 50%;
       }
@@ -1405,6 +1399,7 @@ const targetScoreElement = document.getElementById('target-score');
 const levelInfoElement = document.getElementById('level-info');
 // const cardCountInfoElement = document.getElementById('card-count-info'); // 移除此行
 const displayArea = document.getElementById('display-area');
+const cardStackArea = document.getElementById('card-stack-area'); // 获取卡片堆栈区域元素
 const catPath = document.getElementById('cat-path'); // 获取小猫路径元素
 const walkingCat = document.getElementById('walking-cat'); // 获取行走猫咪元素
 
@@ -1449,7 +1444,8 @@ let game = {
   stepStack: [], // 用于撤销功能
   bgmOn: true,
   isNewLevel: false, // 控制新关卡加载时卡片入场动画的标志
-  lock: false // 防止动画/过渡期间多次点击导致问题
+  lock: false, // 防止动画/过渡期间多次点击导致问题
+  cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 } // NEW: Store calculated card dimensions
 };
 
 // 工具函数
@@ -1702,11 +1698,41 @@ function genLevel(levelIdx){
   game.cards = cards;
 
   let board = [];
-  const areaW = document.getElementById('card-stack-area').offsetWidth;
-  const areaH = document.getElementById('card-stack-area').offsetHeight;
+  const areaW = cardStackArea.offsetWidth;
+  const areaH = cardStackArea.offsetHeight;
 
-  let cardW = (levelIdx === 2) ? 50 : 65;
-  let cardH = (levelIdx === 2) ? 65 : 85;
+  // NEW: Dynamically calculate card dimensions based on area and level configuration
+  // Aim for a certain number of columns and rows based on level config
+  const cols = lv.cols;
+  const rows = lv.rows;
+  const cardAspectRatio = 65 / 85; // Standard card aspect ratio (width / height)
+
+  // Calculate card width based on area width and desired columns, accounting for spacing
+  const horizontalSpacing = 10; // pixels between cards horizontally
+  const verticalSpacing = 10; // pixels between cards vertically
+  
+  let cardW = (areaW - (cols + 1) * horizontalSpacing) / cols;
+  let cardH = cardW / cardAspectRatio;
+
+  // If cards are too tall for the height, recalculate based on height
+  if (cardH * rows + (rows + 1) * verticalSpacing > areaH) {
+      cardH = (areaH - (rows + 1) * verticalSpacing) / rows;
+      cardW = cardH * cardAspectRatio;
+  }
+
+  // Ensure card dimensions are reasonable, set minimums if needed
+  cardW = Math.max(50, Math.min(cardW, 80)); // Limit card width between 50px and 80px
+  cardH = cardW / cardAspectRatio; // Recalculate height to maintain aspect ratio
+
+  // Store calculated dimensions in game state
+  game.cardDimensions = {
+      width: cardW,
+      height: cardH,
+      fontSize: cardW * 0.4, // Adjust font size relative to card width
+      borderRadius: cardW * 0.15, // Adjust border radius relative to card width
+      borderWidth: cardW * 0.04 // Adjust border width relative to card width
+  };
+
   let stackDepth = lv.stack;
 
   const cardsPerStackLayer = Math.ceil(lv.total / stackDepth);
@@ -1719,16 +1745,16 @@ function genLevel(levelIdx){
     let maxAttempts = 50; // 查找非重叠位置的最大尝试次数
     let foundPosition = false;
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      let tempX = randBetween(5, areaW - cardW - 5);
-      let tempY = randBetween(5, areaH - cardH - 5);
+      let tempX = randBetween(5, areaW - game.cardDimensions.width - 5);
+      let tempY = randBetween(5, areaH - game.cardDimensions.height - 5);
 
       // 根据堆栈添加轻微偏移以实现视觉深度
       tempX += (s * 5 * (Math.random() - 0.5));
       tempY += (s * 5 * (Math.random() - 0.5));
 
       // 将位置限制在边界内
-      tempX = Math.max(5, Math.min(tempX, areaW - cardW - 5));
-      tempY = Math.max(5, Math.min(tempY, areaH - cardH - 5));
+      tempX = Math.max(5, Math.min(tempX, areaW - game.cardDimensions.width - 5));
+      tempY = Math.max(5, Math.min(tempY, areaH - game.cardDimensions.height - 5));
 
       let overlap = false;
       // 检查与相同或更低堆栈层中的卡片是否重叠
@@ -1736,7 +1762,7 @@ function genLevel(levelIdx){
         if (existingCard.stack <= s) {
           const dx = Math.abs(tempX - existingCard.x);
           const dy = Math.abs(tempY - existingCard.y);
-          if (dx < cardW * 0.7 && dy < cardH * 0.7) { // 重叠阈值
+          if (dx < game.cardDimensions.width * 0.7 && dy < game.cardDimensions.height * 0.7) { // 重叠阈值
             overlap = true;
             break;
           }
@@ -1753,8 +1779,8 @@ function genLevel(levelIdx){
 
     // 如果未找到非重叠位置的备用方案
     if (!foundPosition) {
-        x = randBetween(5, areaW - cardW - 5);
-        y = randBetween(5, areaH - cardH - 5);
+        x = randBetween(5, areaW - game.cardDimensions.width - 5);
+        y = randBetween(5, areaH - game.cardDimensions.height - 5);
     }
 
     const z = s * 1000 + cardIdx; // 用于分层的 Z 索引
@@ -1799,8 +1825,8 @@ function isCardClickable(card, board){
 
   const activeCards = board.filter(c => !c.matched); // 只考虑未匹配的卡片
 
-  const cardW = (game.level === 2) ? 50 : 65;
-  const cardH = (game.level === 2) ? 65 : 85;
+  const cardW = game.cardDimensions.width; // Use dynamic width
+  const cardH = game.cardDimensions.height; // Use dynamic height
   const overlapThresholdX = cardW * 0.7; // X 轴重叠阈值
   const overlapThresholdY = cardH * 0.7; // Y 轴重叠阈值
 
@@ -1865,6 +1891,10 @@ function clickCard(id) {
   flyingCard.style.top = `${startRect.top}px`;
   flyingCard.style.width = `${startRect.width}px`;
   flyingCard.style.height = `${startRect.height}px`;
+  flyingCard.style.fontSize = `${game.cardDimensions.fontSize}px`; // Set font size
+  flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`; // Set border radius
+  flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`; // Set border width
+
 
   // 隐藏原始卡片
   clickedCardEl.style.opacity = '0';
@@ -2196,11 +2226,12 @@ function startGame(level){
 
   game.level = level;
   // 为 CSS 调整应用/移除关卡特定的 body 类
-  if (level === 2) {
-    document.body.classList.add('level-2-active');
-  } else {
-    document.body.classList.remove('level-2-active');
-  }
+  // REMOVED: Level-specific body class as card sizes are now dynamic
+  // if (level === 2) {
+  //   document.body.classList.add('level-2-active');
+  // } else {
+  //   document.body.classList.remove('level-2-active');
+  // }
 
   let lvData = genLevel(level); // 生成关卡数据
   game.cards = lvData.cards; // 确保 game.cards 已设置
@@ -2254,6 +2285,13 @@ function renderBoard(){
     el.innerHTML = card.icon;
     el.dataset.id = card.id; // 将卡片 ID 存储为数据属性
 
+    // Apply dynamic card dimensions
+    el.style.width = `${game.cardDimensions.width}px`;
+    el.style.height = `${game.cardDimensions.height}px`;
+    el.style.fontSize = `${game.cardDimensions.fontSize}px`;
+    el.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
+    el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
+
     if(clickable){
       el.onclick = () => clickCard(card.id); // 附加点击处理程序
     }
@@ -2277,13 +2315,37 @@ function renderBoard(){
  */
 function renderTemp(){
   const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+
+  // NEW: Dynamically adjust temp slot and temp card dimensions
+  const tempCardWidth = game.cardDimensions.width * 0.9; // Slightly smaller than main card
+  const tempCardHeight = game.cardDimensions.height * 0.9;
+  const tempCardFontSize = game.cardDimensions.fontSize * 0.9;
+  const tempCardBorderRadius = game.cardDimensions.borderRadius * 0.9;
+  const tempCardBorderWidth = game.cardDimensions.borderWidth * 0.8;
+  const tempSlotMargin = game.cardDimensions.width * 0.09; // Adjust margin based on card size
+
+  // Adjust temp area width and min-height based on calculated card sizes
+  const tempArea = document.getElementById('temp-area');
+  tempArea.style.width = `${(tempCardWidth + tempCardBorderWidth * 2 + tempSlotMargin * 2) * TEMP_LIMIT}px`;
+  tempArea.style.minHeight = `${tempCardHeight + tempCardBorderWidth * 2 + 16}px`; // 16 for padding
+
   tempSlots.forEach((slot, i) => {
     slot.innerHTML = ''; // 清除现有内容
+    slot.style.width = `${tempCardWidth}px`;
+    slot.style.height = `${tempCardHeight}px`;
+    slot.style.margin = `0 ${tempSlotMargin}px`;
+    slot.style.borderRadius = `${tempCardBorderRadius}px`;
+    slot.style.borderWidth = `${tempCardBorderWidth}px`;
+
+
     if (i < game.temp.length) {
       const c = game.temp[i];
       let el = document.createElement('div');
       el.className = "temp-card" + (c.matched ? " matched" : ""); // 如果已匹配则添加“matched”类
       el.innerHTML = c.icon;
+      el.style.fontSize = `${tempCardFontSize}px`;
+      el.style.borderRadius = `${tempCardBorderRadius}px`;
+      el.style.borderWidth = `${tempCardBorderWidth}px`;
       slot.appendChild(el);
     }
   });
@@ -2337,14 +2399,34 @@ function renderTemp(){
  */
 function renderDisplay() {
     displayArea.innerHTML = ''; // 清除现有展示卡片
+
+    // NEW: Dynamically adjust display card dimensions
+    const displayCardWidth = game.cardDimensions.width * 0.7; // Smaller than main card
+    const displayCardHeight = game.cardDimensions.height * 0.7;
+    const displayCardFontSize = game.cardDimensions.fontSize * 0.7;
+    const displayCardBorderRadius = game.cardDimensions.borderRadius * 0.7;
+    const displayCardBorderWidth = game.cardDimensions.borderWidth * 0.7;
+    const displayGroupGap = displayCardWidth * 0.1; // Gap between cards in a group
+
+    // Adjust display area width and min-height if necessary
+    displayArea.style.width = `${cardStackArea.offsetWidth * 0.95}px`; // Make it slightly smaller than card stack area
+    displayArea.style.minHeight = `${displayCardHeight + displayCardBorderWidth * 2 + 20}px`; // 20 for padding
+
     game.displayCards.forEach(displaySet => {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'display-group';
-        groupDiv.dataset.id = displaySet.id; // 添加 data-id 以供选择
+        groupDiv.dataset.id = displaySet.id; // Add data-id for selection
+        groupDiv.style.gap = `${displayGroupGap}px`; // Apply dynamic gap
+
         displaySet.cards.forEach(card => {
             const cardDiv = document.createElement('div');
             cardDiv.className = 'display-card' + (displaySet.matched ? ' matched-display' : '');
             cardDiv.innerHTML = card.icon;
+            cardDiv.style.width = `${displayCardWidth}px`;
+            cardDiv.style.height = `${displayCardHeight}px`;
+            cardDiv.style.fontSize = `${displayCardFontSize}px`;
+            cardDiv.style.borderRadius = `${displayCardBorderRadius}px`;
+            cardDiv.style.borderWidth = `${displayCardBorderWidth}px`;
             groupDiv.appendChild(cardDiv);
         });
         displayArea.appendChild(groupDiv);
@@ -2745,8 +2827,17 @@ document.addEventListener('DOMContentLoaded', function() {
       });
 
     // 添加窗口大小调整事件监听器以重新定位猫咪行走者和扭动猫咪
-    window.addEventListener('resize', positionCatWalker);
-    window.addEventListener('resize', updateWigglingCatVisibility); // MODIFICATION: Use this to re-position wiggling cats
+    window.addEventListener('resize', () => {
+        // Recalculate card dimensions on resize
+        if (game.level) { // Only if a level has been started
+            const currentLevelConfig = LEVELS[game.level - 1];
+            // Re-run genLevel to update cardDimensions based on new area size
+            genLevel(game.level); 
+            renderAll(); // Re-render everything with new dimensions
+        }
+        positionCatWalker();
+        updateWigglingCatVisibility();
+    });
 
     // Skip outro button event listener
     skipOutroBtn.addEventListener('click', () => {
@@ -3062,7 +3153,7 @@ function playLevel2Outro() {
         // After showing image for a bit, transition to finish screen
         setTimeout(() => {
             showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
-        }, 3000); // Display image for 3 seconds before moving on
+        }, 3000); // Display image for 3 seconds
     }, 7000); // 7 seconds timeout for video to start playing or end
 
     // Attempt to play video
