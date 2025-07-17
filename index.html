@@ -297,6 +297,12 @@
         /* background-color: rgba(255, 0, 0, 0.1); /* For debugging positioning */
     }
 
+    /* MODIFICATION: Updated cat-walk keyframes - removed transform */
+    @keyframes cat-walk {
+        0% { left: 0; }
+        100% { left: calc(100% - 35px); } /* Moves across the width of #cat-path */
+    }
+
     #walking-cat {
         position: absolute; /* Position within #cat-path */
         width: 40px; /* New size */
@@ -308,14 +314,9 @@
         justify-content: center;
         color: #5d4037; /* Cat color */
         top: -7.5px; /* (20px - 35px) / 2 = -7.5px to center 35px cat in 20px path */
-        /* MODIFICATION: Added transform for mirroring */
+        transform: scaleX(1); /* Initial state */
+        transition: transform 0.01s linear, opacity 0.01s linear; /* Quick transition for mirroring */
         animation: cat-walk 4s linear infinite alternate; /* Animation */
-    }
-
-    /* MODIFICATION: Updated cat-walk keyframes for mirroring */
-    @keyframes cat-walk {
-        0% { left: 0; transform: scaleX(1); }
-        100% { left: calc(100% - 35px); transform: scaleX(-1); } /* Moves across the width of #cat-path and flips */
     }
 
     /* New: Cat Wiggler Instances (Right Cat) */
@@ -1008,16 +1009,26 @@
         overflow: hidden;
     }
 
-    #level2-outro-screen video,
-    #level2-outro-screen img {
-        max-width: 90%; /* Fit within container */
-        max-height: 90%;
-        object-fit: contain; /* Ensure content is fully visible */
-        border-radius: 15px;
-        box-shadow: 0 0 30px rgba(255, 255, 255, 0.3);
+    /* MODIFICATION: Fullscreen video styles for outro */
+    #level2-outro-screen video {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: cover; /* This is key for full-screen without black borders */
+        border-radius: 0; /* Remove border-radius for full screen effect */
+        box-shadow: none; /* Remove shadow for full screen effect */
     }
     #level2-outro-screen img {
-        display: none; /* Image hidden by default, shown on video error */
+        max-width: 100%;
+        max-height: 100%;
+        object-fit: contain; /* Image should probably still contain to avoid cropping */
+        border-radius: 15px; /* Keep for image fallback */
+        box-shadow: 0 0 30px rgba(255, 255, 255, 0.3); /* Keep for image fallback */
     }
     #level2-outro-screen .loading-text {
         color: white;
@@ -1312,6 +1323,7 @@ const levelInfoElement = document.getElementById('level-info');
 // const cardCountInfoElement = document.getElementById('card-count-info'); // 移除此行
 const displayArea = document.getElementById('display-area');
 const catPath = document.getElementById('cat-path'); // 获取小猫路径元素
+const walkingCat = document.getElementById('walking-cat'); // 获取行走猫咪元素
 
 // MODIFICATION: Get references to the three wiggling cat instances
 const wigglingCat1 = document.getElementById('wiggling-cat-1');
@@ -1328,6 +1340,7 @@ const skipOutroBtn = document.getElementById('skip-outro-btn'); // Get the new s
 
 let confirmCallback = null; // 确认模态框的回调函数
 let outroVideoTimeout = null; // 用于视频播放超时的计时器
+let isCatMirrored = false; // To track current orientation of walking cat
 
 // 游戏状态对象
 let game = {
@@ -2196,7 +2209,7 @@ function renderTemp(){
       const heartTopRelativeToMainArea = heartVerticalMidpointAbsolute - mainAreaRect.top;
 
       // 计算第 7 个槽的水平中心相对于 mainArea
-      const heartLeftRelativeToMainArea = (seventhSlotRect.left + seventhTempSlot.offsetWidth / 2) - mainAreaRect.left;
+      const heartLeftRelativeToMainArea = (seventhTempSlot.left + seventhTempSlot.offsetWidth / 2) - mainAreaRect.left;
 
       if (!persistentHeart) {
         persistentHeart = document.createElement('div');
@@ -2247,6 +2260,7 @@ function renderProgressAndScore(){
   // cardCountInfoElement.textContent = `剩余卡牌: ${left}`; // 移除此行
   currentScoreElement.textContent = game.score;
   targetScoreElement.textContent = game.targetScore;
+  updateWigglingCatVisibility(); // Call this when score or target score might change
 }
 
 /**
@@ -2283,7 +2297,6 @@ function renderAll(){
   renderProgressAndScore(); // 更新进度和分数
   updateToolButtons();
   positionCatWalker(); // 确保所有元素渲染后猫咪行走者已定位
-  // positionWigglingCat(); // MODIFICATION: This is now handled by updateWigglingCatVisibility
   updateWigglingCatVisibility(); // Ensure wiggling cat visibility is updated
 }
 
@@ -2479,6 +2492,23 @@ document.addEventListener('DOMContentLoaded', function() {
     skipOutroBtn.addEventListener('click', () => {
         showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
     });
+
+    // Walking cat animation iteration listener
+    if (walkingCat) {
+        walkingCat.addEventListener('animationiteration', () => {
+            isCatMirrored = !isCatMirrored;
+
+            // Fade out
+            walkingCat.style.opacity = '0';
+
+            // After a very brief moment (allowing fade-out to start), change transform and fade back in
+            setTimeout(() => {
+                walkingCat.style.transform = isCatMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+                walkingCat.style.opacity = '1';
+            }, 1); // Minimal delay (1ms) to ensure the opacity change is registered.
+                   // The actual "fade" is handled by the CSS transition duration.
+        });
+    }
 });
 
 // Tool button click handlers
@@ -2735,10 +2765,8 @@ function hideWigglingCats() {
  * MODIFICATION: Updates the visibility and position of wiggling cats based on remaining cards.
  */
 function updateWigglingCatVisibility() {
-    const remainingCards = game.board.filter(c => !c.matched).length;
-    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-
-    if (remainingCards < 21) {
+    // Change condition to show wiggling cats when score meets target
+    if (game.score >= game.targetScore) {
         // Show and position cats
         positionWigglingCat(wigglingCat1, 0); // Above first slot (index 0)
         positionWigglingCat(wigglingCat4, 3); // Above fourth slot (index 3)
