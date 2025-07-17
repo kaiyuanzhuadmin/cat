@@ -287,9 +287,9 @@
     /* Cat Animation Path (Left Cat) */
     #cat-path {
         position: absolute;
-        width: 80%; /* Spans the width of its parent (#main-area) */
+        width: 100%; /* Spans the width of its parent (#main-area) */
         height: 20px; /* Height of the gap */
-        left: 20px; /* Align with parent's left edge */
+        left: 10px; /* Align with parent's left edge */
         /* top will be set by JS */
         z-index: 1000; /* Ensure it's visible */
         pointer-events: none; /* Crucial: allows clicks to pass through to cards */
@@ -300,7 +300,7 @@
     /* MODIFICATION: Updated cat-walk keyframes - removed transform */
     @keyframes cat-walk {
         0% { left: 0; }
-        100% { left: calc(100% - 35px); } /* Moves across the width of #cat-path */
+        100% { left: calc(100% - 55px); } /* Moves across the width of #cat-path */
     }
 
     #walking-cat {
