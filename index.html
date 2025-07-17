@@ -171,8 +171,27 @@
     }
     /* Responsive adjustments for game container */
     @media (max-width: 700px) {
-      #game-container { max-width: 100vw; margin: 0; box-shadow: none; border-radius: 0; min-height: 100vh; border: none;}
+      #game-container {
+        max-width: 100vw;
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+        min-height: 100vh;
+        border: none;
+        /* For iPhone X/XR/XS Max/11/12/13/14/15 series with notches and rounded corners */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+      }
     }
+    /* Desktop adjustments */
+    @media (min-width: 701px) {
+      #game-container {
+        max-width: 900px; /* Increased max-width for larger screens */
+        min-height: 90vh; /* Use viewport height for better desktop fit */
+        margin: 5vh auto; /* Center vertically with some margin */
+      }
+    }
+
 
     /* Header Bar */
     #header-bar {
@@ -223,23 +242,23 @@
       align-items: center;
       justify-content: flex-start;
       position: relative; /* Crucial for absolute positioning of cat-path */
+      padding-top: 10px; /* Add some top padding */
     }
 
     /* Display Area */
     #display-area {
         margin-top: 20px;
-        width: 580px;
+        width: 90%; /* Use percentage for responsiveness */
+        max-width: 580px; /* Keep a max-width for larger screens */
         min-height: 100px; /* Adjust height as needed */
         background: rgba(240, 230, 210, 0.6);
         border-radius: 15px;
         box-shadow: inset 0 2px 10px rgba(100, 60, 40, 0.15), 0 5px 15px rgba(100, 60, 40, 0.2);
-        /* MODIFICATION START: 横向排列 */
         display: flex;
-        flex-direction: row; /* Changed from column to row */
-        flex-wrap: wrap; /* Allow items to wrap to the next line */
-        justify-content: center; /* Center items horizontally */
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
         align-items: center;
-        /* MODIFICATION END */
         border: 2px dashed #b8860b;
         padding: 10px;
         box-sizing: border-box;
@@ -248,7 +267,7 @@
     @media (max-width: 650px) {
       #display-area {
         width: 96vw;
-        min-width: 250px;
+        min-width: unset; /* Remove min-width to allow smaller sizes */
         min-height: 80px;
       }
     }
@@ -265,8 +284,7 @@
     }
 
     .display-card {
-        width: 45px; /* Smaller size for display cards */
-        height: 60px;
+        /* Dimensions set by JS dynamically for responsiveness */
         background: #fffdf7;
         border-radius: 8px;
         box-shadow: 0 2px 8px rgba(0,0,0,0.1);
@@ -274,8 +292,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        font-size: 1.8rem; /* Smaller font size */
-        color: #5d4037;
         user-select: none;
         opacity: 1;
         transition: opacity 0.3s ease-out;
@@ -289,7 +305,7 @@
         position: absolute;
         width: 100%; /* Spans the width of its parent (#main-area) */
         height: 20px; /* Height of the gap */
-        left: 10px; /* Align with parent's left edge */
+        left: 0; /* Align with parent's left edge */
         /* top will be set by JS */
         z-index: 1000; /* Ensure it's visible */
         pointer-events: none; /* Crucial: allows clicks to pass through to cards */
@@ -342,8 +358,9 @@
     /* Card Stack Area */
     #card-stack-area {
       margin-top: 20px; /* This margin creates the gap where the cat animates */
-      width: 580px;
-      height: 500px;
+      width: 90%; /* Use percentage for responsiveness */
+      max-width: 580px; /* Keep a max-width for larger screens */
+      height: 500px; /* This will be overridden by JS for responsive height */
       position: relative;
       background: rgba(240, 230, 210, 0.6);
       border-radius: 15px;
@@ -358,13 +375,17 @@
     @media (max-width: 650px) {
       #card-stack-area {
         width: 96vw;
-        min-width: 250px;
-        /* REMOVED: fixed height */
-        /* height: 420px; */
+        min-width: unset;
         height: 60vh; /* NEW: Use viewport height for responsiveness */
         max-height: 420px; /* NEW: Cap max height */
         margin-top: 15px; /* Adjust margin for better fit */
         margin-bottom: 15px;
+      }
+    }
+    @media (min-width: 701px) {
+      #card-stack-area {
+        height: 600px; /* Larger fixed height for desktop */
+        max-height: 60vh; /* Cap height relative to viewport */
       }
     }
 
@@ -469,7 +490,8 @@
       justify-content: center;
       align-items: center;
       min-height: 80px;
-      width: 500px;
+      width: 90%; /* Use percentage for responsiveness */
+      max-width: 500px; /* Keep a max-width */
       border-radius: 12px;
       background: #fffcf0;
       border: 2px dashed #b8860b;
@@ -536,7 +558,8 @@
       align-items: center;
       justify-content: center;
       gap: 18px;
-      width: 500px;
+      width: 90%; /* Use percentage for responsiveness */
+      max-width: 500px; /* Keep a max-width */
       flex-wrap: wrap;
     }
     #tools-bar button {
@@ -582,10 +605,12 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      width: 450px;
+      width: 90%; /* Use percentage for responsiveness */
+      max-width: 450px; /* Keep a max-width */
     }
     #code-bar input {
-      width: 180px;
+      flex-grow: 1; /* Allow input to grow */
+      max-width: 180px; /* Keep a max-width */
       padding: 7px 10px;
       border-radius: 8px;
       border: 2px solid #b8860b;
@@ -1520,9 +1545,28 @@ const MAX_CLICK_SOUNDS = 10; // 最大并发点击音效
  * @returns {HTMLAudioElement} 新的 Audio 元素。
  */
 function createClickSoundInstance() {
-    const audio = new Audio('kaa.mp3');
+    const audio = new Audio(); // Create an empty audio element
     audio.preload = 'auto';
     audio.volume = 0.4;
+
+    // Add multiple source elements for better browser compatibility
+    const mp3Source = document.createElement('source');
+    mp3Source.src = 'kaa.mp3';
+    mp3Source.type = 'audio/mpeg';
+    audio.appendChild(mp3Source);
+
+    const oggSource = document.createElement('source');
+    oggSource.src = 'kaa.ogg'; // Assuming kaa.ogg exists for fallback
+    oggSource.type = 'audio/ogg';
+    audio.appendChild(oggSource);
+
+    // Add an error listener to the audio element itself for better debugging
+    audio.addEventListener('error', (e) => {
+        console.error("Audio element error:", e);
+        console.error("Audio sources:", Array.from(audio.children).map(s => s.src));
+        console.error("Current src:", audio.src);
+    });
+
     return audio;
 }
 
@@ -2328,8 +2372,11 @@ function renderTemp(){
 
   // Adjust temp area width and min-height based on calculated card sizes
   const tempArea = document.getElementById('temp-area');
-  tempArea.style.width = `${(tempCardWidth + tempCardBorderWidth * 2 + tempSlotMargin * 2) * TEMP_LIMIT}px`;
-  tempArea.style.minHeight = `${tempCardHeight + tempCardBorderWidth * 2 + 16}px`; // 16 for padding
+  // Calculate total width needed for 7 slots including margins and borders
+  const totalTempAreaWidth = (tempCardWidth + (tempCardBorderWidth * 2) + (tempSlotMargin * 2)) * TEMP_LIMIT;
+  tempArea.style.width = `${totalTempAreaWidth}px`;
+  tempArea.style.minHeight = `${tempCardHeight + (tempCardBorderWidth * 2) + 16}px`; // 16 for padding
+
 
   tempSlots.forEach((slot, i) => {
     slot.innerHTML = ''; // 清除现有内容
