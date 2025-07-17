@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>老baby加载中...</title>
+  <title>臭宝加载中...</title>
   <link rel="icon" type="image/png" sizes="96x96" href="me.png">
   <link rel="preload" href="mao3.webp" as="image">
   <link rel="preload" href="mao1.webp" as="image">
@@ -487,7 +487,7 @@
     #temp-area {
       margin: 20px auto 0 auto;
       display: flex;
-      justify-content: center;
+      justify-content: space-evenly; /* Changed from center to space-evenly for better distribution */
       align-items: center;
       min-height: 80px;
       width: 90%; /* Use percentage for responsiveness */
@@ -501,7 +501,7 @@
     }
     .temp-slot {
       /* Width, height, font-size will be set dynamically by JS */
-      margin: 0 6px;
+      margin: 0; /* Removed fixed margin, now handled by flexbox justify-content */
       background: #fdf5e6;
       border-radius: 9px;
       border: 2px dashed #d4a762;
@@ -512,6 +512,7 @@
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
       position: relative;
       overflow: hidden;
+      flex-shrink: 0; /* Prevent shrinking below calculated size */
     }
     .temp-card {
       width: 100%;
@@ -1159,7 +1160,7 @@
       .temp-slot {
         width: 12vw;
         height: 16vw;
-        margin: 0 0.8vw;
+        /* margin: 0 0.8vw; REMOVED: Managed by flexbox now */
       }
       .temp-card {
         font-size: 6vw;
@@ -2361,31 +2362,26 @@ function renderBoard(){
  */
 function renderTemp(){
   const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-
-  // NEW: Dynamically adjust temp slot and temp card dimensions
-  const tempCardWidth = game.cardDimensions.width * 0.9; // Slightly smaller than main card
-  const tempCardHeight = game.cardDimensions.height * 0.9;
-  const tempCardFontSize = game.cardDimensions.fontSize * 0.9;
-  const tempCardBorderRadius = game.cardDimensions.borderRadius * 0.9;
-  const tempCardBorderWidth = game.cardDimensions.borderWidth * 0.8;
-  const tempSlotMargin = game.cardDimensions.width * 0.09; // Adjust margin based on card size
-
-  // Adjust temp area width and min-height based on calculated card sizes
   const tempArea = document.getElementById('temp-area');
-  // Calculate total width needed for 7 slots including margins and borders
-  const totalTempAreaWidth = (tempCardWidth + (tempCardBorderWidth * 2) + (tempSlotMargin * 2)) * TEMP_LIMIT;
-  tempArea.style.width = `${totalTempAreaWidth}px`;
-  tempArea.style.minHeight = `${tempCardHeight + (tempCardBorderWidth * 2) + 16}px`; // 16 for padding
 
+  // 使用一个固定的缩放因子来计算暂存区卡片的尺寸，使其相对于主卡片尺寸更小
+  const tempCardScaleFactor = 0.8; // 暂存区卡片是主卡片尺寸的 80%
+  const tempCardWidth = game.cardDimensions.width * tempCardScaleFactor;
+  const tempCardHeight = game.cardDimensions.height * tempCardScaleFactor;
+  const tempCardFontSize = game.cardDimensions.fontSize * tempCardScaleFactor;
+  const tempCardBorderRadius = game.cardDimensions.borderRadius * tempCardScaleFactor;
+  const tempCardBorderWidth = game.cardDimensions.borderWidth * tempCardScaleFactor;
+
+  // 根据计算出的暂存区卡片高度设置 tempArea 的最小高度
+  tempArea.style.minHeight = `${tempCardHeight + (tempCardBorderWidth * 2) + 16}px`; // 16px 用于内边距
 
   tempSlots.forEach((slot, i) => {
     slot.innerHTML = ''; // 清除现有内容
     slot.style.width = `${tempCardWidth}px`;
     slot.style.height = `${tempCardHeight}px`;
-    slot.style.margin = `0 ${tempSlotMargin}px`;
     slot.style.borderRadius = `${tempCardBorderRadius}px`;
     slot.style.borderWidth = `${tempCardBorderWidth}px`;
-
+    slot.style.margin = '0'; // 显式设置为 0，由 flexbox 的 justify-content: space-evenly 处理间距
 
     if (i < game.temp.length) {
       const c = game.temp[i];
@@ -3075,7 +3071,7 @@ function attemptVideoAutoplay() {
                 video.play().catch(e => console.error("Video playback failed after touch:", e));
                 // Remove listener after first touch to avoid repeated triggers
                 document.body.removeEventListener('touchstart', onFirstTouch);
-            }, { once: true }); // Using {once: true} also ensures it runs only once
+            }, { once: true }); // Using {once: true} also ensures it.
         });
     }
 
