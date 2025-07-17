@@ -642,7 +642,8 @@
         height: auto;
         z-index: -1; /* Sits on top of the ::before pseudo-element */
         opacity: 0.99;
-        background-size: cover;
+        /* MODIFICATION: Added object-fit for video element */
+        object-fit: cover; 
     }
     /* MODIFICATION END: Video Background */
 
@@ -1023,12 +1024,19 @@
         border-radius: 0; /* Remove border-radius for full screen effect */
         box-shadow: none; /* Remove shadow for full screen effect */
     }
+    /* MODIFICATION: Fullscreen image styles for outro */
     #level2-outro-screen img {
-        max-width: 100%;
-        max-height: 100%;
-        object-fit: contain; /* Image should probably still contain to avoid cropping */
-        border-radius: 15px; /* Keep for image fallback */
-        box-shadow: 0 0 30px rgba(255, 255, 255, 0.3); /* Keep for image fallback */
+        position: absolute; /* Added position absolute */
+        top: 50%; /* Added top 50% */
+        left: 50%; /* Added left 50% */
+        transform: translate(-50%, -50%); /* Added transform for centering */
+        min-width: 100%; /* Added min-width */
+        min-height: 100%; /* Added min-height */
+        width: auto; /* Added width auto */
+        height: auto; /* Added height auto */
+        object-fit: cover; /* Changed from 'contain' to 'cover' */
+        border-radius: 0; /* Removed border-radius */
+        box-shadow: none; /* Removed box-shadow */
     }
     #level2-outro-screen .loading-text {
         color: white;
