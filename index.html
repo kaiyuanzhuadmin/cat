@@ -440,6 +440,24 @@
       -moz-user-select: none;
       -ms-user-select: none;
     }
+    
+    /* NEW: Styles for Cat Nap (Sleeping Card) effect */
+    .card.napping {
+        pointer-events: none !important; /* Ensure it's not clickable */
+    }
+    .card.napping::after {
+        content: '💤';
+        position: absolute;
+        top: -10px;
+        right: -5px;
+        font-size: 1.5rem;
+        animation: wave 1.5s infinite ease-in-out;
+        z-index: 5;
+    }
+    .card.napping::before {
+        background: rgba(100, 100, 150, 0.3) !important; /* Blueish tint for sleeping */
+    }
+
 
     /* Temporary Area (Temp Slot) */
     #temp-area {
@@ -609,6 +627,38 @@
       font-weight: bold;
       letter-spacing: 1.2px;
     }
+
+    /* NEW: Random Event Message Overlay */
+    #event-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: none; /* Hidden by default */
+        align-items: center;
+        justify-content: center;
+        z-index: 2200;
+        pointer-events: none; /* Allow clicks to pass through */
+    }
+    #event-message-box {
+        background: rgba(255, 253, 247, 0.9);
+        padding: 20px 30px;
+        border-radius: 15px;
+        border: 3px solid #b8860b;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        text-align: center;
+        animation: fade-in-out-scale 3.5s forwards;
+    }
+    #event-message-box p {
+        font-size: 1.3rem;
+        color: #6e352f;
+        margin: 0;
+        font-weight: bold;
+        text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+    }
+    #event-message-box .event-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
 
     /* Overlay Screens (Start, Level Finish, Game Over) */
     #start-screen, #level-finish, #game-over {
@@ -1164,7 +1214,8 @@
         </div>
     <!-- Cat path element, positioned absolutely -->
     <div id="cat-path">
-        <div id="walking-cat">🐌</div>
+        <!-- MODIFICATION: Changed snail to cat -->
+        <div id="walking-cat">🐈</div>
     </div>
     <div id="card-stack-area"></div>
     <!-- MODIFICATION: Removed cat-wiggler-path and wiggling-cat. Added three wiggling cat instances -->
@@ -1195,6 +1246,14 @@
   </div>
   <div id="footer">
     喵了个咪 &copy; 2025 | Designed by 开元
+  </div>
+
+  <!-- NEW: Random Event Overlay -->
+  <div id="event-overlay">
+      <div id="event-message-box">
+          <div class="event-icon"></div>
+          <p class="event-text"></p>
+      </div>
   </div>
 
   <div id="start-screen">
@@ -1361,10 +1420,17 @@ const outroImage = document.getElementById('outro-image');
 const outroLoadingText = level2OutroScreen.querySelector('.loading-text');
 const skipOutroBtn = document.getElementById('skip-outro-btn'); // Get the new skip button
 
+// NEW: Random Event elements
+const eventOverlay = document.getElementById('event-overlay');
+const eventMessageBox = document.getElementById('event-message-box');
+const eventIconEl = eventMessageBox.querySelector('.event-icon');
+const eventTextEl = eventMessageBox.querySelector('.event-text');
+
 
 let confirmCallback = null; // 确认模态框的回调函数
 let outroVideoTimeout = null; // 用于视频播放超时的计时器
 let isCatMirrored = false; // To track current orientation of walking cat
+let randomEventTimer = null; // NEW: Timer for random cat events
 
 // 游戏状态对象
 let game = {
@@ -1699,7 +1765,8 @@ function genLevel(levelIdx){
       x, y, z,
       matched: false,
       covered: false, // 未明确使用但为了清晰起见
-      stack: s
+      stack: s,
+      isNapping: false // NEW: For cat nap event
     });
   }
 
@@ -1728,7 +1795,7 @@ function genLevel(levelIdx){
  * @returns {boolean} 如果卡片可点击则为 true，否则为 false。
  */
 function isCardClickable(card, board){
-  if(card.matched) return false;
+  if(card.matched || card.isNapping) return false; // MODIFIED: Check for napping status
 
   const activeCards = board.filter(c => !c.matched); // 只考虑未匹配的卡片
 
@@ -1933,6 +2000,7 @@ function checkWin(){
   const scoreMet = game.score >= game.targetScore;
 
   if(allCardsMatched && scoreMet){
+    stopRandomEvents(); // NEW: Stop events on win
     setTimeout(()=>{
       if(game.level===1){
         showLevelFinish('恭喜恭喜！第一关通关！');
@@ -2099,6 +2167,7 @@ function hintStep(){
  * @param {string} msg - 游戏结束消息。
  */
 function gameOver(msg){
+  stopRandomEvents(); // NEW: Stop events on game over
   game.lock = true; // 锁定游戏交互
   document.getElementById('card-stack-area').innerHTML = '';
   document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
@@ -2154,6 +2223,7 @@ function startGame(level){
   positionCatWalker(); // 游戏开始后定位猫咪行走者
   // positionWigglingCat(); // MODIFICATION: This is now handled by updateWigglingCatVisibility
   updateWigglingCatVisibility(); // Initial check for wiggling cat visibility
+  startRandomEvents(); // NEW: Start random events for the new level
 }
 
 /**
@@ -2172,6 +2242,12 @@ function renderBoard(){
     let el = document.createElement('div');
     const clickable = isCardClickable(card, game.board);
     el.className = "card" + (clickable ? "" : " disabled"); // 如果不可点击则添加“disabled”类
+    
+    // NEW: Add napping class if card is napping
+    if (card.isNapping) {
+        el.classList.add('napping');
+    }
+
     el.style.left = card.x + 'px';
     el.style.top = card.y + 'px';
     el.style.zIndex = card.z;
@@ -2329,6 +2405,7 @@ function renderAll(){
  * @param {string} msg - 要在关卡完成屏幕上显示的消息。
  */
 function showLevelFinish(msg){
+  stopRandomEvents(); // NEW: Stop events when level is finished
   playBgm(false); // 关卡完成时暂停背景音乐
   // Clear any existing video timeout
   if (outroVideoTimeout) {
@@ -2446,7 +2523,167 @@ function handleCloseGame(type) {
     });
 }
 
-// 事件监听器
+// ===============================================================
+// NEW: RANDOM CAT EVENT LOGIC
+// ===============================================================
+
+/**
+ * Displays a message in the central event overlay.
+ * @param {string} icon - The emoji icon for the event.
+ * @param {string} text - The message to display.
+ */
+function showEventMessage(icon, text) {
+    eventIconEl.textContent = icon;
+    eventTextEl.innerHTML = text; // Use innerHTML to allow for line breaks
+    eventOverlay.style.display = 'flex';
+
+    // The fade-out is handled by the CSS animation
+    setTimeout(() => {
+        eventOverlay.style.display = 'none';
+    }, 3500); // Must match the animation duration
+}
+
+/**
+ * Event: Cat Nap. Makes a few cards temporarily unclickable.
+ */
+function eventCatNap() {
+    const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
+    if (clickableCards.length < 3) return; // Not enough cards to make the event meaningful
+
+    showEventMessage('💤', '猫咪在打盹...<br>有些卡牌暂时拿不到了！');
+    game.lock = true; // Briefly lock to prevent clicks while selecting cards
+
+    const nappingCards = [];
+    const centerCard = clickableCards[Math.floor(Math.random() * clickableCards.length)];
+    nappingCards.push(centerCard);
+
+    // Find 2-3 nearby cards
+    const otherCards = game.board.filter(c => !c.matched && c.id !== centerCard.id);
+    otherCards.sort((a, b) => {
+        const distA = Math.hypot(a.x - centerCard.x, a.y - centerCard.y);
+        const distB = Math.hypot(b.x - centerCard.x, b.y - centerCard.y);
+        return distA - distB;
+    });
+    nappingCards.push(...otherCards.slice(0, Math.floor(Math.random() * 2) + 2)); // 2 to 3 other cards
+
+    nappingCards.forEach(card => {
+        card.isNapping = true;
+    });
+
+    renderBoard(); // Re-render to apply the "napping" style
+    game.lock = false; // Unlock after rendering
+
+    setTimeout(() => {
+        nappingCards.forEach(card => {
+            const boardCard = game.board.find(c => c.id === card.id);
+            if (boardCard) boardCard.isNapping = false;
+        });
+        renderBoard(); // Re-render to remove the style
+    }, 10000); // Nap duration: 10 seconds
+}
+
+/**
+ * Event: Curious Paw. Swaps the icons of one clickable card and one non-clickable, non-matched card.
+ */
+function eventCuriousPaw() {
+    const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
+    // Find non-matched, non-clickable cards (i.e., covered cards)
+    const unclickableCards = game.board.filter(c => !c.matched && !isCardClickable(c, game.board));
+
+    if (clickableCards.length === 0 || unclickableCards.length === 0) {
+        // Not enough cards to perform a meaningful swap
+        return;
+    }
+
+    showEventMessage('🐾', '好奇的爪子...<br>一张可见卡牌和一张不可见卡牌的图标被交换了！');
+    game.lock = true;
+
+    // Select one random clickable card
+    const card1 = clickableCards[Math.floor(Math.random() * clickableCards.length)];
+    // Select one random unclickable card
+    const card2 = unclickableCards[Math.floor(Math.random() * unclickableCards.length)];
+
+    // Swap icons in the game state
+    const tempIcon = card1.icon;
+    card1.icon = card2.icon;
+    card2.icon = tempIcon;
+
+    // Visual feedback: shake both cards' DOM elements
+    const card1El = document.querySelector(`.card[data-id='${card1.id}']`);
+    const card2El = document.querySelector(`.card[data-id='${card2.id}']`);
+    if (card1El) {
+        card1El.classList.add('hinted-shake');
+    }
+    // Note: card2El might not be directly visible or interactive, but we still apply shake if it exists
+    if (card2El) {
+        card2El.classList.add('hinted-shake');
+    }
+
+    setTimeout(() => {
+        renderBoard(); // Re-render to show the swapped icons and update clickable status
+        game.lock = false;
+    }, 800); // Short delay for the shake animation
+}
+
+/**
+ * Event: Gift Offering. Gives the player a random free tool use.
+ */
+function eventGiftOffering() {
+    const tools = ['undo', 'hint', 'shuffle'];
+    const toolNames = {
+        undo: '撤销',
+        hint: '提示',
+        shuffle: '洗牌'
+    };
+    const randomTool = tools[Math.floor(Math.random() * tools.length)];
+
+    game.toolUses[randomTool]++;
+    updateToolButtons();
+    showEventMessage('🎁', `猫咪送来了礼物！<br>获得1次免费<b>${toolNames[randomTool]}</b>！`);
+}
+
+
+const randomEvents = [
+    { name: 'catNap', func: eventCatNap, weight: 3 },
+    { name: 'curiousPaw', func: eventCuriousPaw, weight: 3 },
+    { name: 'giftOffering', func: eventGiftOffering, weight: 2 }
+];
+
+/**
+ * Starts the timer for triggering random events.
+ */
+function startRandomEvents() {
+    stopRandomEvents(); // Ensure no multiple timers are running
+    randomEventTimer = setInterval(() => {
+        if (game.lock || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+            return; // Don't trigger events if game is locked or finished
+        }
+
+        const weightedList = [];
+        randomEvents.forEach(event => {
+            for (let i = 0; i < event.weight; i++) {
+                weightedList.push(event.func);
+            }
+        });
+        
+        const randomEventFunc = weightedList[Math.floor(Math.random() * weightedList.length)];
+        randomEventFunc();
+
+    }, randBetween(20000, 30000)); // Trigger every 20-30 seconds
+}
+
+/**
+ * Stops the random event timer.
+ */
+function stopRandomEvents() {
+    if (randomEventTimer) {
+        clearInterval(randomEventTimer);
+        randomEventTimer = null;
+    }
+}
+
+
+// Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     // 初始化加载屏幕
     initializeLoadingScreen();
@@ -2526,7 +2763,8 @@ document.addEventListener('DOMContentLoaded', function() {
 
             // After a very brief moment (allowing fade-out to start), change transform and fade back in
             setTimeout(() => {
-                walkingCat.style.transform = isCatMirrored ? 'scaleX(-1)' : 'scaleX(1)';
+                // MODIFIED: Reverse the scaleX logic to make the cat face the opposite direction of movement
+                walkingCat.style.transform = isCatMirrored ? 'scaleX(1)' : 'scaleX(-1)'; 
                 walkingCat.style.opacity = '1';
             }, 1); // Minimal delay (1ms) to ensure the opacity change is registered.
                    // The actual "fade" is handled by the CSS transition duration.
@@ -2562,6 +2800,7 @@ shuffleBtn.onclick = function(){
 // Restart current level button handler
 restartCurrentLevelBtn.onclick = function() {
     showConfirm('确定要重新开始当前关卡吗？所有道具使用次数将重置。', () => {
+        stopRandomEvents(); // NEW: Stop events on restart
         startGame(game.level);
         setTimeout(() => {
             showMessage('关卡已重新开始！', '#3e5a2b');
