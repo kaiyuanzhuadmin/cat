@@ -296,9 +296,9 @@
 
     #walking-cat {
         position: absolute; /* Position within #cat-path */
-        width: 50px; /* New size */
-        height: 50px; /* New size */
-        font-size: 50px; /* Match font size to element size for emoji */
+        width: 35px; /* New size */
+        height: 35px; /* New size */
+        font-size: 35px; /* Match font size to element size for emoji */
         line-height: 1; /* Ensure emoji sits correctly */
         display: flex;
         align-items: center;
@@ -1080,12 +1080,12 @@
         </div>
     <!-- Cat path element, positioned absolutely -->
     <div id="cat-path">
-        <div id="walking-cat">🌸</div>
+        <div id="walking-cat">🐾</div>
     </div>
     <div id="card-stack-area"></div>
     <!-- New: Cat Wiggler Path (Right Cat) -->
     <div id="cat-wiggler-path">
-        <div id="wiggling-cat">🍟</div>
+        <div id="wiggling-cat">💗</div>
     </div>
     <div id="temp-area">
       <div class="temp-slot"></div>
@@ -1407,60 +1407,44 @@ confirmNo.onclick = hideConfirm;
 function generateDisplayCardSet(excludeIcons = []) {
     let chosenIcon = null;
 
-    // 1. Primary Source: Look for triplets from clickable cards in layers 1-4 (stack 0-3)
-    const topLayerClickableCards = game.board.filter(c =>
-        !c.matched && isCardClickable(c, game.board) && c.stack < 4
-    );
-    const topLayerClickableIconCounts = {};
-    topLayerClickableCards.forEach(c => topLayerClickableIconCounts[c.icon] = (topLayerClickableIconCounts[c.icon] || 0) + 1);
+    // 1. Primary Source: Look for triplets from ALL clickable cards on board + temp area
+    const allClickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+    const tempIconCounts = {};
+    game.temp.forEach(c => tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1);
 
-    let potentialTopLayerIcons = Object.keys(topLayerClickableIconCounts).filter(icon => {
+    const combinedClickableIcons = [...allClickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
+    const combinedClickableIconCounts = {};
+    combinedClickableIcons.forEach(icon => combinedClickableIconCounts[icon] = (combinedClickableIconCounts[icon] || 0) + 1);
+
+    let potentialCombinedIcons = Object.keys(combinedClickableIconCounts).filter(icon => {
         if (excludeIcons.includes(icon)) return false;
-        return topLayerClickableIconCounts[icon] >= 3;
+        return combinedClickableIconCounts[icon] >= 3;
     });
 
-    if (potentialTopLayerIcons.length > 0) {
-        chosenIcon = potentialTopLayerIcons[Math.floor(Math.random() * potentialTopLayerIcons.length)];
+    if (potentialCombinedIcons.length > 0) {
+        chosenIcon = potentialCombinedIcons[Math.floor(Math.random() * potentialCombinedIcons.length)];
     } else {
-        // 2. Secondary Source: If no triplets in top layers, look for triplets from ALL clickable cards on board + temp area
-        const allClickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
-        const tempIconCounts = {};
-        game.temp.forEach(c => tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1);
+        // 2. Secondary Source (Fallback): If still no triplets from clickable cards, look from all cards in the game (even if covered)
+        const allIconsInGame = game.cards.map(c => c.icon);
+        const allIconCounts = {};
+        allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
 
-        const combinedClickableIcons = [...allClickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
-        const combinedClickableIconCounts = {};
-        combinedClickableIcons.forEach(icon => combinedClickableIconCounts[icon] = (combinedClickableIconCounts[icon] || 0) + 1);
-
-        let potentialCombinedIcons = Object.keys(combinedClickableIconCounts).filter(icon => {
+        const anyTripletIcons = Object.keys(allIconCounts).filter(icon => {
             if (excludeIcons.includes(icon)) return false;
-            return combinedClickableIconCounts[icon] >= 3;
+            return allIconCounts[icon] >= 3;
         });
 
-        if (potentialCombinedIcons.length > 0) {
-            chosenIcon = potentialCombinedIcons[Math.floor(Math.random() * potentialCombinedIcons.length)];
+        if (anyTripletIcons.length > 0) {
+            chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
         } else {
-            // 3. Tertiary Source (Fallback): If still no triplets from clickable cards, look from all cards in the game (even if covered)
-            const allIconsInGame = game.cards.map(c => c.icon);
-            const allIconCounts = {};
-            allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
-
-            const anyTripletIcons = Object.keys(allIconCounts).filter(icon => {
-                if (excludeIcons.includes(icon)) return false;
-                return allIconCounts[icon] >= 3;
-            });
-
-            if (anyTripletIcons.length > 0) {
-                chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
+            // Last resort: if no triplets at all, pick any icon that exists (should be rare)
+            const availableIconsWithoutExclusion = allIconsInGame.filter(icon => !excludeIcons.includes(icon));
+            if (availableIconsWithoutExclusion.length > 0) {
+                chosenIcon = availableIconsWithoutExclusion[Math.floor(Math.random() * availableIconsWithoutExclusion.length)];
+            } else if (allIconsInGame.length > 0) { // If all icons are in exclusion list, just pick any
+                chosenIcon = allIconsInGame[Math.floor(Math.random() * allIconsInGame.length)];
             } else {
-                // Last resort: if no triplets at all, pick any icon that exists (should be rare)
-                const availableIconsWithoutExclusion = allIconsInGame.filter(icon => !excludeIcons.includes(icon));
-                if (availableIconsWithoutExclusion.length > 0) {
-                    chosenIcon = availableIconsWithoutExclusion[Math.floor(Math.random() * availableIconsWithoutExclusion.length)];
-                } else if (allIconsInGame.length > 0) { // If all icons are in exclusion list, just pick any
-                    chosenIcon = allIconsInGame[Math.floor(Math.random() * allIconsInGame.length)];
-                } else {
-                    return null; // No available card icons
-                }
+                return null; // No available card icons
             }
         }
     }
