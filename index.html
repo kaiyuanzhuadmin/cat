@@ -1373,13 +1373,13 @@
 <script>
 // 游戏配置常量
 const CARD_ICONS = [
-  "🐈", "💐", "🪼", "👒", "🏵️", "🧸", "🍬", "🔮", "🎡", "🐈‍⬛", "🍫", "🪭",
-  "🐖", "🧶", "🌻", "🦋", "💎"
+  "🐈", "💐", "🪼", "👒", "🏵️", "🧸", "🔮", "🎡", "🐈‍⬛", "🍫", "🪭",
+  "🐖", "🧶", "🌻", "🦋"
 ];
 const LEVELS = [
   // 调整 overlap 值，使卡片更易于点击（更小的 overlap 意味着需要更少的重叠才能被视为被覆盖）
   {num: 1, visible: 18, total: 27, stack: 1, rows: 3, cols: 6, overlap: 15, targetScore: 25, totalDisplaySets: 5},
-  {num: 2, visible: 50, total: 168, stack: 2, rows: 7, cols: 9, overlap: 15, targetScore: 100, totalDisplaySets: 20}
+  {num: 2, visible: 18, total: 168, stack: 2, rows: 3, cols: 6, overlap: 15, targetScore: 100, totalDisplaySets: 20}
 ];
 const TEMP_LIMIT = 7; // 暂存区最大卡片数量
 const DISPLAY_CARD_MATCH_SCORE = 5; // 匹配一组展示卡片的分数
