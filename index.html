@@ -1029,8 +1029,8 @@
     .responsive-video-container {
         position: relative;
         width: 100%;
-        max-width: 660px;
-        padding-bottom: 68.1818%;
+        max-width: 900px;
+        padding-bottom: 75%;
         height: 0;
         overflow: hidden;
         border-radius: 10px;
@@ -1250,7 +1250,16 @@
 
   <div id="level-finish" style="display:none;">
     <div id="netease-player" class="responsive-video-container" style="display:none;">
-      <iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="https://embed.music.apple.com/cn/playlist/favourite-music/pl.u-MDAWvoqtWXGMZrz"></iframe>
+      <iframe 
+    allow="autoplay; fullscreen; encrypted-media;" 
+    frameborder="0" 
+    height="auto" 
+    style="width:100%;max-width:900px;overflow:hidden;border-radius:10px;aspect-ratio:3/4;" 
+    sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" 
+    src="https://open.douyin.com/player/video?vid=7495369850937806090&autoplay=0" 
+    referrerpolicy="unsafe-url" 
+    allowfullscreen>
+      </iframe>
     </div>
     <div id="player" style="display:none;">
         <div id="player-content1">
@@ -1846,7 +1855,7 @@ function checkWin(){
       if(game.level===1){
         showLevelFinish('恭喜恭喜！第一关通关！');
       } else {
-        showLevelFinish('所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
+        showLevelFinish('<p> <p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
       }
     },330);
   } else if (allCardsMatched && !scoreMet) {
