@@ -1233,8 +1233,8 @@
     <p> </p> <p>
       <button class="start-btn" id="start-btn">开始游戏</button>
     </p>
-    <p>收集卡片分数，全部清空过关<br>
-    <span style="color:#c0392b;">第二关难度系数略有升级<br></span>可使用兑换码解锁道具</p>
+    <p>收集卡牌，分数达标、全部清空过关<br>
+    <span style="color:#c0392b;">第二关难度略有升级<br></span>可使用兑换码解锁道具</p>
     <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
   </div>
 
@@ -1320,7 +1320,7 @@ const CARD_ICONS = [
   "🐖", "🧶", "🌻", "🦋", "💎"
 ];
 const LEVELS = [
-  {num: 1, visible: 18, total: 27, stack: 1, rows: 3, cols: 6, overlap: 40, targetScore: 25, totalDisplaySets: 5},
+  {num: 1, visible: 18, total: 27, stack: 1, rows: 3, cols: 6, overlap: 30, targetScore: 25, totalDisplaySets: 5},
   {num: 2, visible: 50, total: 168, stack: 2, rows: 7, cols: 9, overlap: 23, targetScore: 100, totalDisplaySets: 20}
 ];
 const TEMP_LIMIT = 7;
@@ -1570,6 +1570,71 @@ function calculateResponsiveSizes() {
     };
 }
 
+// 新增函数：重新计算卡片布局
+function repositionCardsAndLayout(currentBoard, levelConfig) {
+    const lv = levelConfig;
+    const newBoard = [];
+    const unmatchedCards = currentBoard.filter(c => !c.matched); // 只重新布局未匹配的卡片
+
+    game.layout.areaWidth = cardStackArea.offsetWidth;
+    game.layout.areaHeight = cardStackArea.offsetHeight;
+    calculateResponsiveSizes(); // 重新计算卡片尺寸
+
+    let stackDepth = lv.stack;
+    // 根据未匹配卡片数量重新分配到堆叠层，确保每层有卡
+    const cardsPerStackLayer = Math.ceil(unmatchedCards.length / stackDepth);
+    const placementOverlapFactor = 0.9;
+    let maxAttempts = 150;
+
+    // 复制未匹配卡片，并打乱顺序，以便重新随机布局
+    let cardsToPlace = unmatchedCards.map(c => ({ ...c }));
+    shuffle(cardsToPlace);
+
+    for (let i = 0; i < cardsToPlace.length; i++) {
+        const card = cardsToPlace[i];
+        const s = Math.min(Math.floor(i / cardsPerStackLayer), stackDepth - 1); // 重新分配堆叠层
+        let x = 0, y = 0;
+        let foundPosition = false;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            let tempX = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
+            let tempY = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
+            tempX += (s * 5 * (Math.random() - 0.5));
+            tempY += (s * 5 * (Math.random() - 0.5));
+            tempX = Math.max(5, Math.min(tempX, game.layout.areaWidth - game.cardDimensions.width - 5));
+            tempY = Math.max(5, Math.min(tempY, game.layout.areaHeight - game.cardDimensions.height - 5));
+
+            let overlap = false;
+            for (const existingCard of newBoard) { // 检查与已放置卡片的重叠
+                if (existingCard.stack <= s) { // 只检查当前层及下层卡片
+                    const dx = Math.abs(tempX - existingCard.x);
+                    const dy = Math.abs(tempY - existingCard.y);
+                    if (dx < game.cardDimensions.width * placementOverlapFactor && dy < game.cardDimensions.height * placementOverlapFactor) {
+                        overlap = true;
+                        break;
+                    }
+                }
+            }
+            if (!overlap) {
+                x = tempX;
+                y = tempY;
+                foundPosition = true;
+                break;
+            }
+        }
+        if (!foundPosition) {
+            // 如果找不到不重叠的位置，则随机放置
+            x = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
+            y = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
+        }
+        const z = s * 1000 + i; // 重新计算z-index
+        newBoard.push({ ...card, x, y, z, stack: s });
+    }
+
+    newBoard.sort((a, b) => a.z - b.z); // 重新排序
+    return newBoard;
+}
+
 
 function genLevel(levelIdx){
   const lv = LEVELS[levelIdx - 1];
@@ -1605,56 +1670,8 @@ function genLevel(levelIdx){
   }
   game.cards = cards;
 
-  let board = [];
-  game.layout.areaWidth = cardStackArea.offsetWidth;
-  game.layout.areaHeight = cardStackArea.offsetHeight;
-  calculateResponsiveSizes();
-
-  let stackDepth = lv.stack;
-  const cardsPerStackLayer = Math.ceil(lv.total / stackDepth);
-  const placementOverlapFactor = 0.9;
-  let maxAttempts = 150;
-
-  for (let cardIdx = 0; cardIdx < lv.total; cardIdx++) {
-    const s = Math.min(Math.floor(cardIdx / cardsPerStackLayer), stackDepth - 1);
-    let x = 0, y = 0;
-    let foundPosition = false;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      let tempX = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
-      let tempY = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
-      tempX += (s * 5 * (Math.random() - 0.5));
-      tempY += (s * 5 * (Math.random() - 0.5));
-      tempX = Math.max(5, Math.min(tempX, game.layout.areaWidth - game.cardDimensions.width - 5));
-      tempY = Math.max(5, Math.min(tempY, game.layout.areaHeight - game.cardDimensions.height - 5));
-
-      let overlap = false;
-      for (const existingCard of board) {
-        if (existingCard.stack <= s) {
-          const dx = Math.abs(tempX - existingCard.x);
-          const dy = Math.abs(tempY - existingCard.y);
-          if (dx < game.cardDimensions.width * placementOverlapFactor && dy < game.cardDimensions.height * placementOverlapFactor) {
-            overlap = true;
-            break;
-          }
-        }
-      }
-      if (!overlap) {
-        x = tempX;
-        y = tempY;
-        foundPosition = true;
-        break;
-      }
-    }
-    if (!foundPosition) {
-        x = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
-        y = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
-    }
-    const z = s * 1000 + cardIdx;
-    board.push({ id: cards[cardIdx].id, icon: cards[cardIdx].icon, x, y, z, matched: false, covered: false, stack: s, isNapping: false });
-  }
-
-  board.sort((a, b) => a.z - b.z);
-  game.board = board;
+  // Initial layout generation
+  game.board = repositionCardsAndLayout(cards.map(c => ({...c, covered: false, isNapping: false})), lv);
 
   game.displayCards = [];
   const usedDisplayIconsForLevel = new Set();
@@ -1829,7 +1846,6 @@ function checkWin(){
       if(game.level===1){
         showLevelFinish('恭喜恭喜！第一关通关！');
       } else {
-        // MODIFIED: Directly show finish screen for level 2
         showLevelFinish('所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
       }
     },330);
@@ -1875,7 +1891,8 @@ function shuffleStep(){
       let unmatched = game.board.filter(c=>!c.matched);
       let icons = unmatched.map(c=>c.icon);
       shuffle(icons);
-      unmatched.forEach((c,i) => c.icon = icons[i]);
+      // 重新布局洗牌后的卡片
+      game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
       renderAll();
       showMessage('已洗牌');
       game.lock = false;
@@ -2159,7 +2176,6 @@ function showLevelFinish(msg){
 
   nextBtn.style.display = (game.level === 1) ? 'inline-block' : 'none';
   
-  // MODIFIED: Configure close button based on level
   if (game.level === 1) {
     levelFinishTextElement.style.animation = 'shake 3s infinite, show-card-property 6s forwards';
     levelFinishTextElement.innerHTML += '<br>下一关后有彩蛋🪅！';
@@ -2168,7 +2184,7 @@ function showLevelFinish(msg){
     gobangBtn.style.display = 'none';
     restartGameBtn.style.display = 'none';
     retryBtnLevelFinish.style.display = 'inline-block';
-    closeGameBtnLevel.onclick = () => handleCloseGame('level'); // Standard close for level 1
+    closeGameBtnLevel.onclick = () => handleCloseGame('level');
   } else if (game.level === 2) {
     levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
     playerDiv.style.display = 'none';
@@ -2176,7 +2192,6 @@ function showLevelFinish(msg){
     gobangBtn.style.display = 'inline-block';
     restartGameBtn.style.display = 'inline-block';
     retryBtnLevelFinish.style.display = 'none';
-    // Special close for level 2: plays outro video then closes
     closeGameBtnLevel.onclick = () => {
         document.getElementById('level-finish').style.display = 'none';
         playLevel2Outro();
@@ -2276,19 +2291,33 @@ function stopRandomEvents() {
     randomEventTimer = null;
 }
 
+// MODIFIED: Resize handler to re-layout cards
 function handleResize() {
-    if (!game.board || game.board.length === 0) return;
-    const oldWidth = game.layout.areaWidth;
-    const newWidth = cardStackArea.offsetWidth;
-    if (oldWidth === 0 || oldWidth === newWidth) return;
-    const scaleFactor = newWidth / oldWidth;
-    game.board.forEach(card => {
-        card.x *= scaleFactor;
-        card.y *= scaleFactor;
-    });
-    game.layout.areaWidth = newWidth;
-    game.layout.areaHeight = cardStackArea.offsetHeight;
+    // 只有当游戏正在进行中（即 board 不为空且游戏未结束）才重新布局
+    if (!game.board || game.board.length === 0 || document.getElementById('start-screen').style.display === 'flex' || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+        positionCatWalker(); // 确保猫咪位置正确
+        return;
+    }
+
+    const currentAreaWidth = cardStackArea.offsetWidth;
+    const currentAreaHeight = cardStackArea.offsetHeight;
+
+    // 检查尺寸是否确实发生了变化
+    if (game.layout.areaWidth === currentAreaWidth && game.layout.areaHeight === currentAreaHeight) {
+        return;
+    }
+
+    // 更新布局尺寸
+    game.layout.areaWidth = currentAreaWidth;
+    game.layout.areaHeight = currentAreaHeight;
+
+    // 重新计算卡片尺寸
     calculateResponsiveSizes();
+
+    // 重新布局所有未匹配的卡片
+    game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+    
+    // 重新渲染所有元素
     renderAll();
 }
 
@@ -2335,7 +2364,11 @@ document.addEventListener('DOMContentLoaded', function() {
     codeBtn.disabled = true;
     codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
 
-    window.addEventListener('resize', handleResize);
+    // 使用 debounce 优化 resize 事件处理
+    window.addEventListener('resize', debounce(handleResize, 200));
+    // 初始加载时也调用一次布局，确保第一次加载时的布局正确
+    handleResize(); 
+
     skipOutroBtn.addEventListener('click', () => handleCloseGame('level'));
 
     if (walkingCat) {
@@ -2522,7 +2555,6 @@ function updateWigglingCatVisibility() {
     }
 }
 
-// MODIFIED: This function is now the final closing sequence
 function playLevel2Outro() {
     game.lock = true;
     playBgm(false);
@@ -2567,6 +2599,17 @@ function playLevel2Outro() {
         outroLoadingText.textContent = '视频加载失败，显示图片...';
         setTimeout(finalCloseAction, 3000);
     };
+}
+
+// Debounce function to limit how often a function is called
+function debounce(func, delay) {
+  let timeout;
+  return function() {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
 }
 </script>
 </body>
