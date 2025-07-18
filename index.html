@@ -1168,7 +1168,7 @@
         <div id="progress-bar"></div>
       </div>
       <p id="loading-text">正在加载资源...</p>
-      <small class="loading-footer">喵了个咪 &copy 2025 | Designed by 开元</small>
+      <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
     </div>
   </div>
 
@@ -1213,7 +1213,7 @@
     <div id="message-bar"></div>
   </div>
   <div id="footer">
-    喵了个咪 &copy 2025 | Designed by 开元
+    喵了个咪 &copy; 2025 | Designed by 开元
   </div>
 
   <div id="event-overlay">
@@ -1235,7 +1235,7 @@
     </p>
     <p>收集卡牌，分数达标、全部清空过关<br>
     <span style="color:#c0392b;">第二关难度略有升级<br></span>可使用兑换码解锁道具</p>
-    <small class="loading-footer">喵了个咪 &copy 2025 | Designed by 开元</small>
+    <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
   </div>
 
   <div id="level2-outro-screen" style="display:none;">
@@ -1387,7 +1387,6 @@ const eventTextEl = eventMessageBox.querySelector('.event-text');
 
 let confirmCallback = null;
 let outroVideoTimeout = null;
-// MODIFIED: Initialize cat mirror state. It starts moving L->R, so it should be mirrored.
 let isCatMirrored = true;
 let randomEventTimer = null;
 
@@ -1409,7 +1408,6 @@ let game = {
   bgmOn: true,
   isNewLevel: false,
   lock: false,
-  // NEW: Store calculated card dimensions and layout reference
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
   layout: { areaWidth: 0, areaHeight: 0 }
 };
@@ -1554,16 +1552,12 @@ function generateDisplayCardSet(excludeIcons = []) {
     }
 }
 
-// NEW: Function to calculate all responsive sizes
 function calculateResponsiveSizes() {
     const areaW = cardStackArea.offsetWidth;
     const lv = LEVELS[game.level - 1];
-
-    // This logic determines card size based on container width and level settings
-    const baseCardWidth = areaW / (lv.cols + 2); // Heuristic based on columns
-    const clampedCardWidth = Math.max(40, Math.min(baseCardWidth, 80)); // Clamp between 40px and 80px
+    const baseCardWidth = areaW / (lv.cols + 2);
+    const clampedCardWidth = Math.max(40, Math.min(baseCardWidth, 80));
     const cardAspectRatio = 65 / 85;
-
     const finalCardW = clampedCardWidth;
     const finalCardH = finalCardW / cardAspectRatio;
 
@@ -1612,7 +1606,6 @@ function genLevel(levelIdx){
   game.cards = cards;
 
   let board = [];
-  // NEW: Store reference width/height and calculate initial dimensions
   game.layout.areaWidth = cardStackArea.offsetWidth;
   game.layout.areaHeight = cardStackArea.offsetHeight;
   calculateResponsiveSizes();
@@ -1748,7 +1741,7 @@ function clickCard(id) {
     const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
     if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
         console.error("Invalid end slot index for flying card. Aborting animation.");
-        document.body.removeChild(flyingCard);
+        if(flyingCard.parentNode) document.body.removeChild(flyingCard);
         game.lock = false;
         return;
     }
@@ -1835,8 +1828,9 @@ function checkWin(){
     setTimeout(()=>{
       if(game.level===1){
         showLevelFinish('恭喜恭喜！第一关通关！');
-      }else{
-        playLevel2Outro();
+      } else {
+        // MODIFIED: Directly show finish screen for level 2
+        showLevelFinish('所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
       }
     },330);
   } else if (allCardsMatched && !scoreMet) {
@@ -2145,7 +2139,6 @@ function showLevelFinish(msg){
   levelFinishScreen.style.display='flex';
   levelFinishTextElement.innerHTML = msg;
   
-  // NEW: Add confetti
   const existingConfetti = levelFinishScreen.querySelector('.confetti-container');
   if (existingConfetti) existingConfetti.remove();
   const confettiContainer = document.createElement('div');
@@ -2157,7 +2150,7 @@ function showLevelFinish(msg){
       piece.className = 'confetti-piece';
       piece.style.left = Math.random() * 100 + 'vw';
       piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
-      const duration = Math.random() * 3 + 4; // 4-7 seconds
+      const duration = Math.random() * 3 + 4;
       piece.style.animationDuration = `${duration}s`;
       piece.style.animationDelay = `${Math.random() * 5}s`;
       piece.style.transform = `rotate(${Math.random() * 360}deg)`;
@@ -2165,6 +2158,8 @@ function showLevelFinish(msg){
   }
 
   nextBtn.style.display = (game.level === 1) ? 'inline-block' : 'none';
+  
+  // MODIFIED: Configure close button based on level
   if (game.level === 1) {
     levelFinishTextElement.style.animation = 'shake 3s infinite, show-card-property 6s forwards';
     levelFinishTextElement.innerHTML += '<br>下一关后有彩蛋🪅！';
@@ -2173,6 +2168,7 @@ function showLevelFinish(msg){
     gobangBtn.style.display = 'none';
     restartGameBtn.style.display = 'none';
     retryBtnLevelFinish.style.display = 'inline-block';
+    closeGameBtnLevel.onclick = () => handleCloseGame('level'); // Standard close for level 1
   } else if (game.level === 2) {
     levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
     playerDiv.style.display = 'none';
@@ -2180,6 +2176,11 @@ function showLevelFinish(msg){
     gobangBtn.style.display = 'inline-block';
     restartGameBtn.style.display = 'inline-block';
     retryBtnLevelFinish.style.display = 'none';
+    // Special close for level 2: plays outro video then closes
+    closeGameBtnLevel.onclick = () => {
+        document.getElementById('level-finish').style.display = 'none';
+        playLevel2Outro();
+    };
   }
 }
 
@@ -2195,7 +2196,7 @@ function handleCloseGame(type) {
         setTimeout(() => {
             document.getElementById('game-container').style.display = 'none';
             let messageHtml = type === 'level' ? `<p>当前客户端暂不支持自动关闭，</p><p>请点击页面关闭标签关闭。</p><br> 如若重新开始游戏，请点击<br><br><button onclick="window.location.href='https://kaiyuanzhuadmin.github.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>` : `<p>当前客户端暂不支持自动关闭</p><p>小提示：可输入"kaiyuan"兑换提示次数。</p><br> 如果想重新开始游戏，请点击<br><br><button onclick="window.location.href='https://kaiyuanzhuadmin.github.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>`;
-            document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">${messageHtml}<br><small class="loading-footer mt-8">喵了个咪 &copy 2025 | Designed by 开元</small></div>`;
+            document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">${messageHtml}<br><small class="loading-footer mt-8">喵了个咪 &copy; 2025 | Designed by 开元</small></div>`;
         }, 100);
     });
 }
@@ -2275,30 +2276,19 @@ function stopRandomEvents() {
     randomEventTimer = null;
 }
 
-// NEW: Resize handler
 function handleResize() {
     if (!game.board || game.board.length === 0) return;
-
     const oldWidth = game.layout.areaWidth;
     const newWidth = cardStackArea.offsetWidth;
-    if (oldWidth === 0 || oldWidth === newWidth) return; // Avoid division by zero or unnecessary rerenders
-
+    if (oldWidth === 0 || oldWidth === newWidth) return;
     const scaleFactor = newWidth / oldWidth;
-
-    // Update card positions
     game.board.forEach(card => {
         card.x *= scaleFactor;
         card.y *= scaleFactor;
     });
-
-    // Store new reference width/height
     game.layout.areaWidth = newWidth;
     game.layout.areaHeight = cardStackArea.offsetHeight;
-
-    // Recalculate all element sizes
     calculateResponsiveSizes();
-    
-    // Re-render everything with new dimensions and positions
     renderAll();
 }
 
@@ -2345,15 +2335,12 @@ document.addEventListener('DOMContentLoaded', function() {
     codeBtn.disabled = true;
     codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
 
-    // MODIFIED: Added resize handler
     window.addEventListener('resize', handleResize);
-    skipOutroBtn.addEventListener('click', () => showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉'));
+    skipOutroBtn.addEventListener('click', () => handleCloseGame('level'));
 
-    // MODIFIED: Walking cat animation logic
     if (walkingCat) {
         walkingCat.addEventListener('animationiteration', () => {
             isCatMirrored = !isCatMirrored;
-            // When moving R->L (isCatMirrored = false), normal. When L->R (isCatMirrored = true), mirrored.
             walkingCat.style.transform = isCatMirrored ? 'scaleX(-1)' : 'scaleX(1)';
         });
     }
@@ -2535,6 +2522,7 @@ function updateWigglingCatVisibility() {
     }
 }
 
+// MODIFIED: This function is now the final closing sequence
 function playLevel2Outro() {
     game.lock = true;
     playBgm(false);
@@ -2543,12 +2531,16 @@ function playLevel2Outro() {
     skipOutroBtn.style.display = 'block';
     outroVideo.style.display = 'none';
     outroImage.style.display = 'none';
+
+    const finalCloseAction = () => handleCloseGame('level');
+
     outroVideoTimeout = setTimeout(() => {
         outroVideo.style.display = 'none';
         outroImage.style.display = 'block';
         outroLoadingText.textContent = '视频无法播放，显示图片...';
-        setTimeout(() => showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉'), 3000);
+        setTimeout(finalCloseAction, 3000);
     }, 7000);
+
     outroVideo.load();
     const playPromise = outroVideo.play();
     if (playPromise !== undefined) {
@@ -2561,19 +2553,19 @@ function playLevel2Outro() {
             outroImage.style.display = 'block';
             outroLoadingText.textContent = '视频无法播放，显示图片...';
             if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
-            setTimeout(() => showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉'), 3000);
+            setTimeout(finalCloseAction, 3000);
         });
     }
     outroVideo.onended = () => {
         if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
-        showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
+        finalCloseAction();
     };
     outroVideo.onerror = (e) => {
         if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
         outroVideo.style.display = 'none';
         outroImage.style.display = 'block';
         outroLoadingText.textContent = '视频加载失败，显示图片...';
-        setTimeout(() => showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉'), 3000);
+        setTimeout(finalCloseAction, 3000);
     };
 }
 </script>
