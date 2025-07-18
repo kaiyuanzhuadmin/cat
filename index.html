@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>臭宝加载中...</title>
+  <title>喵了个咪</title>
   <link rel="icon" type="image/png" sizes="96x96" href="me.png">
   <link rel="preload" href="mao3.webp" as="image">
   <link rel="preload" href="mao1.webp" as="image">
@@ -13,12 +13,13 @@
   <link rel="preload" href="mao.webp" as="image">
   <link rel="preload" href="mao.mp4" as="video">
   <link rel="preload" href="cat1.webp" as="image">
-  <link rel="preload" href="js/index.js" as="script">
   <link rel="preload" href="Get.mp3" as="audio">
   <link rel="preload" href="kaa.mp3" as="audio">
   <!-- Preload mao2.mp4 and mao2.webp for level 2 outro -->
   <link rel="preload" href="mao2.mp4" as="video">
   <link rel="preload" href="mao2.webp" as="image">
+  <!-- jQuery CDN for existing JS logic -->
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.7.1/jquery.min.js"></script>
   <style>
     /* Keyframe animations */
     @keyframes card-entry {
@@ -868,8 +869,8 @@
       text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
     }
 
-    /* REMOVED: Styles for Level 2 on ALL devices to reduce difficulty */
-    /* body.level-2-active .card {
+    /* MODIFICATION: Styles for Level 2 on ALL devices to increase difficulty */
+    body.level-2-active .card {
       width: 50px;
       height: 65px;
       font-size: 2rem;
@@ -902,7 +903,7 @@
     }
     body.level-2-active #card-stack-area {
       height: 420px;
-    } */
+    }
 
     /* Hint Animation */
     .hinted-shake {
@@ -1369,9 +1370,6 @@
 </audio>
 <audio id="click-sound" src="kaa.mp3" preload="auto"></audio>
 
-<script src="js/jquery-3.4.1.min.js"></script>
-<script src="js/index.js"></script>
-
 <script>
 // 游戏配置常量
 const CARD_ICONS = [
@@ -1379,8 +1377,9 @@ const CARD_ICONS = [
   "🐖", "🧶", "🌻", "🦋", "💎"
 ];
 const LEVELS = [
-  {num: 1, visible: 18, total: 27, stack: 1, rows: 3, cols: 6, overlap: 30, targetScore: 25, totalDisplaySets: 5},
-  {num: 2, visible: 50, total: 168, stack: 2, rows: 7, cols: 9, overlap: 23, targetScore: 100, totalDisplaySets: 20}
+  // 调整 overlap 值，使卡片更易于点击（更小的 overlap 意味着需要更少的重叠才能被视为被覆盖）
+  {num: 1, visible: 18, total: 27, stack: 1, rows: 3, cols: 6, overlap: 15, targetScore: 25, totalDisplaySets: 5},
+  {num: 2, visible: 50, total: 168, stack: 2, rows: 7, cols: 9, overlap: 15, targetScore: 100, totalDisplaySets: 20}
 ];
 const TEMP_LIMIT = 7; // 暂存区最大卡片数量
 const DISPLAY_CARD_MATCH_SCORE = 5; // 匹配一组展示卡片的分数
@@ -1455,7 +1454,6 @@ const eventTextEl = eventMessageBox.querySelector('.event-text');
 
 let confirmCallback = null; // 确认模态框的回调函数
 let outroVideoTimeout = null; // 用于视频播放超时的计时器
-let isCatMirrored = false; // To track current orientation of walking cat
 let randomEventTimer = null; // NEW: Timer for random cat events
 
 // 游戏状态对象
@@ -1629,25 +1627,21 @@ confirmNo.onclick = hideConfirm;
 function generateDisplayCardSet(excludeIcons = []) {
     let chosenIcon = null;
 
-    // --- 新增逻辑：优先从前 1-4 层（堆栈 0-3）的可见卡片中选择 ---
-    const visibleLayeredCards = game.board.filter(c =>
-        !c.matched && isCardClickable(c, game.board) && c.stack >= 0 && c.stack <= 3
-    );
-    const visibleLayeredIconCounts = {};
-    visibleLayeredCards.forEach(c => visibleLayeredIconCounts[c.icon] = (visibleLayeredIconCounts[c.icon] || 0) + 1);
+    // 1. 优先从游戏板上当前可点击的卡片中选择三联牌
+    const clickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+    const clickableBoardIconCounts = {};
+    clickableBoardCards.forEach(c => clickableBoardIconCounts[c.icon] = (clickableBoardIconCounts[c.icon] || 0) + 1);
 
-    let potentialVisibleLayeredIcons = Object.keys(visibleLayeredIconCounts).filter(icon => {
+    let potentialClickableIcons = Object.keys(clickableBoardIconCounts).filter(icon => {
         if (excludeIcons.includes(icon)) return false;
-        return visibleLayeredIconCounts[icon] >= 3;
+        return clickableBoardIconCounts[icon] >= 3;
     });
 
-    if (potentialVisibleLayeredIcons.length > 0) {
-        chosenIcon = potentialVisibleLayeredIcons[Math.floor(Math.random() * potentialVisibleLayeredIcons.length)];
+    if (potentialClickableIcons.length > 0) {
+        chosenIcon = potentialClickableIcons[Math.floor(Math.random() * potentialClickableIcons.length)];
     } else {
-        // --- 现有逻辑（如果可见分层卡片中没有三联牌则回退） ---
-        // 1. 主要来源：从游戏板上所有可点击卡片 + 暂存区中查找三联牌
-        const allClickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
-        const combinedClickableIcons = [...allClickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
+        // 2. 如果没有可点击的三联牌，则从所有可点击卡片 + 暂存区中查找三联牌
+        const combinedClickableIcons = [...clickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
         const combinedClickableIconCounts = {};
         combinedClickableIcons.forEach(icon => combinedClickableIconCounts[icon] = (combinedClickableIconCounts[icon] || 0) + 1);
 
@@ -1659,7 +1653,7 @@ function generateDisplayCardSet(excludeIcons = []) {
         if (potentialCombinedIcons.length > 0) {
             chosenIcon = potentialCombinedIcons[Math.floor(Math.random() * potentialCombinedIcons.length)];
         } else {
-            // 2. 次要来源（回退）：如果仍然没有可点击卡片中的三联牌，则从游戏中所有卡片（即使被覆盖）中查找
+            // 3. 如果仍然没有可用的三联牌，则从游戏中所有卡片（即使被覆盖）中查找
             const allIconsInGame = game.cards.map(c => c.icon);
             const allIconCounts = {};
             allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
@@ -1752,6 +1746,7 @@ function genLevel(levelIdx){
   const areaH = cardStackArea.offsetHeight;
 
   // NEW: Dynamically calculate card dimensions based on area and level configuration
+  // This ensures card sizes scale with the available game area, adapting to different screen sizes.
   const cardAspectRatio = 65 / 85; // Standard card aspect ratio (width / height)
   const minCardWidth = 50; // Minimum allowed card width
   const maxCardWidth = 80; // Maximum allowed card width
@@ -2290,12 +2285,12 @@ function startGame(level){
 
   game.level = level;
   // 为 CSS 调整应用/移除关卡特定的 body 类
-  // REMOVED: Level-specific body class as card sizes are now dynamic
-  // if (level === 2) {
-  //   document.body.classList.add('level-2-active');
-  // } else {
-  //   document.body.classList.remove('level-2-active');
-  // }
+  // MODIFICATION: Apply/remove level-specific body class for difficulty consistency
+  if (level === 2) {
+    document.body.classList.add('level-2-active');
+  } else {
+    document.body.classList.remove('level-2-active');
+  }
 
   let lvData = genLevel(level); // 生成关卡数据
   game.cards = lvData.cards; // 确保 game.cards 已设置
@@ -2905,23 +2900,37 @@ document.addEventListener('DOMContentLoaded', function() {
         showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
     });
 
-    // Walking cat animation iteration listener
+    // MODIFICATION START: Walking cat animation iteration listener for mirroring
     if (walkingCat) {
+        // Initial state: Cat starts at left (0%) and moves right, so it should be mirrored (facing right).
+        walkingCat.style.transform = 'scaleX(-1)';
+
         walkingCat.addEventListener('animationiteration', () => {
-            isCatMirrored = !isCatMirrored;
+            // On each iteration, the animation direction reverses (due to 'alternate').
+            // If it was moving right (current transform scaleX(-1)), it will now move left.
+            // If it was moving left (current transform scaleX(1)), it will now move right.
 
-            // Fade out
+            // Get the current computed transform style
+            const currentTransform = window.getComputedStyle(walkingCat).transform;
+
+            // Check if the current transform matrix indicates a mirrored state (scaleX(-1))
+            // The matrix for scaleX(-1) will typically start with 'matrix(-1, 0, 0, 1, ...)'
+            if (currentTransform.includes('matrix(-1,')) {
+                // It was moving right (mirrored), now it will move left (should be original)
+                walkingCat.style.transform = 'scaleX(1)';
+            } else {
+                // It was moving left (original), now it will move right (should be mirrored)
+                walkingCat.style.transform = 'scaleX(-1)';
+            }
+
+            // Add a brief fade effect for smoothness during the transform change
             walkingCat.style.opacity = '0';
-
-            // After a very brief moment (allowing fade-out to start), change transform and fade back in
             setTimeout(() => {
-                // MODIFIED: Reverse the scaleX logic to make the cat face the opposite direction of movement
-                walkingCat.style.transform = isCatMirrored ? 'scaleX(1)' : 'scaleX(-1)'; 
                 walkingCat.style.opacity = '1';
-            }, 1); // Minimal delay (1ms) to ensure the opacity change is registered.
-                   // The actual "fade" is handled by the CSS transition duration.
+            }, 10); // A very slight delay for the opacity transition
         });
     }
+    // MODIFICATION END
 });
 
 // Tool button click handlers
@@ -2930,9 +2939,8 @@ undoBtn.onclick = function(){
     undoStep();
     game.toolUses.undo--;
     updateToolButtons();
-  } else if (game.toolUses.undo > 0 && game.stepStack.length === 0) {
-    showMessage('无法撤销更多', '#888');
   }
+  // No else if needed here, as undoStep already handles the empty stack message.
 };
 hintBtn.onclick = function(){
   if(game.toolUses.hint > 0){
@@ -3279,4 +3287,3 @@ function playLevel2Outro() {
 </script>
 </body>
 </html>
-
