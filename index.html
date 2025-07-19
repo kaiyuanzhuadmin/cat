@@ -1390,6 +1390,7 @@ let confirmCallback = null;
 let outroVideoTimeout = null;
 let isCatMirrored = true;
 let randomEventTimer = null;
+let isLandscape = false; // NEW: Variable to track screen orientation
 
 // Game State Object
 let game = {
@@ -2122,11 +2123,22 @@ function showMessage(msg, color){
   if(msg) setTimeout(()=>{bar.textContent='';}, 2300);
 }
 
+// MODIFIED: Function to update tool buttons, now includes orientation check
 function updateToolButtons() {
   document.getElementById('undo-count').textContent = game.toolUses.undo;
   document.getElementById('hint-count').textContent = game.toolUses.hint;
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
-  undoBtn.disabled = game.toolUses.undo <= 0;
+  
+  const undoDisabledByCount = game.toolUses.undo <= 0;
+  // Check for landscape orientation
+  if (isLandscape) {
+    undoBtn.disabled = true;
+    undoBtn.title = "横屏模式下不可用";
+  } else {
+    undoBtn.disabled = undoDisabledByCount;
+    undoBtn.title = "撤销(需兑换码)";
+  }
+
   hintBtn.disabled = game.toolUses.hint <= 0;
   shuffleBtn.disabled = game.toolUses.shuffle <= 0;
 }
@@ -2328,6 +2340,30 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeLoadingScreen();
     attemptVideoAutoplay();
     
+    // NEW: Handle screen orientation changes
+    const orientationQuery = window.matchMedia("(orientation: landscape)");
+    isLandscape = orientationQuery.matches; // Initial check on load
+    
+    function handleOrientationChange(event) {
+        isLandscape = event.matches;
+        updateToolButtons(); // Re-evaluate button states whenever orientation changes
+    }
+    
+    orientationQuery.addEventListener('change', handleOrientationChange);
+
+    // NEW: Handle page visibility changes to pause/play music
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            bgm.pause(); // Pause music when tab is not visible
+        } else {
+            // Resume music only if it was supposed to be on
+            if (game.bgmOn) {
+                bgm.play().catch(e => console.error("BGM resume failed", e));
+            }
+        }
+    });
+
+
     const feedbackDiv = document.createElement('div');
     feedbackDiv.style.cssText = 'color: red; font-size: 12px; margin-top: 5px;';
     codeInput.parentNode.insertBefore(feedbackDiv, codeInput.nextSibling);
