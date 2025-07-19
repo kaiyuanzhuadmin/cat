@@ -1454,7 +1454,7 @@ const MAX_MATCH_SOUNDS = 10;
 function createMatchSoundInstance() {
     const audio = new Audio();
     audio.preload = 'auto';
-    audio.volume = 0.4;
+    audio.volume = 0.5; // MODIFIED: Set match sound volume
     const mp3Source = document.createElement('source');
     mp3Source.src = 'kaa.mp3';
     mp3Source.type = 'audio/mpeg';
@@ -2225,7 +2225,7 @@ function showLevelFinish(msg){
 function initializeGame(){
   musicToggleBtn.innerHTML = game.bgmOn ? '🎼' : '🔇';
   updateToolButtons();
-  if (bgm) bgm.volume = 0.3;
+  if (bgm) bgm.volume = 0.5; // MODIFIED: Set BGM volume to 50%
 }
 
 function handleCloseGame(type) {
@@ -2361,13 +2361,17 @@ document.addEventListener('DOMContentLoaded', function() {
     
     orientationQuery.addEventListener('change', handleOrientationChange);
 
-    // NEW: Handle page visibility changes to pause/play music
+    // NEW & MODIFIED: Handle page visibility changes to pause/play music
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             bgm.pause(); // Pause music when tab is not visible
         } else {
-            // Resume music only if it was supposed to be on
-            if (game.bgmOn) {
+            const levelFinishScreen = document.getElementById('level-finish');
+            const gameOverScreen = document.getElementById('game-over');
+            const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
+
+            // Resume music only if it was supposed to be on AND we are not on an end screen
+            if (game.bgmOn && !isGameEndScreenVisible) {
                 bgm.play().catch(e => console.error("BGM resume failed", e));
             }
         }
