@@ -1251,7 +1251,7 @@
 
   <div id="level-finish" style="display:none;">
     <div id="netease-player" class="responsive-video-container" style="display:none;">
-      <iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="https://player.bilibili.com/player.html?isOutside=true&aid=114878413148199&bvid=BV1X9uQz6E6v&cid=31143166462&p=1"></iframe>
+      <iframe allow="encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="https://player.bilibili.com/player.html?isOutside=true&aid=114878413148199&bvid=BV1X9uQz6E6v&cid=31143166462&p=1"></iframe>
     </div>
     <div id="player" style="display:none;">
         <div id="player-content1">
@@ -1448,10 +1448,10 @@ function playBgm(on) {
   }
 }
 
-let clickSoundPool = [];
-const MAX_CLICK_SOUNDS = 10;
+let matchSoundPool = [];
+const MAX_MATCH_SOUNDS = 10;
 
-function createClickSoundInstance() {
+function createMatchSoundInstance() {
     const audio = new Audio();
     audio.preload = 'auto';
     audio.volume = 0.4;
@@ -1467,20 +1467,30 @@ function createClickSoundInstance() {
     return audio;
 }
 
-for (let i = 0; i < MAX_CLICK_SOUNDS; i++) {
-    clickSoundPool.push(createClickSoundInstance());
+for (let i = 0; i < MAX_MATCH_SOUNDS; i++) {
+    matchSoundPool.push(createMatchSoundInstance());
 }
 
-function playClickSound() {
+function playMatchSound() {
   if (game.bgmOn) {
-    let soundInstance = clickSoundPool.find(audio => audio.paused || audio.ended);
+    let soundInstance = matchSoundPool.find(audio => audio.paused || audio.ended);
     if (!soundInstance) {
-        soundInstance = createClickSoundInstance();
+        soundInstance = createMatchSoundInstance();
     }
     soundInstance.currentTime = 0;
-    soundInstance.play().catch(e => console.error("Click sound failed to play:", e));
+    soundInstance.play().catch(e => console.error("Match sound failed to play:", e));
   }
 }
+
+// NEW: Function to trigger vibration or sound on match
+function triggerMatchFeedback() {
+    if (navigator.vibrate) {
+        navigator.vibrate(100); // Vibrate for 100ms
+    } else {
+        playMatchSound(); // Fallback to sound
+    }
+}
+
 
 function showConfirm(msg, callback) {
   confirmMsg.textContent = msg;
@@ -1748,8 +1758,7 @@ function clickCard(id) {
 
   clickedCardEl.style.opacity = '0';
   clickedCardEl.style.pointerEvents = 'none';
-  playClickSound();
-
+  
   const animationDuration = 150;
   const tempAppearanceDelay = 80;
 
@@ -1793,6 +1802,7 @@ function clickCard(id) {
     let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
 
     if (matchedIcon) {
+      triggerMatchFeedback(); // MODIFIED: Trigger feedback on match
       game.temp.forEach(c => { if (c.icon === matchedIcon) c.matched = true; });
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
