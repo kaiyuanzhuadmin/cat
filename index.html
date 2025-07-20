@@ -162,6 +162,15 @@
         }
     }
 
+    /* NEW: Dynamic Scaling Animation for Buttons */
+    @keyframes scale-pulse-dynamic {
+        0%, 100% { transform: scale(1); }
+        50% { transform: scale(1.1); }
+    }
+    .scale-pulse-dynamic {
+        animation: scale-pulse-dynamic 0.8s ease-in-out infinite alternate;
+    }
+
 
     /* Global body styles */
     body {
@@ -1481,7 +1490,7 @@ function playBgm(on) {
 // NEW: Initialize Web Audio API
 async function initAudio() {
     try {
-        // Create AudioContext after a user gesture (e.g., click)
+        // Create AudioContext after a user gesture (e.e.g., click)
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -2014,6 +2023,8 @@ function gameOver(msg){
   targetScoreElement.textContent = '0';
   document.getElementById('message-bar').textContent = '';
   hideWigglingCats();
+  // Add dynamic scaling to retry button on game over
+  retryBtnGameOver.classList.add('scale-pulse-dynamic');
   setTimeout(() => {
     document.getElementById('game-over').style.display = 'flex';
     document.getElementById('game-over-text').innerHTML = msg;
@@ -2039,6 +2050,11 @@ function startGame(level){
   positionCatWalker();
   updateWigglingCatVisibility();
   startRandomEvents();
+  // Remove dynamic scaling from buttons when starting a new game
+  nextBtn.classList.remove('scale-pulse-dynamic');
+  retryBtnGameOver.classList.remove('scale-pulse-dynamic');
+  gobangBtn.classList.remove('scale-pulse-dynamic');
+  closeGameBtnLevel.classList.remove('scale-pulse-dynamic');
 }
 
 function renderBoard(){
@@ -2189,11 +2205,16 @@ function updateToolButtons() {
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
   
   const undoDisabledByCount = game.toolUses.undo <= 0;
-  // Check for landscape orientation
-  if (isLandscape) {
-    undoBtn.disabled = true;
-    undoBtn.title = "横屏模式下不可用";
+  
+  // Check if it's a mobile device (based on screen width)
+  const isMobile = window.innerWidth <= 700; // Assuming 700px is the breakpoint for mobile
+
+  if (isMobile) {
+    // On mobile, disable undo button in landscape mode
+    undoBtn.disabled = undoDisabledByCount || isLandscape;
+    undoBtn.title = isLandscape ? "横屏模式下不可用" : "撤销(需兑换码)";
   } else {
+    // On desktop, undo button is only disabled by count
     undoBtn.disabled = undoDisabledByCount;
     undoBtn.title = "撤销(需兑换码)";
   }
@@ -2257,6 +2278,8 @@ function showLevelFinish(msg){
     restartGameBtn.style.display = 'none';
     retryBtnLevelFinish.style.display = 'inline-block';
     closeGameBtnLevel.onclick = () => handleCloseGame('level');
+    // Add dynamic scaling to next button for level 1 completion
+    nextBtn.classList.add('scale-pulse-dynamic');
   } else if (game.level === 2) {
     levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
     playerDiv.style.display = 'none';
@@ -2268,6 +2291,9 @@ function showLevelFinish(msg){
         document.getElementById('level-finish').style.display = 'none';
         playLevel2Outro();
     };
+    // Add dynamic scaling to gobang and close game buttons for level 2 completion
+    gobangBtn.classList.add('scale-pulse-dynamic');
+    closeGameBtnLevel.classList.add('scale-pulse-dynamic');
   }
 }
 
