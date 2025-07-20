@@ -163,12 +163,43 @@
     }
 
     /* NEW: Dynamic Scaling Animation for Buttons */
-    @keyframes scale-pulse-dynamic {
-        0%, 100% { transform: scale(1); }
-        50% { transform: scale(1.1); }
+    @keyframes button-scale-pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.08);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
     }
-    .scale-pulse-dynamic {
-        animation: scale-pulse-dynamic 0.8s ease-in-out infinite alternate;
+
+    /* NEW: Scaling and Fading Animation for Buttons */
+    @keyframes button-scale-fade-pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+    }
+    .animated-scale-fade {
+        animation: button-scale-fade-pulse 1.8s infinite ease-in-out;
+    }
+
+
+    /* NEW: Cloud passing animation */
+    @keyframes cloud-pass {
+      from {
+        transform: translateX(-250px);
+      }
+      to {
+        transform: translateX(100vw);
+      }
     }
 
 
@@ -857,9 +888,59 @@
       border: 3px solid #8B4513;
       box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
     }
+    
+    /* MODIFIED: Game Over Screen for Cloud Animation */
     #game-over {
+      overflow: hidden; /* Hide clouds when they are outside the container */
+    }
+    /* MODIFIED: Apply wave animation to inner content, not the whole screen */
+    #game-over-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
       animation: wave 2s infinite;
     }
+    /* NEW: Cloud styling for Game Over screen */
+    .cloud-layer {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .cloud-layer::before,
+    .cloud-layer::after {
+      content: '☁️';
+      position: absolute;
+      opacity: 0.4;
+      color: #888;
+      animation-name: cloud-pass;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+    .cloud-layer::before {
+      font-size: 120px;
+      top: 10%;
+      animation-duration: 20s;
+      animation-delay: -5s;
+    }
+    .cloud-layer::after {
+      font-size: 80px;
+      top: 25%;
+      animation-duration: 15s;
+    }
+    /* Make sure game over content is above clouds */
+    #game-over > * {
+      position: relative;
+      z-index: 1;
+    }
+
     #level-finish::before, #game-over::before {
       content: "";
       position: absolute;
@@ -908,6 +989,12 @@
     #retry-btn:hover {
       background: #f0e1d0;
       transform: translateY(-1px);
+    }
+
+    /* MODIFIED: Apply scaling animation to specific buttons */
+    #retry-btn2,
+    #next-btn {
+       animation: button-scale-pulse 1.5s infinite ease-in-out;
     }
 
     /* Main Game Footer */
@@ -1323,9 +1410,12 @@
   </div>
 
   <div id="game-over" style="display:none;">
-    <div id="game-over-text"></div>
-    <button id="retry-btn2">重试</button>
-    <button id="close-game-btn-gameover" style="margin-left:10px;">关闭游戏</button>
+    <div class="cloud-layer"></div>
+    <div id="game-over-content">
+        <div id="game-over-text"></div>
+        <button id="retry-btn2">重试</button>
+        <button id="close-game-btn-gameover" style="margin-left:10px;">关闭游戏</button>
+    </div>
   </div>
 </div>
 
@@ -1490,7 +1580,7 @@ function playBgm(on) {
 // NEW: Initialize Web Audio API
 async function initAudio() {
     try {
-        // Create AudioContext after a user gesture (e.e.g., click)
+        // Create AudioContext after a user gesture (e.g., click)
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
@@ -2023,11 +2113,11 @@ function gameOver(msg){
   targetScoreElement.textContent = '0';
   document.getElementById('message-bar').textContent = '';
   hideWigglingCats();
-  // Add dynamic scaling to retry button on game over
-  retryBtnGameOver.classList.add('scale-pulse-dynamic');
   setTimeout(() => {
-    document.getElementById('game-over').style.display = 'flex';
-    document.getElementById('game-over-text').innerHTML = msg;
+    const gameOverScreen = document.getElementById('game-over');
+    gameOverScreen.style.display = 'flex';
+    // MODIFIED: Find the inner text element
+    gameOverScreen.querySelector('#game-over-text').innerHTML = msg;
   }, 100);
 }
 
@@ -2050,11 +2140,6 @@ function startGame(level){
   positionCatWalker();
   updateWigglingCatVisibility();
   startRandomEvents();
-  // Remove dynamic scaling from buttons when starting a new game
-  nextBtn.classList.remove('scale-pulse-dynamic');
-  retryBtnGameOver.classList.remove('scale-pulse-dynamic');
-  gobangBtn.classList.remove('scale-pulse-dynamic');
-  closeGameBtnLevel.classList.remove('scale-pulse-dynamic');
 }
 
 function renderBoard(){
@@ -2205,16 +2290,11 @@ function updateToolButtons() {
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
   
   const undoDisabledByCount = game.toolUses.undo <= 0;
-  
-  // Check if it's a mobile device (based on screen width)
-  const isMobile = window.innerWidth <= 700; // Assuming 700px is the breakpoint for mobile
-
-  if (isMobile) {
-    // On mobile, disable undo button in landscape mode
-    undoBtn.disabled = undoDisabledByCount || isLandscape;
-    undoBtn.title = isLandscape ? "横屏模式下不可用" : "撤销(需兑换码)";
+  // Check for landscape orientation
+  if (isLandscape) {
+    undoBtn.disabled = true;
+    undoBtn.title = "横屏模式下不可用";
   } else {
-    // On desktop, undo button is only disabled by count
     undoBtn.disabled = undoDisabledByCount;
     undoBtn.title = "撤销(需兑换码)";
   }
@@ -2269,8 +2349,12 @@ function showLevelFinish(msg){
 
   nextBtn.style.display = (game.level === 1) ? 'inline-block' : 'none';
   
+  // MODIFIED: Reset button animations before applying new ones
+  gobangBtn.classList.remove('animated-scale-fade');
+  closeGameBtnLevel.classList.remove('animated-scale-fade');
+  
   if (game.level === 1) {
-    levelFinishTextElement.style.animation = 'shake 3s infinite, show-card-property 6s forwards';
+    levelFinishTextElement.style.animation = 'shake 6s infinite, show-card-property 15s forwards';
     levelFinishTextElement.innerHTML += '<br>下一关后有彩蛋🪅！';
     playerDiv.style.display = 'block';
     neteasePlayerDiv.style.display = 'none';
@@ -2278,8 +2362,6 @@ function showLevelFinish(msg){
     restartGameBtn.style.display = 'none';
     retryBtnLevelFinish.style.display = 'inline-block';
     closeGameBtnLevel.onclick = () => handleCloseGame('level');
-    // Add dynamic scaling to next button for level 1 completion
-    nextBtn.classList.add('scale-pulse-dynamic');
   } else if (game.level === 2) {
     levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
     playerDiv.style.display = 'none';
@@ -2287,13 +2369,15 @@ function showLevelFinish(msg){
     gobangBtn.style.display = 'inline-block';
     restartGameBtn.style.display = 'inline-block';
     retryBtnLevelFinish.style.display = 'none';
+    
+    // MODIFIED: Add animation class to buttons for level 2
+    gobangBtn.classList.add('animated-scale-fade');
+    closeGameBtnLevel.classList.add('animated-scale-fade');
+    
     closeGameBtnLevel.onclick = () => {
         document.getElementById('level-finish').style.display = 'none';
         playLevel2Outro();
     };
-    // Add dynamic scaling to gobang and close game buttons for level 2 completion
-    gobangBtn.classList.add('scale-pulse-dynamic');
-    closeGameBtnLevel.classList.add('scale-pulse-dynamic');
   }
 }
 
