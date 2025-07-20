@@ -29,6 +29,32 @@
       100% { opacity: 1; transform: scale(1) translateY(0); }
     }
 
+    /* Animation for matched cards disappearing from temp area */
+    @keyframes card-disappear {
+        from {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.4) rotate(20deg);
+        }
+    }
+    .temp-card.disappearing {
+        animation: card-disappear 0.3s ease-out forwards;
+    }
+
+    /* NEW: Animation for temp slots when cards are cleared */
+    @keyframes slot-flash {
+        0% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
+        50% { background-color: #fff8dc; box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.5); }
+        100% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
+    }
+    .temp-slot.clearing {
+        animation: slot-flash 0.4s ease-out;
+    }
+
+
     @keyframes pulse-scale {
       0%, 100% { transform: scale(1); opacity: 0.8; }
       50% { transform: scale(1.05); opacity: 1; }
@@ -1309,7 +1335,6 @@
   <source src="Get.ogg" type="audio/ogg">
   您的浏览器不支持音频元素。
 </audio>
-<audio id="click-sound" src="kaa.mp3" preload="auto"></audio>
 
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/index.js"></script>
@@ -1390,7 +1415,11 @@ let confirmCallback = null;
 let outroVideoTimeout = null;
 let isCatMirrored = true;
 let randomEventTimer = null;
-let isLandscape = false; // NEW: Variable to track screen orientation
+let isLandscape = false; 
+
+// NEW: Web Audio API variables
+let audioContext;
+let clickSoundBuffer;
 
 // Game State Object
 let game = {
@@ -1448,47 +1477,48 @@ function playBgm(on) {
   }
 }
 
-let matchSoundPool = [];
-const MAX_MATCH_SOUNDS = 10;
-
-function createMatchSoundInstance() {
-    const audio = new Audio();
-    audio.preload = 'auto';
-    audio.volume = 0.5; // MODIFIED: Set match sound volume
-    const mp3Source = document.createElement('source');
-    mp3Source.src = 'kaa.mp3';
-    mp3Source.type = 'audio/mpeg';
-    audio.appendChild(mp3Source);
-    const oggSource = document.createElement('source');
-    oggSource.src = 'kaa.ogg';
-    oggSource.type = 'audio/ogg';
-    audio.appendChild(oggSource);
-    audio.addEventListener('error', (e) => console.error("Audio element error:", e));
-    return audio;
-}
-
-for (let i = 0; i < MAX_MATCH_SOUNDS; i++) {
-    matchSoundPool.push(createMatchSoundInstance());
-}
-
-function playMatchSound() {
-  if (game.bgmOn) {
-    let soundInstance = matchSoundPool.find(audio => audio.paused || audio.ended);
-    if (!soundInstance) {
-        soundInstance = createMatchSoundInstance();
+// NEW: Initialize Web Audio API
+async function initAudio() {
+    try {
+        // Create AudioContext after a user gesture (e.g., click)
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        // If context is suspended, resume it
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+        // Fetch and decode the sound file if not already done
+        if (!clickSoundBuffer) {
+            const response = await fetch('kaa.mp3');
+            const arrayBuffer = await response.arrayBuffer();
+            clickSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        }
+    } catch (e) {
+        console.error("Failed to initialize Web Audio:", e);
     }
-    soundInstance.currentTime = 0;
-    soundInstance.play().catch(e => console.error("Match sound failed to play:", e));
-  }
 }
+
+// NEW: Play sound using Web Audio API
+function playClickSound() {
+    if (!clickSoundBuffer || !audioContext || !game.bgmOn) return;
+    try {
+        const source = audioContext.createBufferSource();
+        source.buffer = clickSoundBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+    } catch (e) {
+        console.error("Failed to play click sound:", e);
+    }
+}
+
 
 // NEW: Function to trigger vibration or sound on match
 function triggerMatchFeedback() {
     if (navigator.vibrate) {
         navigator.vibrate(100); // Vibrate for 100ms
-    } else {
-        playMatchSound(); // Fallback to sound
     }
+    playClickSound(); // Always play sound, even with vibration
 }
 
 
@@ -1725,6 +1755,8 @@ function clickCard(id) {
   let cardData = game.board.find(c => c.id === id);
   if (!cardData || cardData.matched || !isCardClickable(cardData, game.board)) return;
 
+  playClickSound(); // Play click sound immediately on valid click
+
   let tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
   let iconCntCheck = {};
   tempCheck.forEach(c => iconCntCheck[c.icon] = (iconCntCheck[c.icon] || 0) + 1);
@@ -1802,8 +1834,35 @@ function clickCard(id) {
     let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
 
     if (matchedIcon) {
-      triggerMatchFeedback(); // MODIFIED: Trigger feedback on match
-      game.temp.forEach(c => { if (c.icon === matchedIcon) c.matched = true; });
+      triggerMatchFeedback();
+      
+      const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+      const matchedElements = [];
+
+      // Mark cards for removal and identify elements to animate
+      game.temp.forEach((c, index) => {
+          if (c.icon === matchedIcon) {
+              c.matched = true;
+              const slot = tempSlots[index];
+              if (slot) {
+                  const cardEl = slot.querySelector('.temp-card');
+                  matchedElements.push({ slot, cardEl });
+              }
+          }
+      });
+
+      // Apply animations
+      matchedElements.forEach(({ slot, cardEl }) => {
+          if (cardEl) {
+              cardEl.classList.add('disappearing');
+          }
+          slot.classList.add('clearing');
+          // The class is removed automatically by renderTemp, but for safety:
+          slot.addEventListener('animationend', () => {
+              slot.classList.remove('clearing');
+          }, { once: true });
+      });
+
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
               displaySet.matched = true;
@@ -1826,7 +1885,6 @@ function clickCard(id) {
                   if (newSet) {
                       displaySet.cards = newSet;
                       displaySet.matched = false;
-                      game.totalDisplaySetsGenerated++;
                   } else {
                       game.displayCards = game.displayCards.filter(ds => ds.id !== displaySet.id);
                   }
@@ -1840,7 +1898,7 @@ function clickCard(id) {
         renderBoard();
         checkWin();
         game.lock = false;
-      }, 100);
+      }, 450); // Increased delay for animations
     } else {
       checkWin();
       game.lock = false;
@@ -2488,6 +2546,7 @@ musicToggleBtn.onclick = function(){
 };
 startBtn.onclick = function(){
   document.getElementById('start-screen').style.display = 'none';
+  initAudio(); // Initialize audio on first user interaction
   startGame(1);
 };
 nextBtn.onclick = function(){
