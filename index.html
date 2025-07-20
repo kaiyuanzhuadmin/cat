@@ -1416,6 +1416,7 @@ let outroVideoTimeout = null;
 let isCatMirrored = true;
 let randomEventTimer = null;
 let isLandscape = false; 
+let lastShakeTime = 0; // NEW: for shake detection cooldown
 
 // NEW: Web Audio API variables
 let audioContext;
@@ -1612,29 +1613,27 @@ function calculateResponsiveSizes() {
     };
 }
 
-// 新增函数：重新计算卡片布局
 function repositionCardsAndLayout(currentBoard, levelConfig) {
     const lv = levelConfig;
-    const newBoard = [];
-    const unmatchedCards = currentBoard.filter(c => !c.matched); // 只重新布局未匹配的卡片
+    const newUnmatchedBoard = [];
+    const unmatchedCards = currentBoard.filter(c => !c.matched);
+    const matchedCards = currentBoard.filter(c => c.matched); 
 
     game.layout.areaWidth = cardStackArea.offsetWidth;
     game.layout.areaHeight = cardStackArea.offsetHeight;
-    calculateResponsiveSizes(); // 重新计算卡片尺寸
+    calculateResponsiveSizes();
 
     let stackDepth = lv.stack;
-    // 根据未匹配卡片数量重新分配到堆叠层，确保每层有卡
     const cardsPerStackLayer = Math.ceil(unmatchedCards.length / stackDepth);
     const placementOverlapFactor = 0.9;
     let maxAttempts = 150;
 
-    // 复制未匹配卡片，并打乱顺序，以便重新随机布局
     let cardsToPlace = unmatchedCards.map(c => ({ ...c }));
     shuffle(cardsToPlace);
 
     for (let i = 0; i < cardsToPlace.length; i++) {
         const card = cardsToPlace[i];
-        const s = Math.min(Math.floor(i / cardsPerStackLayer), stackDepth - 1); // 重新分配堆叠层
+        const s = Math.min(Math.floor(i / cardsPerStackLayer), stackDepth - 1);
         let x = 0, y = 0;
         let foundPosition = false;
 
@@ -1647,8 +1646,8 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
             tempY = Math.max(5, Math.min(tempY, game.layout.areaHeight - game.cardDimensions.height - 5));
 
             let overlap = false;
-            for (const existingCard of newBoard) { // 检查与已放置卡片的重叠
-                if (existingCard.stack <= s) { // 只检查当前层及下层卡片
+            for (const existingCard of newUnmatchedBoard) {
+                if (existingCard.stack <= s) {
                     const dx = Math.abs(tempX - existingCard.x);
                     const dy = Math.abs(tempY - existingCard.y);
                     if (dx < game.cardDimensions.width * placementOverlapFactor && dy < game.cardDimensions.height * placementOverlapFactor) {
@@ -1665,16 +1664,16 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
             }
         }
         if (!foundPosition) {
-            // 如果找不到不重叠的位置，则随机放置
             x = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
             y = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
         }
-        const z = s * 1000 + i; // 重新计算z-index
-        newBoard.push({ ...card, x, y, z, stack: s });
+        const z = s * 1000 + i;
+        newUnmatchedBoard.push({ ...card, x, y, z, stack: s });
     }
 
-    newBoard.sort((a, b) => a.z - b.z); // 重新排序
-    return newBoard;
+    const finalBoard = [...newUnmatchedBoard, ...matchedCards];
+    finalBoard.sort((a, b) => (a.z || 0) - (b.z || 0));
+    return finalBoard;
 }
 
 
@@ -1712,7 +1711,6 @@ function genLevel(levelIdx){
   }
   game.cards = cards;
 
-  // Initial layout generation
   game.board = repositionCardsAndLayout(cards.map(c => ({...c, covered: false, isNapping: false})), lv);
 
   game.displayCards = [];
@@ -1755,7 +1753,7 @@ function clickCard(id) {
   let cardData = game.board.find(c => c.id === id);
   if (!cardData || cardData.matched || !isCardClickable(cardData, game.board)) return;
 
-  playClickSound(); // Play click sound immediately on valid click
+  playClickSound();
 
   let tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
   let iconCntCheck = {};
@@ -1839,7 +1837,6 @@ function clickCard(id) {
       const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
       const matchedElements = [];
 
-      // Mark cards for removal and identify elements to animate
       game.temp.forEach((c, index) => {
           if (c.icon === matchedIcon) {
               c.matched = true;
@@ -1851,13 +1848,11 @@ function clickCard(id) {
           }
       });
 
-      // Apply animations
       matchedElements.forEach(({ slot, cardEl }) => {
           if (cardEl) {
               cardEl.classList.add('disappearing');
           }
           slot.classList.add('clearing');
-          // The class is removed automatically by renderTemp, but for safety:
           slot.addEventListener('animationend', () => {
               slot.classList.remove('clearing');
           }, { once: true });
@@ -1898,7 +1893,7 @@ function clickCard(id) {
         renderBoard();
         checkWin();
         game.lock = false;
-      }, 450); // Increased delay for animations
+      }, 450);
     } else {
       checkWin();
       game.lock = false;
@@ -1958,10 +1953,6 @@ function shuffleStep(){
   unmatchedCardsElements.forEach(el => el.classList.add('card-shuffling-out'));
 
   setTimeout(() => {
-      let unmatched = game.board.filter(c=>!c.matched);
-      let icons = unmatched.map(c=>c.icon);
-      shuffle(icons);
-      // 重新布局洗牌后的卡片
       game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
       renderAll();
       showMessage('已洗牌');
@@ -2283,7 +2274,7 @@ function showLevelFinish(msg){
 function initializeGame(){
   musicToggleBtn.innerHTML = game.bgmOn ? '🎼' : '🔇';
   updateToolButtons();
-  if (bgm) bgm.volume = 0.5; // MODIFIED: Set BGM volume to 50%
+  if (bgm) bgm.volume = 0.5;
 }
 
 function handleCloseGame(type) {
@@ -2372,34 +2363,52 @@ function stopRandomEvents() {
     randomEventTimer = null;
 }
 
-// MODIFIED: Resize handler to re-layout cards
 function handleResize() {
-    // 只有当游戏正在进行中（即 board 不为空且游戏未结束）才重新布局
     if (!game.board || game.board.length === 0 || document.getElementById('start-screen').style.display === 'flex' || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
-        positionCatWalker(); // 确保猫咪位置正确
+        positionCatWalker();
         return;
     }
 
     const currentAreaWidth = cardStackArea.offsetWidth;
     const currentAreaHeight = cardStackArea.offsetHeight;
 
-    // 检查尺寸是否确实发生了变化
     if (game.layout.areaWidth === currentAreaWidth && game.layout.areaHeight === currentAreaHeight) {
         return;
     }
 
-    // 更新布局尺寸
     game.layout.areaWidth = currentAreaWidth;
     game.layout.areaHeight = currentAreaHeight;
 
-    // 重新计算卡片尺寸
     calculateResponsiveSizes();
 
-    // 重新布局所有未匹配的卡片
     game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
     
-    // 重新渲染所有元素
     renderAll();
+}
+
+// NEW: Shake to shuffle handler
+function handleDeviceMotion(event) {
+    if (game.lock || game.toolUses.shuffle <= 0) {
+        return;
+    }
+
+    const currentTime = new Date().getTime();
+    if ((currentTime - lastShakeTime) > 1500) { // 1.5 second cooldown to prevent multiple triggers
+        const acceleration = event.accelerationIncludingGravity;
+        const shakeThreshold = 18; // m/s^2, adjusted for sensitivity
+
+        if (
+            Math.abs(acceleration.x) > shakeThreshold ||
+            Math.abs(acceleration.y) > shakeThreshold
+        ) {
+            lastShakeTime = currentTime;
+            
+            shuffleStep();
+            game.toolUses.shuffle--;
+            updateToolButtons();
+            showMessage('你摇动了手机，自动使用了一次洗牌！', '#3e5a2b');
+        }
+    }
 }
 
 
@@ -2408,27 +2417,32 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeLoadingScreen();
     attemptVideoAutoplay();
     
-    // NEW: Handle screen orientation changes
+    // MODIFIED: Handle screen orientation changes
     const orientationQuery = window.matchMedia("(orientation: landscape)");
-    isLandscape = orientationQuery.matches; // Initial check on load
+    isLandscape = orientationQuery.matches;
     
     function handleOrientationChange(event) {
         isLandscape = event.matches;
-        updateToolButtons(); // Re-evaluate button states whenever orientation changes
+        updateToolButtons();
     }
     
     orientationQuery.addEventListener('change', handleOrientationChange);
 
-    // NEW & MODIFIED: Handle page visibility changes to pause/play music
+    // NEW: Add shake event listener
+    if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', handleDeviceMotion);
+    } else {
+        console.log("此设备不支持摇一摇功能。");
+    }
+
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-            bgm.pause(); // Pause music when tab is not visible
+            bgm.pause();
         } else {
             const levelFinishScreen = document.getElementById('level-finish');
             const gameOverScreen = document.getElementById('game-over');
             const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
 
-            // Resume music only if it was supposed to be on AND we are not on an end screen
             if (game.bgmOn && !isGameEndScreenVisible) {
                 bgm.play().catch(e => console.error("BGM resume failed", e));
             }
@@ -2473,9 +2487,7 @@ document.addEventListener('DOMContentLoaded', function() {
     codeBtn.disabled = true;
     codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
 
-    // 使用 debounce 优化 resize 事件处理
     window.addEventListener('resize', debounce(handleResize, 200));
-    // 初始加载时也调用一次布局，确保第一次加载时的布局正确
     handleResize(); 
 
     skipOutroBtn.addEventListener('click', () => handleCloseGame('level'));
@@ -2546,7 +2558,7 @@ musicToggleBtn.onclick = function(){
 };
 startBtn.onclick = function(){
   document.getElementById('start-screen').style.display = 'none';
-  initAudio(); // Initialize audio on first user interaction
+  initAudio(); 
   startGame(1);
 };
 nextBtn.onclick = function(){
@@ -2711,7 +2723,6 @@ function playLevel2Outro() {
     };
 }
 
-// Debounce function to limit how often a function is called
 function debounce(func, delay) {
   let timeout;
   return function() {
