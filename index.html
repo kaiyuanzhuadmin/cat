@@ -2670,7 +2670,8 @@ function handleDeviceMotion(event) {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    initializeLoadingScreen();
+    // MODIFIED: Call the new realistic loading screen function
+    initializeRealisticLoadingScreen();
     attemptVideoAutoplay();
     
     // MODIFIED: Handle screen orientation changes
@@ -2865,21 +2866,39 @@ restartGameBtn.onclick = () => window.location.href = 'https://www.kaiyuanzhu.qz
 closeGameBtnLevel.onclick = () => handleCloseGame('level');
 closeGameBtnGameOver.onclick = () => handleCloseGame('gameover');
 
-function initializeLoadingScreen() {
+// MODIFIED: Replaced the old loading screen function with a realistic asset loader.
+function initializeRealisticLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
     const progressBar = document.getElementById('progress-bar');
     const loadingText = document.getElementById('loading-text');
-    let progress = 0;
-    const assets = ["加载字体...", "加载音效...", "加载图片...", "初始化关卡...", "准备喵咪...", "完成!"];
-    let assetIndex = 0;
-    loadingText.textContent = assets[0];
-    const interval = setInterval(() => {
-        progress += Math.random() * 15 + 5;
-        if (progress >= 100) {
-            progress = 100;
-            clearInterval(interval);
-            progressBar.style.width = progress + '%';
-            loadingText.textContent = assets[assets.length - 1];
+
+    // List of critical assets to track for the loading bar
+    const assetsToLoad = [
+        { type: 'image', src: 'me.png' },
+        { type: 'image', src: 'mao3.webp' },
+        { type: 'image', src: 'mao1.webp' },
+        { type: 'image', src: 'mao.webp' },
+        { type: 'image', src: 'mao2.webp' },
+        { type: 'image', src: 'cat1.webp' },
+        { type: 'audio', src: 'Get.mp3' },
+        { type: 'audio', src: 'kaa.mp3' },
+        { type: 'video', src: 'mao.mp4' },
+        { type: 'video', src: 'mao2.mp4' }
+    ];
+
+    let assetsLoaded = 0;
+    const totalAssets = assetsToLoad.length;
+
+    function updateProgress(asset) {
+        assetsLoaded++;
+        const progress = (assetsLoaded / totalAssets) * 100;
+        progressBar.style.width = progress + '%';
+        // You can choose to show which asset is loading, or a general message
+        loadingText.textContent = `正在加载资源... (${assetsLoaded}/${totalAssets})`;
+
+        if (assetsLoaded === totalAssets) {
+            // All assets loaded, proceed to finish loading sequence
+            loadingText.textContent = '完成!';
             setTimeout(() => {
                 loadingScreen.style.opacity = '0';
                 loadingScreen.addEventListener('transitionend', () => {
@@ -2888,16 +2907,48 @@ function initializeLoadingScreen() {
                     initializeGame();
                 }, { once: true });
             }, 400);
-        } else {
-            progressBar.style.width = progress + '%';
-            const nextAssetThreshold = (assetIndex + 1) * 20;
-            if (progress > nextAssetThreshold && assetIndex < assets.length - 1) {
-                assetIndex++;
-                loadingText.textContent = assets[assetIndex];
-            }
         }
-    }, 250);
+    }
+
+    function loadAsset(asset) {
+        const handleSuccess = () => updateProgress(asset);
+        const handleError = () => {
+            console.error(`Failed to load asset: ${asset.src}`);
+            updateProgress(asset); // Still count it as "done" to not block the loading process
+        };
+
+        switch (asset.type) {
+            case 'image':
+                const img = new Image();
+                img.onload = handleSuccess;
+                img.onerror = handleError;
+                img.src = asset.src;
+                break;
+            case 'audio':
+                const audio = new Audio();
+                audio.addEventListener('canplaythrough', handleSuccess, { once: true });
+                audio.onerror = handleError;
+                audio.src = asset.src;
+                break;
+            case 'video':
+                const video = document.createElement('video');
+                video.addEventListener('canplaythrough', handleSuccess, { once: true });
+                video.onerror = handleError;
+                video.src = asset.src;
+                break;
+        }
+    }
+
+    // Start loading all assets
+    if (totalAssets > 0) {
+        loadingText.textContent = '准备加载资源...';
+        assetsToLoad.forEach(loadAsset);
+    } else {
+        // If no assets are listed, just skip to the end
+        updateProgress({ src: 'N/A' });
+    }
 }
+
 function attemptVideoAutoplay() {
     const video = document.getElementById('start-screen-video');
     if (!video) return;
