@@ -1326,7 +1326,7 @@
 <div id="game-container">
   <div id="loading-screen">
     <div class="loading-content">
-      <h1 class="loading-title">正在加载.</h1>
+      <h1 class="loading-title">Loading.</h1>
       <div class="progress-bar-container">
         <div id="progress-bar"></div>
       </div>
@@ -1569,6 +1569,7 @@ let clickSoundBuffer;
 // Game State Object
 let game = {
   level: 1,
+  levelStartTime: 0, // MODIFIED: Added for level timer
   cards: [],
   board: [],
   temp: [],
@@ -1586,10 +1587,7 @@ let game = {
   lock: false,
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
   layout: { areaWidth: 0, areaHeight: 0 },
-  isCurtainEnabled: true, // NEW: Controls if the curtain effect is active
-  levelStartTime: 0, // NEW: To track level start time
-  levelEndTime: 0, // NEW: To track level end time
-  timeTaken: 0 // NEW: To store time taken for the level
+  isCurtainEnabled: true // NEW: Controls if the curtain effect is active
 };
 
 // Utility Functions
@@ -1630,7 +1628,7 @@ function playBgm(on) {
 async function initAudio() {
     try {
         // Create AudioContext after a user gesture (e.g., click)
-        if (!audioContext || audioContext.state === 'closed') { // Recreate if closed
+        if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
         // If context is suspended, resume it
@@ -1651,23 +1649,13 @@ async function initAudio() {
 // NEW: Play sound using Web Audio API
 function playClickSound() {
     if (!clickSoundBuffer || !audioContext || !game.bgmOn) return;
-    // Ensure audio context is running before trying to play
-    if (audioContext.state === 'suspended') {
-        audioContext.resume().then(() => {
-            const source = audioContext.createBufferSource();
-            source.buffer = clickSoundBuffer;
-            source.connect(audioContext.destination);
-            source.start(0);
-        }).catch(e => console.error("Failed to resume audio context and play sound:", e));
-    } else {
-        try {
-            const source = audioContext.createBufferSource();
-            source.buffer = clickSoundBuffer;
-            source.connect(audioContext.destination);
-            source.start(0);
-        } catch (e) {
-            console.error("Failed to play click sound:", e);
-        }
+    try {
+        const source = audioContext.createBufferSource();
+        source.buffer = clickSoundBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+    } catch (e) {
+        console.error("Failed to play click sound:", e);
     }
 }
 
@@ -1682,7 +1670,7 @@ function triggerMatchFeedback() {
 
 
 function showConfirm(msg, callback) {
-  confirmMsg.textContent = msg;
+  confirmMsg.innerHTML = msg; // Use innerHTML to allow basic HTML like <br>
   confirmCallback = callback;
   confirmModal.style.display = 'flex';
 }
@@ -2060,27 +2048,40 @@ function clickCard(id) {
   }, tempAppearanceDelay);
 }
 
-function checkWin(){
-  const allCardsMatched = game.board.every(c=>c.matched);
-  const scoreMet = game.score >= game.targetScore;
+// MODIFIED: checkWin function to show time taken
+function checkWin() {
+    const allCardsMatched = game.board.every(c => c.matched);
+    const scoreMet = game.score >= game.targetScore;
 
-  if(allCardsMatched && scoreMet){
-    // Stop the timer
-    game.levelEndTime = Date.now();
-    game.timeTaken = (game.levelEndTime - game.levelStartTime) / 1000; // Time in seconds
+    if (allCardsMatched && scoreMet) {
+        stopRandomEvents();
+        stopCurtainRandomToggle();
+        game.lock = true; // Lock game while showing message
 
-    stopRandomEvents();
-    stopCurtainRandomToggle(); // NEW: Stop curtain toggle on win
-    setTimeout(()=>{
-      if(game.level===1){
-        showLevelFinish(`恭喜恭喜！第一关通关！<br>本关用时: ${game.timeTaken.toFixed(2)} 秒`);
-      } else {
-        showLevelFinish(`<p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉<br>本关用时: ${game.timeTaken.toFixed(2)} 秒`);
-      }
-    },330);
-  } else if (allCardsMatched && !scoreMet) {
-      gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
-  }
+        const elapsedSeconds = ((Date.now() - game.levelStartTime) / 1000).toFixed(1);
+        const message = `本关过关用时 ${elapsedSeconds} 秒`;
+
+        // Temporarily change the confirm modal to an alert modal
+        const originalYesText = confirmYes.textContent;
+        const originalNoDisplay = confirmNo.style.display;
+        confirmYes.textContent = '好的';
+        confirmNo.style.display = 'none';
+
+        showConfirm(message, () => {
+            // Callback for when user clicks "好的"
+            if (game.level === 1) {
+                showLevelFinish('恭喜恭喜！第一关通关！');
+            } else {
+                showLevelFinish('<p> <p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
+            }
+            // Restore the modal for other uses
+            confirmYes.textContent = originalYesText;
+            confirmNo.style.display = originalNoDisplay;
+        });
+
+    } else if (allCardsMatched && !scoreMet) {
+        gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
+    }
 }
 
 function saveStep(){
@@ -2188,9 +2189,11 @@ function gameOver(msg){
   }, 100);
 }
 
+// MODIFIED: startGame to include timer start
 function startGame(level){
   footer.style.display = 'block';
   game.level = level;
+  game.levelStartTime = Date.now(); // Start timer for the level
   let lvData = genLevel(level);
   game.cards = lvData.cards;
   game.board = lvData.board;
@@ -2201,7 +2204,6 @@ function startGame(level){
   game.stepStack = [];
   game.lock = false;
   game.isNewLevel = true;
-  game.levelStartTime = Date.now(); // Start the timer for the level
   renderAll();
   updateToolButtons();
   if (game.bgmOn) playBgm(true);
@@ -2406,7 +2408,7 @@ function showLevelFinish(msg){
   
   const levelFinishScreen = document.getElementById('level-finish');
   levelFinishScreen.style.display='flex';
-  levelFinishTextElement.innerHTML = msg; // Set the message including time taken
+  levelFinishTextElement.innerHTML = msg;
   
   const existingConfetti = levelFinishScreen.querySelector('.confetti-container');
   if (existingConfetti) existingConfetti.remove();
@@ -2707,24 +2709,22 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("此设备不支持摇一摇功能。");
     }
 
+    // MODIFIED: visibilitychange listener to handle audio context
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             bgm.pause();
-            // Pause AudioContext when page is hidden
-            if (audioContext && audioContext.state === 'running') {
-                audioContext.suspend();
-            }
         } else {
+            // Resume AudioContext if it was suspended
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
+            }
+            
             const levelFinishScreen = document.getElementById('level-finish');
             const gameOverScreen = document.getElementById('game-over');
             const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
 
             if (game.bgmOn && !isGameEndScreenVisible) {
                 bgm.play().catch(e => console.error("BGM resume failed", e));
-            }
-            // Resume AudioContext when page becomes visible
-            if (audioContext && audioContext.state === 'suspended') {
-                audioContext.resume().catch(e => console.error("AudioContext resume failed:", e));
             }
         }
     });
