@@ -8,57 +8,27 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
-
-  <!-- 优先级1: 核心CSS和字体图标 - 确保页面基本样式和图标立即可用 -->
-  <link rel="preload" href="font/iconfont.css" as="style">
-  <link rel="stylesheet" href="font/iconfont.css">
-  <link rel="preload" href="css/style.css" as="style">
-  <link rel="stylesheet" href="css/style.css">
-
-  <!-- 优先级2: 游戏启动和加载屏幕所需的核心图片 -->
-  <link rel="preload" href="mao3.webp" as="image"> <!-- 加载屏幕背景 -->
-  <link rel="preload" href="me.png" as="image"> <!-- 网站图标 -->
-
-  <!-- 优先级3: 游戏核心逻辑JS - 确保游戏功能尽快可用 -->
-  <link rel="preload" href="js/index.js" as="script">
-  <script src="js/index.js"></script>
-  <script src="js/jquery-3.4.1.min.js"></script> <!-- jQuery，如果index.js依赖，也应提前加载 -->
-
-
+  
+  <!-- 优化点: 将所有CSS内联以减少HTTP请求，并移除所有 <link rel="preload">。资源加载将由JavaScript精确控制。 -->
   <style>
-    /* 关键帧动画 */
+    /* 所有的游戏样式都集中在这里。原有的 iconfont.css 和 style.css 内容应合并于此。 */
+    /* Keyframe animations */
     @keyframes card-entry {
       0% { opacity: 0; transform: scale(0.5) translateY(-50px); }
       70% { opacity: 1; transform: scale(1.05) translateY(10px); }
       100% { opacity: 1; transform: scale(1) translateY(0); }
     }
-
-    /* 匹配的卡牌从临时区域消失的动画 */
     @keyframes card-disappear {
-        from {
-            opacity: 1;
-            transform: scale(1) rotate(0deg);
-        }
-        to {
-            opacity: 0;
-            transform: scale(0.4) rotate(20deg);
-        }
+        from { opacity: 1; transform: scale(1) rotate(0deg); }
+        to { opacity: 0; transform: scale(0.4) rotate(20deg); }
     }
-    .temp-card.disappearing {
-        animation: card-disappear 0.3s ease-out forwards;
-    }
-
-    /* 新增: 卡牌清除时临时槽位的动画 */
+    .temp-card.disappearing { animation: card-disappear 0.3s ease-out forwards; }
     @keyframes slot-flash {
         0% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
         50% { background-color: #fff8dc; box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.5); }
         100% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
     }
-    .temp-slot.clearing {
-        animation: slot-flash 0.4s ease-out;
-    }
-
-
+    .temp-slot.clearing { animation: slot-flash 0.4s ease-out; }
     @keyframes pulse-scale {
       0%, 100% { transform: scale(1); opacity: 0.8; }
       50% { transform: scale(1.05); opacity: 1; }
@@ -90,8 +60,6 @@
       10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-1deg); }
       20%, 40%, 60%, 80% { transform: translateX(3px) rotate(1deg); }
     }
-
-    /* 新增: 分数弹出动画 */
     @keyframes score-pop {
       0% { opacity: 0; transform: translateY(0) scale(0.8); }
       20% { opacity: 1; transform: translateY(-15px) scale(1.1); }
@@ -102,24 +70,18 @@
       position: absolute;
       font-size: 1.5rem;
       font-weight: bold;
-      color: #4CAF50; /* 绿色表示正分数 */
+      color: #4CAF50;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-      pointer-events: none; /* 使其不可交互 */
+      pointer-events: none;
       animation: score-pop 1s ease-out forwards;
-      z-index: 2000; /* 确保它在其他元素之上 */
+      z-index: 2000;
     }
-
-    /* 新增: 卡牌洗牌出场动画 */
     @keyframes card-shuffle-out {
       0% { opacity: 1; transform: scale(1) rotate(0deg); }
       50% { opacity: 0; transform: scale(0.5) rotate(15deg); }
-      100% { opacity: 0; transform: scale(0.5) rotate(15deg); } /* 保持隐藏 */
+      100% { opacity: 0; transform: scale(0.5) rotate(15deg); }
     }
-    .card-shuffling-out {
-      animation: card-shuffle-out 0.3s ease-in forwards;
-    }
-
-    /* 新增: 爱心动画 */
+    .card-shuffling-out { animation: card-shuffle-out 0.3s ease-in forwards; }
     @keyframes fade-in-out-heart {
       0% { opacity: 0; transform: scale(0.5); }
       50% { opacity: 1; transform: scale(1.2); }
@@ -127,752 +89,333 @@
     }
     .heart-animation {
       position: absolute;
-      font-size: 30px; /* 用户要求30px */
-      color: #ff69b4; /* 粉色爱心 */
+      font-size: 30px;
+      color: #ff69b4;
       pointer-events: none;
-      animation: fade-in-out-heart 2.5s ease-out infinite alternate; /* 更改为无限交替 */
-      z-index: 1000; /* 确保它在卡牌之上，如果需要的话在猫咪摇摆器之下 */
+      animation: fade-in-out-heart 2.5s ease-out infinite alternate;
+      z-index: 1000;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
     }
-    
-    /* 新增: 彩带动画 */
     .confetti-container {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        pointer-events: none;
-        overflow: hidden;
-        z-index: 9999;
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        pointer-events: none; overflow: hidden; z-index: 9999;
     }
     .confetti-piece {
-        position: absolute;
-        width: 8px;
-        height: 16px;
-        background: #f00; /* 将由JS随机化 */
-        top: -20px;
-        opacity: 0;
+        position: absolute; width: 8px; height: 16px;
+        background: #f00; top: -20px; opacity: 0;
         animation: fall linear forwards;
     }
     @keyframes fall {
-        0% {
-            transform: translateY(0) rotateZ(0deg);
-            opacity: 1;
-        }
-        100% {
-            transform: translateY(110vh) rotateZ(720deg);
-            opacity: 0;
-        }
+        0% { transform: translateY(0) rotateZ(0deg); opacity: 1; }
+        100% { transform: translateY(110vh) rotateZ(720deg); opacity: 0; }
     }
-
-    /* 新增: 按钮动态缩放脉冲动画 */
     @keyframes button-scale-pulse {
-      0%, 100% {
-        transform: scale(1);
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      }
-      50% {
-        transform: scale(1.08);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      }
+      0%, 100% { transform: scale(1); box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+      50% { transform: scale(1.08); box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     }
-
-    /* 新增: 按钮缩放和淡入淡出脉冲动画 */
     @keyframes button-scale-fade-pulse {
-      0%, 100% {
-        transform: scale(1);
-        opacity: 0.8;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-      }
-      50% {
-        transform: scale(1.08);
-        opacity: 1;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-      }
+      0%, 100% { transform: scale(1); opacity: 0.8; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+      50% { transform: scale(1.08); opacity: 1; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     }
-    .animated-scale-fade {
-        animation: button-scale-fade-pulse 1.8s infinite ease-in-out;
-    }
-
-
-    /* 新增: 云朵飘过动画 */
+    .animated-scale-fade { animation: button-scale-fade-pulse 1.8s infinite ease-in-out; }
     @keyframes cloud-pass {
-      from {
-        transform: translateX(-250px);
-      }
-      to {
-        transform: translateX(100vw);
-      }
+      from { transform: translateX(-250px); }
+      to { transform: translateX(100vw); }
     }
-
-
-    /* 全局body样式 */
     body {
-      margin: 0;
-      min-height: 100vh;
-      overflow-x: hidden;
-      /* 新增: 应用新字体 */
+      margin: 0; min-height: 100vh; overflow-x: hidden;
       font-family: 'ZCOOL KuaiLe', 'HanyiSentyLotus', 'FangSong', cursive, sans-serif;
-      color: #3e2723;
-      position: relative; /* 关键: 为伪元素提供定位参考 */
+      color: #3e2723; position: relative;
     }
-    /* Body背景图片 */
     body::before {
-      content: "";
-      position: fixed; /* 使用fixed覆盖整个视口 */
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
+      content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
       background: #f7f0e8 url('cat1.webp') no-repeat center center;
-      background-size: cover;
-      z-index: -2; /* 放置在内容下方 */
+      background-size: cover; z-index: -2;
     }
-    /* Body透明叠加层 */
     body::after {
-      content: "";
-      position: fixed; /* 使用fixed覆盖整个视口 */
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background-color: white;
-      opacity: 0.3; /* 30%透明白色蒙版 */
-      z-index: -1; /* 放置在背景图片之上，内容之下 */
+      content: ""; position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background-color: white; opacity: 0.3; z-index: -1;
     }
-    /* 加载屏幕禁用滚动 */
-    body.no-scroll {
-      overflow: hidden;
-    }
-
-    /* 游戏容器 */
+    body.no-scroll { overflow: hidden; }
     #game-container {
-      max-width: 650px;
-      margin: 30px auto;
-      background: rgba(255, 255, 255, 0.7);
-      border-radius: 25px;
-      box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
-      padding: 0 0 20px 0;
-      position: relative; /* 绝对定位加载屏幕的关键 */
-      min-height: 880px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+      max-width: 650px; margin: 30px auto; background: rgba(255, 255, 255, 0.7);
+      border-radius: 25px; box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
+      padding: 0 0 20px 0; position: relative; min-height: 880px;
+      display: flex; flex-direction: column; align-items: center;
       border: 3px solid #8B4513;
     }
-    /* 游戏容器的响应式调整 */
     @media (max-width: 700px) {
       #game-container {
-        max-width: 100vw;
-        margin: 0;
-        box-shadow: none;
-        border-radius: 0;
-        min-height: 100vh;
-        border: none;
-        /* 适用于iPhone X/XR/XS Max/11/12/13/14/15系列带刘海和圆角屏幕 */
-        padding-top: env(safe-area-inset-top);
-        padding-bottom: env(safe-area-inset-bottom);
-        padding-left: env(safe-area-inset-left);
-        padding-right: env(safe-area-inset-right);
+        max-width: 100vw; margin: 0; box-shadow: none; border-radius: 0;
+        min-height: 100vh; border: none;
+        padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left); padding-right: env(safe-area-inset-right);
       }
     }
-    /* 桌面调整 */
     @media (min-width: 701px) {
       #game-container {
-        max-width: 900px; /* 增加大屏幕最大宽度 */
-        min-height: 90vh; /* 使用视口高度以更好地适应桌面 */
-        margin: 5vh auto; /* 垂直居中并留有边距 */
+        max-width: 900px; min-height: 90vh; margin: 5vh auto;
       }
     }
-
-
-    /* 头部栏 */
     #header-bar {
-      width: 100%;
-      padding: 15px 25px 0 25px;
-      box-sizing: border-box;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
+      width: 100%; padding: 15px 25px 0 25px; box-sizing: border-box;
+      display: flex; justify-content: space-between; align-items: center;
       background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0));
-      border-top-left-radius: 22px;
-      border-top-right-radius: 22px;
+      border-top-left-radius: 22px; border-top-right-radius: 22px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     #progress-info {
-      font-size: 1.55rem;
-      font-weight: bold;
-      color: #5d4037;
+      font-size: 1.55rem; font-weight: bold; color: #5d4037;
       text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
-      display: flex; /* 使其成为flex容器 */
-      gap: 15px; /* 关卡/卡牌和分数/目标之间的间距 */
-      align-items: center;
+      display: flex; gap: 15px; align-items: center;
     }
     #music-toggle {
-      background: none;
-      border: none;
-      outline: none;
-      font-size: 1.8rem;
-      cursor: pointer;
-      color: #6d4c41;
-      transition: transform 0.2s ease-in-out;
+      background: none; border: none; outline: none; font-size: 1.8rem;
+      cursor: pointer; color: #6d4c41; transition: transform 0.2s ease-in-out;
     }
-    #music-toggle:hover {
-      transform: scale(1.1);
-    }
+    #music-toggle:hover { transform: scale(1.1); }
     .score-display, .target-display {
-        font-size: 1.2rem; /* 略小于主进度条 */
-        color: #8B4513; /* 分数/目标的独特颜色 */
-        font-weight: bold;
+        font-size: 1.2rem; color: #8B4513; font-weight: bold;
         text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
     }
-
-    /* 主游戏区域 */
     #main-area {
-      flex:1;
-      width: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      position: relative; /* 猫咪路径和幕布绝对定位的关键 */
-      padding-top: 10px; /* 增加顶部填充 */
+      flex:1; width: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-start; position: relative;
+      padding-top: 10px;
     }
-
-    /* 显示区域 */
     #display-area {
-        margin-top: 20px;
-        width: 90%; /* 使用百分比实现响应式 */
-        max-width: 580px; /* 保持大屏幕最大宽度 */
-        min-height: 100px; /* 根据需要调整高度 */
-        background: rgba(240, 230, 210, 0.6);
-        border-radius: 15px;
+        margin-top: 20px; width: 90%; max-width: 580px; min-height: 100px;
+        background: rgba(240, 230, 210, 0.6); border-radius: 15px;
         box-shadow: inset 0 2px 10px rgba(100, 60, 40, 0.15), 0 5px 15px rgba(100, 60, 40, 0.2);
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-        justify-content: center;
-        align-items: center;
-        border: 2px dashed #b8860b;
-        padding: 10px;
-        box-sizing: border-box;
-        gap: 10px; /* 显示组之间的间距 */
+        display: flex; flex-direction: row; flex-wrap: wrap; justify-content: center;
+        align-items: center; border: 2px dashed #b8860b; padding: 10px;
+        box-sizing: border-box; gap: 10px;
     }
     @media (max-width: 650px) {
-      #display-area {
-        width: 96vw;
-        min-width: unset; /* 移除最小宽度以允许更小尺寸 */
-        min-height: 80px;
-      }
+      #display-area { width: 96vw; min-width: unset; min-height: 80px; }
     }
-
     .display-group {
-        display: flex;
-        gap: 5px; /* 显示组中卡牌之间的间距 */
-        align-items: center;
-        justify-content: center;
-        background: rgba(255, 255, 255, 0.5);
-        border-radius: 8px;
-        padding: 5px 10px;
-        border: 1px solid #d4a762;
+        display: flex; gap: 5px; align-items: center; justify-content: center;
+        background: rgba(255, 255, 255, 0.5); border-radius: 8px;
+        padding: 5px 10px; border: 1px solid #d4a762;
     }
-
     .display-card {
-        /* 宽度、高度、字体大小将由JS动态设置以实现响应式 */
-        background: #fffdf7;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-        border: 2px solid #a0522d;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        user-select: none;
-        opacity: 1;
-        transition: opacity 0.3s ease-out;
+        background: #fffdf7; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 2px solid #a0522d; display: flex; align-items: center; justify-content: center;
+        user-select: none; opacity: 1; transition: opacity 0.3s ease-out;
     }
-    .display-card.matched-display {
-        opacity: 0; /* 匹配时淡出 */
-    }
-
-    /* 新增: 显示区域的幕布效果 */
+    .display-card.matched-display { opacity: 0; }
     #curtain {
-        position: absolute;
-        background-color: rgba(255, 255, 255, 0.95); /* 半透明白色 */
-        z-index: 1050; /* 在显示区域之上，事件叠加层之下 */
-        display: none; /* 默认隐藏，由JS控制 */
-        border-radius: 15px; /* 与显示区域边框半径匹配 */
-        transition: opacity 0.5s ease-in-out; /* 平滑淡入淡出 */
-        overflow: hidden; /* 用于幕布动画 */
-        /* 幕布初始状态为关闭（完全不透明） */
-        opacity: 1;
+        position: absolute; background-color: rgba(255, 255, 255, 0.95);
+        z-index: 1050; display: none; border-radius: 15px;
+        transition: opacity 0.5s ease-in-out; overflow: hidden; opacity: 1;
     }
-
-    /* 幕布纹理/动画 (可选，目前使用纯色) */
     #curtain::before {
-        content: '';
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        /* 如果有幕布纹理，可以在这里添加，例如：url('path/to/curtain_texture.png') */
-        background: linear-gradient(to bottom, #f7f0e8, #e0d8cf); /* 简单渐变 */
-        opacity: 0.9;
+        content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(to bottom, #f7f0e8, #e0d8cf); opacity: 0.9;
     }
-
-    /* 打开幕布的动画 (淡出) */
-    #curtain.open {
-        opacity: 0;
-        pointer-events: none; /* 打开时允许点击穿透 */
-    }
-
-    /* 关闭幕布的动画 (淡入) */
-    #curtain.closed {
-        opacity: 1;
-        pointer-events: all; /* 关闭时阻止点击 */
-    }
-
-    /* 猫咪动画路径 (左侧猫咪) */
+    #curtain.open { opacity: 0; pointer-events: none; }
+    #curtain.closed { opacity: 1; pointer-events: all; }
     #cat-path {
-        position: absolute;
-        width: 100%; /* 跨越其父元素 (#main-area) 的宽度 */
-        height: 20px; /* 间隙的高度 */
-        left: 0; /* 与父元素左边缘对齐 */
-        /* top将由JS设置 */
-        z-index: 1060; /* 修改: 确保它在幕布之上可见 */
-        pointer-events: none; /* 关键: 允许点击穿透到卡牌 */
-        overflow: visible; /* 允许猫咪溢出如果它比路径高度大 */
-        /* background-color: rgba(255, 0, 0, 0.1); /* 用于调试定位 */
+        position: absolute; width: 100%; height: 20px; left: 0;
+        z-index: 1060; pointer-events: none; overflow: visible;
     }
-
     @keyframes cat-walk {
         0% { left: 0; }
-        100% { left: calc(100% - 55px); } /* 跨越 #cat-path 的宽度移动 */
+        100% { left: calc(100% - 55px); }
     }
-
     #walking-cat {
-        position: absolute;
-        width: 30px;
-        height: 30px;
-        font-size: 30px;
-        line-height: 1;
-        display: flex;
-        z-index: 10;
-        align-items: center;
-        justify-content: center;
-        color: #5d4037;
-        top: -20px;
-        /* 修改: 首次从左向右移动时镜像 */
-        transform: scaleX(-1); 
-        transition: transform 0.2s ease-in-out; /* 镜像的平滑过渡 */
+        position: absolute; width: 30px; height: 30px; font-size: 30px;
+        line-height: 1; display: flex; z-index: 10; align-items: center;
+        justify-content: center; color: #5d4037; top: -20px;
+        transform: scaleX(-1); transition: transform 0.2s ease-in-out;
         animation: cat-walk 15s linear infinite alternate;
     }
-
-    /* 新增: 猫咪摇摆器实例 (右侧猫咪) */
     .wiggling-cat-instance {
-        position: absolute;
-        width: 35px;
-        height: 35px;
-        font-size: 35px;
-        line-height: 1;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        color: #5d4037;
-        transform: translateX(-50%); /* 水平居中于其位置 */
-        animation: shake 1.8s ease-in-out infinite alternate; /* 使用现有的抖动动画 */
-        z-index: 10; /* 更高的z-index以在卡牌/临时区域之上 */
-        pointer-events: none;
-        display: none; /* 默认隐藏，由JS控制 */
+        position: absolute; width: 35px; height: 35px; font-size: 35px;
+        line-height: 1; display: flex; align-items: center; justify-content: center;
+        color: #5d4037; transform: translateX(-50%);
+        animation: shake 1.8s ease-in-out infinite alternate;
+        z-index: 10; pointer-events: none; display: none;
     }
-
-
-    /* 卡牌堆叠区域 */
     #card-stack-area {
-      margin-top: 20px; /* 此边距创建了猫咪动画的间隙 */
-      width: 90%; /* 使用百分比实现响应式 */
-      max-width: 580px; /* 保持大屏幕最大宽度 */
-      height: 500px; /* 这将由JS覆盖以实现响应式高度 */
-      position: relative;
-      background: rgba(240, 230, 210, 0.6);
+      margin-top: 20px; width: 90%; max-width: 580px; height: 500px;
+      position: relative; background: rgba(240, 230, 210, 0.6);
       border-radius: 15px;
       box-shadow: inset 0 2px 10px rgba(100, 60, 40, 0.15), 0 5px 15px rgba(100, 60, 40, 0.2);
-      overflow: visible;
-      display: flex;
-      align-items: center;
-      justify-content: center;
+      overflow: visible; display: flex; align-items: center; justify-content: center;
       border: 2px dashed #b8860b;
     }
-    /* 卡牌堆叠区域的响应式调整 */
     @media (max-width: 650px) {
       #card-stack-area {
-        width: 96vw;
-        min-width: unset;
-        height: 60vh; /* 新增: 使用视口高度实现响应式 */
-        max-height: 420px; /* 新增: 设置最大高度 */
-        margin-top: 15px; /* 调整边距以更好地适应 */
-        margin-bottom: 15px;
+        width: 96vw; min-width: unset; height: 60vh;
+        max-height: 420px; margin-top: 15px; margin-bottom: 15px;
       }
     }
     @media (min-width: 701px) {
-      #card-stack-area {
-        height: 600px; /* 桌面更大固定高度 */
-        max-height: 60vh; /* 相对于视口的高度上限 */
-      }
+      #card-stack-area { height: 600px; max-height: 60vh; }
     }
-
-    /* 单个卡牌样式 */
     .card {
-      /* 宽度、高度、字体大小将由JS动态设置 */
-      background: #fffdf7;
-      border-radius: 10px;
+      background: #fffdf7; border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
-      border: 3px solid #d4a762;
-      position: absolute;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
+      border: 3px solid #d4a762; position: absolute; display: flex;
+      align-items: center; justify-content: center; cursor: pointer;
       user-select: none;
       transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.3s, border-color 0.15s;
-      z-index: 1;
-      overflow: hidden;
-      color: #5d4037;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
+      z-index: 1; overflow: hidden; color: #5d4037;
+      -webkit-user-select: none; -moz-user-select: none; -ms-user-select: none;
     }
-    .card-entering {
-      animation: card-entry 0.5s ease-out forwards;
-    }
-    .hint-animation {
-      animation: show-card-property 2s forwards;
-    }
+    .card-entering { animation: card-entry 0.5s ease-out forwards; }
+    .hint-animation { animation: show-card-property 2s forwards; }
     .card.selected {
       border: 3.5px solid #a0522d;
       box-shadow: 0 4px 20px rgba(160, 82, 45, 0.4), 0 0 25px rgba(255,255,0,0.5);
-      z-index: 100 !important;
-      transform: scale(1.01) rotate(-2deg);
+      z-index: 100 !important; transform: scale(1.01) rotate(-2deg);
     }
-    .card.disabled {
-      pointer-events: none;
-      position: absolute;
-      opacity: 1;
-    }
+    .card.disabled { pointer-events: none; position: absolute; opacity: 1; }
     .card.disabled::before {
-      content: '';
-      position: absolute;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: rgba(128, 128, 128, 0.4);
-      border-radius: 8px;
-      z-index: 2;
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(128, 128, 128, 0.4); border-radius: 8px; z-index: 2;
       transition: background 0.5s ease;
     }
-    .card.disabled > *:not(.disabled::before) {
-        opacity: 0.5;
-    }
+    .card.disabled > *:not(.disabled::before) { opacity: 0.5; }
     .card:not(.disabled):not(.matched):hover {
       transform: translateY(-5px) scale(1.05) rotate(2deg);
       box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.5);
-      transition: transform 0.1s ease-out, box-shadow 0.05s ease-out;
-      z-index: 2;
+      transition: transform 0.1s ease-out, box-shadow 0.05s ease-out; z-index: 2;
     }
-    .card.matched {
-      opacity: 0.05;
-      transition: opacity 0.2s;
-      pointer-events: none;
-    }
+    .card.matched { opacity: 0.05; transition: opacity 0.2s; pointer-events: none; }
     .card .mini {
-      font-size: 1.2rem;
-      position: absolute;
-      bottom: 7px;
-      right: 9px;
-      opacity: 0.5;
-      user-select: none;
-      -webkit-user-select: none;
-      -moz-user-select: none;
-      -ms-user-select: none;
+      font-size: 1.2rem; position: absolute; bottom: 7px; right: 9px;
+      opacity: 0.5; user-select: none; -webkit-user-select: none;
+      -moz-user-select: none; -ms-user-select: none;
     }
-    
-    .card.napping {
-        pointer-events: none !important;
-    }
+    .card.napping { pointer-events: none !important; }
     .card.napping::after {
-        content: '💤';
-        position: absolute;
-        top: -10px;
-        right: -5px;
-        font-size: 1.5rem;
-        animation: wave 1.5s infinite ease-in-out;
-        z-index: 5;
+        content: '💤'; position: absolute; top: -10px; right: -5px;
+        font-size: 1.5rem; animation: wave 1.5s infinite ease-in-out; z-index: 5;
     }
-    .card.napping::before {
-        background: rgba(100, 100, 150, 0.3) !important;
-    }
-
-
-    /* 临时区域 (临时槽位) */
+    .card.napping::before { background: rgba(100, 100, 150, 0.3) !important; }
     #temp-area {
-      margin: 20px auto 0 auto;
-      display: flex;
-      justify-content: space-evenly;
-      align-items: center;
-      min-height: 80px;
-      width: 90%;
-      max-width: 500px;
-      border-radius: 12px;
-      background: #fffcf0;
-      border: 2px dashed #b8860b;
-      padding: 8px 0;
-      box-sizing: border-box;
+      margin: 20px auto 0 auto; display: flex; justify-content: space-evenly;
+      align-items: center; min-height: 80px; width: 90%; max-width: 500px;
+      border-radius: 12px; background: #fffcf0; border: 2px dashed #b8860b;
+      padding: 8px 0; box-sizing: border-box;
       box-shadow: inset 0 1px 5px rgba(0,0,0,0.08);
     }
     .temp-slot {
-      margin: 0;
-      background: #fdf5e6;
-      border-radius: 9px;
-      border: 2px dashed #d4a762;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: #92776c;
+      margin: 0; background: #fdf5e6; border-radius: 9px;
+      border: 2px dashed #d4a762; display: flex; align-items: center;
+      justify-content: center; color: #92776c;
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
-      position: relative;
-      overflow: hidden;
-      flex-shrink: 0;
+      position: relative; overflow: hidden; flex-shrink: 0;
     }
     .temp-card {
-      width: 100%;
-      height: 100%;
-      background: #fffdf7;
-      border-radius: 9px;
-      border: 2.5px solid #a0522d;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(160, 82, 45, 0.3);
-      cursor: default;
-      position: absolute;
+      width: 100%; height: 100%; background: #fffdf7; border-radius: 9px;
+      border: 2.5px solid #a0522d; display: flex; align-items: center;
+      justify-content: center; box-shadow: 0 2px 8px rgba(160, 82, 45, 0.3);
+      cursor: default; position: absolute;
       transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
-      box-sizing: border-box;
-      color: #5d4037;
+      box-sizing: border-box; color: #5d4037;
     }
-    .temp-card.matched {
-      opacity: 0.05;
-    }
-
-    /* 飞行卡牌动画 */
+    .temp-card.matched { opacity: 0.05; }
     .flying-card {
-      background: #fffdf7;
-      border-radius: 10px;
+      background: #fffdf7; border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
-      border: 3px solid #d4a762;
-      position: fixed;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      user-select: none;
+      border: 3px solid #d4a762; position: fixed; display: flex;
+      align-items: center; justify-content: center; user-select: none;
       z-index: 10000;
       transition: top 0.3s ease-in-out, left 0.3s ease-in-out, transform 0.3s ease-in-out;
-      overflow: hidden;
-      color: #5d4037;
+      overflow: hidden; color: #5d4037;
     }
-
-    /* 工具栏 */
     #tools-bar {
-      margin: 20px auto 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 18px;
-      width: 90%;
-      max-width: 500px;
+      margin: 20px auto 0 auto; display: flex; align-items: center;
+      justify-content: center; gap: 18px; width: 90%; max-width: 500px;
       flex-wrap: wrap;
     }
     #tools-bar button {
-      padding: 9px 18px;
-      background: #f7e9d7;
-      border: 2px solid #b8860b;
-      border-radius: 10px;
-      font-size: 1.05rem;
-      color: #6e352f;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-      outline: none;
-      position: relative;
-      min-width: 75px;
-      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-      font-family: 'ZCOOL KuaiLe', cursive; /* 应用字体 */
+      padding: 9px 18px; background: #f7e9d7; border: 2px solid #b8860b;
+      border-radius: 10px; font-size: 1.05rem; color: #6e352f;
+      font-weight: bold; cursor: pointer;
+      transition: background 0.15s, transform 0.1s; outline: none;
+      position: relative; min-width: 75px; box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
     }
-    #tools-bar button:hover {
-      background: #e9d9c6;
-      transform: translateY(-1px);
-    }
+    #tools-bar button:hover { background: #e9d9c6; transform: translateY(-1px); }
     #tools-bar button:disabled {
-      background: #f0f0f0;
-      color: #b0b0b0;
-      border-color: #d0d0d0;
-      cursor: not-allowed;
-      transform: none;
-      box-shadow: none;
+      background: #f0f0f0; color: #b0b0b0; border-color: #d0d0d0;
+      cursor: not-allowed; transform: none; box-shadow: none;
     }
     #restart-btn {
-      background: #ffe0b3;
-      border-color: #ffcc80;
-      color: #96602c;
+      background: #ffe0b3; border-color: #ffcc80; color: #96602c;
     }
-    #restart-btn:hover {
-      background: #ffd599;
-    }
-
-    /* 兑换码栏 */
+    #restart-btn:hover { background: #ffd599; }
     #code-bar {
-      margin: 15px auto 0 auto;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 8px;
-      width: 90%;
-      max-width: 450px;
+      margin: 15px auto 0 auto; display: flex; align-items: center;
+      justify-content: center; gap: 8px; width: 90%; max-width: 450px;
     }
     #code-bar input {
-      flex-grow: 1;
-      max-width: 180px;
-      padding: 7px 10px;
-      border-radius: 8px;
-      border: 2px solid #b8860b;
-      outline: none;
-      font-size: 1.05rem;
-      color: #5d4037;
-      background: #fffdf7;
+      flex-grow: 1; max-width: 180px; padding: 7px 10px; border-radius: 8px;
+      border: 2px solid #b8860b; outline: none; font-size: 1.05rem;
+      color: #5d4037; background: #fffdf7;
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
       font-family: 'ZCOOL KuaiLe', cursive;
     }
-    #code-bar input::placeholder {
-      color: #a0a0a0;
-    }
+    #code-bar input::placeholder { color: #a0a0a0; }
     #code-bar button {
-      padding: 7px 12px;
-      font-size: 1.05rem;
-      background: #e6f6d3;
-      border: 2px solid #a0c388;
-      border-radius: 9px;
-      cursor: pointer;
-      color: #3e5a2b;
-      font-weight: bold;
-      transition: background 0.15s;
-      min-width: 65px;
-      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      padding: 7px 12px; font-size: 1.05rem; background: #e6f6d3;
+      border: 2px solid #a0c388; border-radius: 9px; cursor: pointer;
+      color: #3e5a2b; font-weight: bold; transition: background 0.15s;
+      min-width: 65px; box-shadow: 0 1px 4px rgba(0,0,0,0.1);
       font-family: 'ZCOOL KuaiLe', cursive;
     }
-    #code-bar button:hover {
-      background: #d2e5bb;
-    }
-
-    /* 消息栏 */
+    #code-bar button:hover { background: #d2e5bb; }
     #message-bar {
-      margin: 15px auto 0 auto;
-      text-align: center;
-      font-size: 1.1rem;
-      color: #c0392b;
-      min-height: 28px;
-      font-weight: bold;
-      letter-spacing: 1.2px;
+      margin: 15px auto 0 auto; text-align: center; font-size: 1.1rem;
+      color: #c0392b; min-height: 28px; font-weight: bold; letter-spacing: 1.2px;
     }
-
-    /* 新增: 随机事件消息叠加层 */
     #event-overlay {
-        position: absolute;
-        top: 0; left: 0; width: 100%; height: 100%;
-        display: none; /* 默认隐藏 */
-        align-items: center;
-        justify-content: center;
-        z-index: 2200;
-        pointer-events: none; /* 允许点击穿透 */
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        display: none; align-items: center; justify-content: center;
+        z-index: 2200; pointer-events: none;
     }
     #event-message-box {
-        background: rgba(255, 253, 247, 0.9);
-        padding: 20px 30px;
-        border-radius: 15px;
-        border: 3px solid #b8860b;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
-        text-align: center;
+        background: rgba(255, 253, 247, 0.9); padding: 20px 30px;
+        border-radius: 15px; border: 3px solid #b8860b;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2); text-align: center;
         animation: fade-in-out-scale 3.5s forwards;
     }
     #event-message-box p {
-        font-size: 1.3rem;
-        color: #6e352f;
-        margin: 0;
-        font-weight: bold;
+        font-size: 1.3rem; color: #6e352f; margin: 0; font-weight: bold;
         text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
     }
-    #event-message-box .event-icon {
-        font-size: 2rem;
-        margin-bottom: 10px;
-    }
-
-
-    /* 叠加屏幕 (开始, 关卡完成, 游戏结束) */
+    #event-message-box .event-icon { font-size: 2rem; margin-bottom: 10px; }
     #start-screen, #level-finish, #game-over {
-      position: absolute;
-      left: 0; right: 0; top: 0; bottom: 0;
-      z-index: 1100;
-      background: rgba(255,255,255,0.98);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-direction: column;
-      font-size: 1.1rem;
-      border-radius: 25px;
+      position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+      z-index: 1100; background: rgba(255,255,255,0.98);
+      display: flex; align-items: center; justify-content: center;
+      flex-direction: column; font-size: 1.1rem; border-radius: 25px;
       text-align: center;
     }
-    /* 开始屏幕特定样式 */
-    #start-screen {
-      padding-top: 10vh;
-      overflow: hidden;
-      box-sizing: border-box;
-    }
-    
+    #start-screen { padding-top: 10vh; overflow: hidden; box-sizing: border-box; }
     #start-screen-video {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        min-width: 100%;
-        min-height: 100%;
-        width: auto;
-        height: auto;
-        z-index: -1;
-        opacity: 0.99;
-        object-fit: cover; 
+        position: absolute; top: 50%; left: 50%;
+        transform: translate(-50%, -50%); min-width: 100%; min-height: 100%;
+        width: auto; height: auto; z-index: -1; opacity: 0.99; object-fit: cover;
     }
-
     #start-screen::before {
-      content: "";
-      position: absolute;
-      left: 0; right: 0; top: 0; bottom: 0;
-      background-image: url('mao.webp');
-      background-size: cover;
-      background-position: center;
-      opacity: 0.5;
-      z-index: -2;
+      content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+      background-image: url('mao.webp'); background-size: cover;
+      background-position: center; opacity: 0.5; z-index: -2;
     }
     #start-screen h1 {
-      /* 新增: 响应式字体大小 */
-      font-size: clamp(3rem, 12vw, 5rem);
-      margin: 0 0 25px 0;
+      font-size: clamp(3rem, 12vw, 5rem); margin: 0 0 25px 0;
       letter-spacing: 3px;
       text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
       display: inline-block;
     }
     #start-screen h1 span {
-      display: inline-block;
-      animation: wave 2s infinite ease-in-out;
+      display: inline-block; animation: wave 2s infinite ease-in-out;
     }
     #start-screen h1 span:nth-child(1) { animation-delay: -0.4s; }
     #start-screen h1 span:nth-child(2) { animation-delay: -0.2s; }
@@ -880,16 +423,10 @@
     #start-screen h1 span:nth-child(4) { animation-delay: 0.2s; }
     #start-screen h1 span:nth-child(5) { animation-delay: 0.4s; }
     #start-screen .start-btn {
-      margin-top: 30px;
-      padding: 15px 50px;
-      font-size: 1.4rem;
+      margin-top: 30px; padding: 15px 50px; font-size: 1.4rem;
       background: linear-gradient(90deg, #a0c388, #88b368);
-      border: none;
-      border-radius: 15px;
-      color: #3e5a2b;
-      font-weight: bold;
-      cursor: pointer;
-      box-shadow: 0 4px 15px rgba(160, 195, 136, 0.5);
+      border: none; border-radius: 15px; color: #3e5a2b; font-weight: bold;
+      cursor: pointer; box-shadow: 0 4px 15px rgba(160, 195, 136, 0.5);
       animation: pulse-scale 1.5s infinite ease-in-out;
       transition: background 0.2s, transform 0.1s;
       font-family: 'ZCOOL KuaiLe', cursive;
@@ -899,428 +436,191 @@
       transform: translateY(-2px);
     }
     #start-screen p {
-        color: #5d4037;
-        line-height: 1.6;
-        margin: 0 40px 15px;
-        margin-top: 15vh;
+        color: #5d4037; line-height: 1.6; margin: 0 40px 15px; margin-top: 15vh;
     }
-    #start-screen span {
-        color: #c0392b;
-        font-weight: bold;
-    }
-
-    /* 加载和开始屏幕的页脚 */
+    #start-screen span { color: #c0392b; font-weight: bold; }
     .loading-footer {
-        color: #795548;
-        font-size: 0.85rem;
-        position: absolute;
-        bottom: 30px;
-        left: 0;
-        right: 0;
-        text-align: center;
-        letter-spacing: 1.5px;
+        color: #795548; font-size: 0.85rem; position: absolute; bottom: 30px;
+        left: 0; right: 0; text-align: center; letter-spacing: 1.5px;
         text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
     }
-
-    /* 关卡完成和游戏结束屏幕 */
     #level-finish, #game-over {
-      font-size: 1.8rem;
-      color: #5d4037;
-      background: rgba(255,243,245,0.99);
-      border-radius: 25px;
-      position: absolute;
-      overflow: hidden;
-      border: 3px solid #8B4513;
-      box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
+      font-size: 1.8rem; color: #5d4037; background: rgba(255,243,245,0.99);
+      border-radius: 25px; position: absolute; overflow: hidden;
+      border: 3px solid #8B4513; box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
     }
-    
-    /* 修改: 游戏结束屏幕的云朵动画 */
-    #game-over {
-      overflow: hidden; /* 隐藏超出容器的云朵 */
-    }
-    /* 修改: 对内部内容应用波浪动画，而不是整个屏幕 */
+    #game-over { overflow: hidden; }
     #game-over-content {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      animation: wave 2s infinite;
+      width: 100%; height: 100%; display: flex; flex-direction: column;
+      align-items: center; justify-content: center; animation: wave 2s infinite;
     }
-    /* 新增: 游戏结束屏幕的云朵样式 */
     .cloud-layer {
-      content: '';
-      position: absolute;
-      left: 0;
-      top: 0;
-      width: 100%;
-      height: 100%;
-      pointer-events: none;
-      z-index: 0;
+      content: ''; position: absolute; left: 0; top: 0; width: 100%;
+      height: 100%; pointer-events: none; z-index: 0;
     }
-    .cloud-layer::before,
-    .cloud-layer::after {
-      content: '🌧️';
-      position: absolute;
-      opacity: 0.88;
-      color: #888;
-      animation-name: cloud-pass;
-      animation-timing-function: linear;
+    .cloud-layer::before, .cloud-layer::after {
+      content: '🌧️'; position: absolute; opacity: 0.88; color: #888;
+      animation-name: cloud-pass; animation-timing-function: linear;
       animation-iteration-count: infinite;
     }
     .cloud-layer::before {
-      font-size: 120px;
-      top: 10%;
-      animation-duration: 20s;
-      animation-delay: -5s;
+      font-size: 120px; top: 10%; animation-duration: 20s; animation-delay: -5s;
     }
     .cloud-layer::after {
-      font-size: 80px;
-      top: 25%;
-      animation-duration: 15s;
+      font-size: 80px; top: 25%; animation-duration: 15s;
     }
-    /* 确保游戏结束内容在云朵之上 */
-    #game-over > * {
-      position: relative;
-      z-index: 1;
-    }
-
+    #game-over > * { position: relative; z-index: 1; }
     #level-finish::before, #game-over::before {
-      content: "";
-      position: absolute;
-      left: 0;
-      right: 0;
-      top: 0;
-      bottom: 0;
-      background-image: url('mao1.webp');
-      background-size: cover;
-      background-position: center;
-      opacity: 0.4;
-      z-index: -1;
+      content: ""; position: absolute; left: 0; right: 0; top: 0; bottom: 0;
+      background-image: url('mao1.webp'); background-size: cover;
+      background-position: center; opacity: 0.4; z-index: -1;
     }
     #level-finish button, #game-over button {
-      margin-top: 20px;
-      padding: 12px 35px;
-      font-size: 1.25rem;
-      background: #e6f6d3;
-      border: 2px solid #a0c388;
-      border-radius: 12px;
-      color: #3e5a2b;
-      font-weight: bold;
-      cursor: pointer;
+      margin-top: 20px; padding: 12px 35px; font-size: 1.25rem;
+      background: #e6f6d3; border: 2px solid #a0c388; border-radius: 12px;
+      color: #3e5a2b; font-weight: bold; cursor: pointer;
       transition: background 0.15s, transform 0.1s;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
       font-family: 'ZCOOL KuaiLe', cursive;
     }
     #level-finish button:hover, #game-over button:hover {
-      background: #d2e5bb;
-      transform: translateY(-1px);
+      background: #d2e5bb; transform: translateY(-1px);
     }
     #retry-btn {
-      margin-top: 18px;
-      padding: 10px 30px;
-      font-size: 1.15rem;
-      background: #f7e9d7;
-      border: 2px solid #d4a762;
-      border-radius: 10px;
-      color: #6e352f;
-      font-weight: bold;
-      cursor: pointer;
-      transition: background 0.15s, transform 0.1s;
-      display: inline-block;
+      margin-top: 18px; padding: 10px 30px; font-size: 1.15rem;
+      background: #f7e9d7; border: 2px solid #d4a762; border-radius: 10px;
+      color: #6e352f; font-weight: bold; cursor: pointer;
+      transition: background 0.15s, transform 0.1s; display: inline-block;
       box-shadow: 0 1px 5px rgba(0,0,0,0.1);
     }
-    #retry-btn:hover {
-      background: #f0e1d0;
-      transform: translateY(-1px);
-    }
-
-    /* 修改: 对特定按钮应用缩放动画 */
-    #retry-btn2,
-    #next-btn {
-       animation: button-scale-pulse 1.5s infinite ease-in-out;
-    }
-
-    /* 主游戏页脚 */
+    #retry-btn:hover { background: #f0e1d0; transform: translateY(-1px); }
+    #retry-btn2, #next-btn { animation: button-scale-pulse 1.5s infinite ease-in-out; }
     #footer {
-      margin: 20px auto 0 auto;
-      width: 100%;
-      text-align: center;
-      font-size: 1rem;
-      color: #8B4513;
-      letter-spacing: 1.5px;
+      margin: 20px auto 0 auto; width: 100%; text-align: center; font-size: 1rem;
+      color: #8B4513; letter-spacing: 1.5px;
       text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
     }
-
-    /* 提示动画 */
-    .hinted-shake {
-      animation: shake 0.5s ease-in-out 4;
-    }
-
-    /* 自定义确认模态框样式 */
+    .hinted-shake { animation: shake 0.5s ease-in-out 4; }
     .modal-overlay {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6);
-        z-index: 2500;
-        display: none;
-        align-items: center;
-        justify-content: center;
+        position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6); z-index: 2500; display: none;
+        align-items: center; justify-content: center;
     }
     .modal-content {
-        background: #fffdf7;
-        padding: 30px 40px;
-        border-radius: 15px;
-        text-align: center;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        background: #fffdf7; padding: 30px 40px; border-radius: 15px;
+        text-align: center; box-shadow: 0 5px 20px rgba(0,0,0,0.3);
         border: 3px solid #d4a762;
     }
     .modal-content p {
-        font-size: 1.2rem;
-        color: #5d4037;
-        margin: 0 0 25px 0;
-        font-weight: bold;
+        font-size: 1.2rem; color: #5d4037; margin: 0 0 25px 0; font-weight: bold;
     }
     .modal-content button {
-        padding: 9px 25px;
-        background: #f7e9d7;
-        border: 2px solid #b8860b;
-        border-radius: 10px;
-        font-size: 1.05rem;
-        color: #6e352f;
-        font-weight: bold;
-        cursor: pointer;
-        margin: 0 10px;
+        padding: 9px 25px; background: #f7e9d7; border: 2px solid #b8860b;
+        border-radius: 10px; font-size: 1.05rem; color: #6e352f;
+        font-weight: bold; cursor: pointer; margin: 0 10px;
         transition: background 0.15s, transform 0.1s;
         font-family: 'ZCOOL KuaiLe', cursive;
     }
     #confirm-yes {
-        background: #e6f6d3;
-        border-color: #a0c388;
-        color: #3e5a2b;
+        background: #e6f6d3; border-color: #a0c388; color: #3e5a2b;
     }
-    #confirm-yes:hover {
-        background: #d2e5bb;
-    }
-    #confirm-no:hover {
-        background: #e9d9c6;
-    }
-
-    /* 关卡完成文本 */
+    #confirm-yes:hover { background: #d2e5bb; }
+    #confirm-no:hover { background: #e9d9c6; }
     #level-finish-text {
-      color: #3e2723;
-      font-size: 1.2em;
-      text-align: center;
-      margin-top: 20px; /* 这里改为 margin-top */
-      margin-bottom: 20px;
+      color: #3e2723; font-size: 1.2em; text-align: center;
+      margin-top: 20px; margin-bottom: 20px;
     }
-
-    /* 加载屏幕样式 */
     #loading-screen {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 1199;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background-color: #f7f0e8;
-      background-size: cover;
-      transition: opacity 0.5s ease-out;
-      border-radius: 25px;
-      overflow: hidden;
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 1199; display: flex; align-items: center; justify-content: center;
+      background-color: #f7f0e8; background-size: cover;
+      transition: opacity 0.5s ease-out; border-radius: 25px; overflow: hidden;
     }
     #loading-screen::before {
-      content: '';
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      background-image: url('mao3.webp');
-      background-repeat: no-repeat;
-      background-position: center center;
-      background-size: cover;
-      opacity: 0.6;
+      content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url('mao3.webp'); background-repeat: no-repeat;
+      background-position: center center; background-size: cover; opacity: 0.6;
     }
     .loading-content {
-      position: relative;
-      z-index: 1001;
-      text-align: center;
-      width: 80%;
-      max-width: 500px;
-      display: flex;
-      flex-direction: column;
-      height: 100%;
-      align-items: center;
-      justify-content: flex-start;
-      padding-top: 6vh;
+      position: relative; z-index: 1001; text-align: center; width: 80%;
+      max-width: 500px; display: flex; flex-direction: column; height: 100%;
+      align-items: center; justify-content: flex-start; padding-top: 6vh;
       box-sizing: border-box;
     }
     .loading-title {
-      font-size: 2.8rem;
-      margin: 0 0 40px 0;
-      color: #3e2723;
+      font-size: 2.8rem; margin: 0 0 40px 0; color: #3e2723;
       letter-spacing: 3px;
       text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
       animation: pulse-scale 1.5s infinite ease-in-out;
     }
-    .loading-title::after {
-      content: ".";
-      animation: text-progress 2s infinite;
-    }
+    .loading-title::after { content: "."; animation: text-progress 2s infinite; }
     .progress-bar-container {
-      width: 100%;
-      height: 30px;
-      background: rgba(184, 134, 11, 0.2);
-      border-radius: 10px;
-      border: 2px solid #b8860b;
-      overflow: hidden;
-      margin-bottom: 15px;
-      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-      margin-top: 40vh;
-      z-index: 1004;
+      width: 100%; height: 30px; background: rgba(184, 134, 11, 0.2);
+      border-radius: 10px; border: 2px solid #b8860b; overflow: hidden;
+      margin-bottom: 15px; box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      margin-top: 40vh; z-index: 1004;
     }
     #progress-bar {
-      width: 0%;
-      height: 100%;
+      width: 0%; height: 100%;
       background: linear-gradient(90deg, #a0c388, #88b368);
-      border-radius: 8px;
-      transition: width 0.3s ease-out;
+      border-radius: 8px; transition: width 0.3s ease-out;
     }
     #loading-text {
-      font-size: 1.1rem;
-      color: #5d4037;
-      margin-bottom: 40px;
-      min-height: 20px;
-      text-align: center;
+      font-size: 1.1rem; color: #5d4037; margin-bottom: 40px;
+      min-height: 20px; text-align: center;
     }
-
-    /* Bilibili播放器响应式视频容器 */
     .responsive-video-container {
-        position: relative;
-        width: 100%;
-        max-width: 660px; /* 或视频的合适最大宽度 */
-        padding-bottom: 68.1818%; /* 16:9 宽高比 (9 / 16 * 100%) */
-        height: 0;
-        overflow: hidden;
-        border-radius: 10px;
-        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+        position: relative; width: 100%; max-width: 660px;
+        padding-bottom: 68.1818%; height: 0; overflow: hidden;
+        border-radius: 10px; box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
     }
     .responsive-video-container iframe {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        border: 0;
-        border-radius: 10px;
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        border: 0; border-radius: 10px;
     }
-
-    /* 修改: 新增第二关结束屏幕样式 */
     #level2-outro-screen {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.9);
-        z-index: 2000;
-        display: none;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        border-radius: 25px;
-        overflow: hidden;
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+        background-color: rgba(0, 0, 0, 0.9); z-index: 2000; display: none;
+        flex-direction: column; align-items: center; justify-content: center;
+        border-radius: 25px; overflow: hidden;
     }
-
     #level2-outro-screen video {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        /* 移除 min-width 和 min-height，因为 height: 100% 和 object-fit: cover 会处理填充 */
-        height: 100%;   /* 确保视频高度填充其父容器 */
-        width: auto;    /* 允许宽度根据视频原始比例自动调整 */
-        object-fit: cover; /* 关键：使视频覆盖整个区域，当高度填充时，宽度超出部分会被裁剪 */
-        border-radius: 0;
-        box-shadow: none;
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        height: 100%; width: auto; object-fit: cover;
+        border-radius: 0; box-shadow: none;
     }
     #level2-outro-screen img {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        min-width: 100%;
-        min-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: cover;
-        border-radius: 0;
-        box-shadow: none;
+        position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+        min-width: 100%; min-height: 100%; width: auto; height: auto;
+        object-fit: cover; border-radius: 0; box-shadow: none;
     }
     #level2-outro-screen .loading-text {
-        color: white;
-        font-size: 1.5rem;
-        margin-top: 20px;
+        color: white; font-size: 1.5rem; margin-top: 20px;
     }
-
-    /* 跳过结束动画按钮样式 */
     #skip-outro-btn {
-        position: absolute;
-        top: 20px;
-        right: 20px;
-        padding: 8px 15px;
-        background: rgba(255, 255, 255, 0.7);
-        border: 1px solid #ccc;
-        border-radius: 8px;
-        font-size: 1rem;
-        color: #333;
-        cursor: pointer;
-        z-index: 2001;
-        transition: background 0.2s, transform 0.2s;
+        position: absolute; top: 20px; right: 20px; padding: 8px 15px;
+        background: rgba(255, 255, 255, 0.7); border: 1px solid #ccc;
+        border-radius: 8px; font-size: 1rem; color: #333; cursor: pointer;
+        z-index: 2001; transition: background 0.2s, transform 0.2s;
     }
-    #skip-outro-btn:hover {
-        background: rgba(255, 255, 255, 0.9);
-        transform: scale(1.05);
-    }
-
-
-    /* 小屏幕媒体查询 */
+    #skip-outro-btn:hover { background: rgba(255, 255, 255, 0.9); transform: scale(1.05); }
     @media (max-width: 500px) {
       #card-stack-area, #temp-area, #tools-bar, #code-bar { width: 98vw; }
       #tools-bar button {
-          min-width: unset;
-          width: 30%;
-          margin-bottom: 8px;
-          padding: 8px 10px;
-          font-size: 0.95rem;
+          min-width: unset; width: 30%; margin-bottom: 8px;
+          padding: 8px 10px; font-size: 0.95rem;
       }
-      #tools-bar {
-          gap: 6px;
-      }
-      #temp-area {
-        width: 98vw;
-        margin: 15px auto 0 auto;
-      }
-      #code-bar input {
-        width: 50%;
-      }
-      #display-area {
-        width: 96vw;
-        padding: 5px;
-      }
+      #tools-bar { gap: 6px; }
+      #temp-area { width: 98vw; margin: 15px auto 0 auto; }
+      #code-bar input { width: 50%; }
+      #display-area { width: 96vw; padding: 5px; }
       #level-finish, #game-over {
-        font-size: 1.2rem;
-        padding: 20px;
-        box-sizing: border-box;
+        font-size: 1.2rem; padding: 20px; box-sizing: border-box;
       }
-
       #level-finish button, #game-over button, #retry-btn {
-          font-size: 1rem;
-          padding: 10px 20px;
+          font-size: 1rem; padding: 10px 20px;
       }
-
-      #level-finish-text {
-          font-size: 1em;
-      }
+      #level-finish-text { font-size: 1em; }
     }
   </style>
 </head>
@@ -1328,16 +628,16 @@
 <div id="game-container">
   <div id="loading-screen">
     <div class="loading-content">
-      <h1 class="loading-title">正在加载.</h1>
+      <h1 class="loading-title">Loading.</h1>
       <div class="progress-bar-container">
         <div id="progress-bar"></div>
       </div>
-      <p id="loading-text">正在加载核心资源...</p>
+      <p id="loading-text">正在加载资源...</p>
       <small class="loading-footer">喵了个喵 &copy; 2025 | Designed by 开元</small>
     </div>
   </div>
 
-  <div id="header-bar">
+  <div id="header-bar" style="display:none;">
     <div id="progress-info">
         <span id="level-info">关卡: 1 / 2</span>
         <span class="score-display">分数: <span id="current-score">0</span></span>
@@ -1345,10 +645,9 @@
     </div>
     <button id="music-toggle" title="音乐开关">🎼</button>
   </div>
-  <div id="main-area">
-    <div id="display-area">
-        </div>
-    <div id="curtain"></div> <!-- 新增幕布元素 -->
+  <div id="main-area" style="display:none;">
+    <div id="display-area"></div>
+    <div id="curtain"></div>
     <div id="cat-path">
         <div id="walking-cat">🐈</div>
     </div>
@@ -1378,7 +677,7 @@
     </div>
     <div id="message-bar"></div>
   </div>
-  <div id="footer">
+  <div id="footer" style="display:none;">
     喵了个喵 &copy; 2025 | Designed by 开元
   </div>
 
@@ -1389,13 +688,11 @@
       </div>
   </div>
 
-  <div id="start-screen">
-    <!-- 视频和图片将由JS动态加载，避免阻塞初始渲染 -->
+  <div id="start-screen" style="display:none;">
     <video id="start-screen-video" autoplay loop muted playsinline>
-        <source src="mao.webm" type="video/webm">
-        <source src="mao.mp4" type="video/mp4">
-        <!-- 如果视频无法播放，将由JS设置备用图片 -->
-        <img src="mao.webp" alt="背景图">
+      <source src="mao.webm" type="video/webm">
+      <source src="mao.mp4" type="video/mp4">
+      <img src="mao.webp" alt="背景图">
     </video>
     <h1><span>喵</span><span>了</span><span>个</span><span>喵</span><span> 🐾</span></h1>
     <p> </p> <p>
@@ -1411,7 +708,7 @@
         <source src="mao2.mp4" type="video/mp4">
         您的浏览器不支持视频播放。
     </video>
-    <img id="outro-image" src="mao2.webp" alt="第二关彩蛋图片" style="display:none;">
+    <img id="outro-image" src="mao2.webp" alt="Level 2 Outro Image" style="display:none;">
     <div class="loading-text" style="display:none;">正在加载...</div>
     <button id="skip-outro-btn" style="display:none;">跳过动画</button>
   </div>
@@ -1474,14 +771,22 @@
   </div>
 </div>
 
+<!-- 优化点: audio 标签的 preload="auto" 允许浏览器自行决定加载时机，不会阻塞页面渲染 -->
 <audio id="bgm" loop preload="auto">
   <source src="Get.mp3" type="audio/mpeg">
   <source src="Get.ogg" type="audio/ogg">
   您的浏览器不支持音频元素。
 </audio>
 
+<!-- 优化点: 脚本放在 body 尾部，防止阻塞渲染 -->
+<script src="js/jquery-3.4.1.min.js"></script>
+<!-- <script src="js/index.js"></script> --> <!-- 游戏逻辑将包含在下面的 script 块中 -->
+
 <script>
-// 游戏配置常量
+// 为了方便演示和修改，这里将 index.js 的内容直接放入。实际部署时可以保持为外部文件。
+// ======================= START OF GAME LOGIC (index.js) =======================
+
+// Game configuration constants
 const CARD_ICONS = [
   "🐈", "💐", "🪼", "👒", "🏵️", "🧸", "🍬", "🔮", "🎡", "🐈‍⬛", "🍫", "🪭",
   "🐖", "🧶", "🌻", "🦋", "💎", "🌈", "🍂"
@@ -1501,10 +806,10 @@ const REDEMPTION_CODES = {
   "不知道": { undo: 3, hint: 1, shuffle: 1 },
   "开元": { undo: 10, hint: 10, shuffle: 10 },
   "通关": { type: "skip_level" },
-  "xianshi": { type: "curtain_off" } // 新增: 禁用幕布的兑换码
+  "xianshi": { type: "curtain_off" }
 };
 
-// DOM元素
+// DOM Elements
 const bgm = document.getElementById('bgm');
 const confirmModal = document.getElementById('confirm-modal');
 const confirmMsg = document.getElementById('confirm-msg');
@@ -1536,7 +841,7 @@ const displayArea = document.getElementById('display-area');
 const cardStackArea = document.getElementById('card-stack-area');
 const catPath = document.getElementById('cat-path');
 const walkingCat = document.getElementById('walking-cat');
-const curtainElement = document.getElementById('curtain'); // 新增: 幕布元素
+const curtainElement = document.getElementById('curtain');
 
 const wigglingCat1 = document.getElementById('wiggling-cat-1');
 const wigglingCat4 = document.getElementById('wiggling-cat-4');
@@ -1558,19 +863,17 @@ let confirmCallback = null;
 let outroVideoTimeout = null;
 let isCatMirrored = true;
 let randomEventTimer = null;
-let curtainTimer = null; // 新增: 随机幕布切换计时器
+let curtainTimer = null;
 let isLandscape = false; 
-let hasShownLandscapeMessage = false; // 新增: 标记是否已显示横屏消息
-let lastShakeTime = 0; // 新增: 用于摇动检测冷却
+let hasShownLandscapeMessage = false;
+let lastShakeTime = 0;
 
-// 新增: Web Audio API变量
 let audioContext;
 let clickSoundBuffer;
 
-// 游戏状态对象
 let game = {
   level: 1,
-  levelStartTime: 0, // 修改: 添加了关卡计时器
+  levelStartTime: 0,
   cards: [],
   board: [],
   temp: [],
@@ -1588,25 +891,18 @@ let game = {
   lock: false,
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
   layout: { areaWidth: 0, areaHeight: 0 },
-  isCurtainEnabled: true // 新增: 控制幕布效果是否激活
+  isCurtainEnabled: true
 };
 
-// 实用函数
-function randArr(arr) {
-  return arr.slice().sort(() => Math.random() - 0.5);
-}
-
+// Utility Functions
+function randArr(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
 }
-
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
-
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
 function randBetween(a, b) { return a + Math.random() * (b - a); }
 
 function playBgm(on) {
@@ -1615,7 +911,7 @@ function playBgm(on) {
     const playPromise = bgm.play();
     if (playPromise !== undefined) {
       playPromise.catch(error => {
-        console.error("背景音乐自动播放被阻止:", error);
+        console.error("BGM autoplay was blocked:", error);
         game.bgmOn = false;
         musicToggleBtn.innerHTML = '🔇';
       });
@@ -1625,29 +921,25 @@ function playBgm(on) {
   }
 }
 
-// 新增: 初始化Web Audio API
 async function initAudio() {
     try {
-        // 在用户手势（例如点击）后创建AudioContext
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        // 如果上下文已暂停，则恢复
         if (audioContext.state === 'suspended') {
             await audioContext.resume();
         }
-        // 如果尚未完成，则获取并解码声音文件
         if (!clickSoundBuffer) {
+            // This sound is preloaded by our new loader, but we still need to decode it.
             const response = await fetch('kaa.mp3');
             const arrayBuffer = await response.arrayBuffer();
             clickSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
         }
     } catch (e) {
-        console.error("初始化Web Audio失败:", e);
+        console.error("Failed to initialize Web Audio:", e);
     }
 }
 
-// 新增: 使用Web Audio API播放声音
 function playClickSound() {
     if (!clickSoundBuffer || !audioContext || !game.bgmOn) return;
     try {
@@ -1656,22 +948,19 @@ function playClickSound() {
         source.connect(audioContext.destination);
         source.start(0);
     } catch (e) {
-        console.error("播放点击音效失败:", e);
+        console.error("Failed to play click sound:", e);
     }
 }
 
-
-// 新增: 触发匹配反馈（震动或声音）的函数
 function triggerMatchFeedback() {
     if (navigator.vibrate) {
-        navigator.vibrate(100); // 震动100毫秒
+        navigator.vibrate(100);
     }
-    playClickSound(); // 即使有震动也播放声音
+    playClickSound();
 }
 
-
 function showConfirm(msg, callback) {
-  confirmMsg.innerHTML = msg; // 使用innerHTML允许基本HTML，如<br>
+  confirmMsg.innerHTML = msg;
   confirmCallback = callback;
   confirmModal.style.display = 'flex';
 }
@@ -1695,9 +984,7 @@ function generateDisplayCardSet(excludeIcons = []) {
     const visibleLayeredCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.stack >= 0 && c.stack <= 3);
     const visibleLayeredIconCounts = {};
     visibleLayeredCards.forEach(c => visibleLayeredIconCounts[c.icon] = (visibleLayeredIconCounts[c.icon] || 0) + 1);
-
     let potentialVisibleLayeredIcons = Object.keys(visibleLayeredIconCounts).filter(icon => !excludeIcons.includes(icon) && visibleLayeredIconCounts[icon] >= 3);
-
     if (potentialVisibleLayeredIcons.length > 0) {
         chosenIcon = potentialVisibleLayeredIcons[Math.floor(Math.random() * potentialVisibleLayeredIcons.length)];
     } else {
@@ -1705,9 +992,7 @@ function generateDisplayCardSet(excludeIcons = []) {
         const combinedClickableIcons = [...allClickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
         const combinedClickableIconCounts = {};
         combinedClickableIcons.forEach(icon => combinedClickableIconCounts[icon] = (combinedClickableIconCounts[icon] || 0) + 1);
-
         let potentialCombinedIcons = Object.keys(combinedClickableIconCounts).filter(icon => !excludeIcons.includes(icon) && combinedClickableIconCounts[icon] >= 3);
-
         if (potentialCombinedIcons.length > 0) {
             chosenIcon = potentialCombinedIcons[Math.floor(Math.random() * potentialCombinedIcons.length)];
         } else {
@@ -1715,7 +1000,6 @@ function generateDisplayCardSet(excludeIcons = []) {
             const allIconCounts = {};
             allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
             const anyTripletIcons = Object.keys(allIconCounts).filter(icon => !excludeIcons.includes(icon) && allIconCounts[icon] >= 3);
-
             if (anyTripletIcons.length > 0) {
                 chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
             } else {
@@ -1730,7 +1014,6 @@ function generateDisplayCardSet(excludeIcons = []) {
             }
         }
     }
-
     if (chosenIcon) {
         return [
             { icon: chosenIcon, id: Date.now() + 1 },
@@ -1750,12 +1033,9 @@ function calculateResponsiveSizes() {
     const cardAspectRatio = 65 / 85;
     const finalCardW = clampedCardWidth;
     const finalCardH = finalCardW / cardAspectRatio;
-
     game.cardDimensions = {
-        width: finalCardW,
-        height: finalCardH,
-        fontSize: finalCardW * 0.45,
-        borderRadius: finalCardW * 0.15,
+        width: finalCardW, height: finalCardH,
+        fontSize: finalCardW * 0.45, borderRadius: finalCardW * 0.15,
         borderWidth: Math.max(2, finalCardW * 0.04)
     };
 }
@@ -1765,25 +1045,20 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
     const newUnmatchedBoard = [];
     const unmatchedCards = currentBoard.filter(c => !c.matched);
     const matchedCards = currentBoard.filter(c => c.matched); 
-
     game.layout.areaWidth = cardStackArea.offsetWidth;
     game.layout.areaHeight = cardStackArea.offsetHeight;
     calculateResponsiveSizes();
-
     let stackDepth = lv.stack;
     const cardsPerStackLayer = Math.ceil(unmatchedCards.length / stackDepth);
     const placementOverlapFactor = 0.9;
     let maxAttempts = 150;
-
     let cardsToPlace = unmatchedCards.map(c => ({ ...c }));
     shuffle(cardsToPlace);
-
     for (let i = 0; i < cardsToPlace.length; i++) {
         const card = cardsToPlace[i];
         const s = Math.min(Math.floor(i / cardsPerStackLayer), stackDepth - 1);
         let x = 0, y = 0;
         let foundPosition = false;
-
         for (let attempt = 0; attempt < maxAttempts; attempt++) {
             let tempX = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
             let tempY = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
@@ -1791,7 +1066,6 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
             tempY += (s * 5 * (Math.random() - 0.5));
             tempX = Math.max(5, Math.min(tempX, game.layout.areaWidth - game.cardDimensions.width - 5));
             tempY = Math.max(5, Math.min(tempY, game.layout.areaHeight - game.cardDimensions.height - 5));
-
             let overlap = false;
             for (const existingCard of newUnmatchedBoard) {
                 if (existingCard.stack <= s) {
@@ -1804,10 +1078,7 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
                 }
             }
             if (!overlap) {
-                x = tempX;
-                y = tempY;
-                foundPosition = true;
-                break;
+                x = tempX; y = tempY; foundPosition = true; break;
             }
         }
         if (!foundPosition) {
@@ -1817,24 +1088,20 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
         const z = s * 1000 + i;
         newUnmatchedBoard.push({ ...card, x, y, z, stack: s });
     }
-
     const finalBoard = [...newUnmatchedBoard, ...matchedCards];
     finalBoard.sort((a, b) => (a.z || 0) - (b.z || 0));
     return finalBoard;
 }
-
 
 function genLevel(levelIdx){
   const lv = LEVELS[levelIdx - 1];
   game.score = 0;
   game.targetScore = lv.targetScore;
   game.totalDisplaySetsGenerated = 0;
-  game.isCurtainEnabled = true; // 新关卡重置幕布状态
-
+  game.isCurtainEnabled = true;
   let allIcons = [];
   const requiredUniqueIcons = Math.ceil(lv.total / 3);
   let availableIcons = randArr(CARD_ICONS).slice(0, Math.min(CARD_ICONS.length, requiredUniqueIcons + 2));
-
   let iconPool = [];
   for (let i = 0; i < requiredUniqueIcons; i++) {
     for (let j = 0; j < 3; j++) {
@@ -1852,15 +1119,12 @@ function genLevel(levelIdx){
   }
   shuffle(iconPool);
   allIcons = iconPool;
-
   let cards = [];
   for(let i = 0; i < lv.total; i++){
     cards.push({ id: i, icon: allIcons[i], matched: false });
   }
   game.cards = cards;
-
   game.board = repositionCardsAndLayout(cards.map(c => ({...c, covered: false, isNapping: false})), lv);
-
   game.displayCards = [];
   const usedDisplayIconsForLevel = new Set();
   for (let i = 0; i < INITIAL_DISPLAY_SETS_VISIBLE; i++) {
@@ -1876,7 +1140,6 @@ function genLevel(levelIdx){
 
 function isCardClickable(card, board){
   if(card.matched || card.isNapping) return false;
-
   const activeCards = board.filter(c => !c.matched);
   const cardW = game.cardDimensions.width;
   const cardH = game.cardDimensions.height;
@@ -1884,7 +1147,6 @@ function isCardClickable(card, board){
   const clickableOverlapFactor = 1 - (currentLevelConfig.overlap / 100);
   const overlapThresholdX = cardW * clickableOverlapFactor;
   const overlapThresholdY = cardH * clickableOverlapFactor;
-
   for (const otherCard of activeCards) {
     if (card.id === otherCard.id) continue;
     if (otherCard.z > card.z) {
@@ -1900,9 +1162,7 @@ function clickCard(id) {
   if (game.lock) return;
   let cardData = game.board.find(c => c.id === id);
   if (!cardData || cardData.matched || !isCardClickable(cardData, game.board)) return;
-
   playClickSound();
-
   let tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
   let iconCntCheck = {};
   tempCheck.forEach(c => iconCntCheck[c.icon] = (iconCntCheck[c.icon] || 0) + 1);
@@ -1911,16 +1171,13 @@ function clickCard(id) {
       gameOver('暂存区已超限，游戏失败！');
       return;
   }
-
   saveStep();
   game.lock = true;
-
   const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
   if (!clickedCardEl) {
     game.lock = false;
     return;
   }
-
   const startRect = clickedCardEl.getBoundingClientRect();
   const flyingCard = document.createElement('div');
   flyingCard.className = 'flying-card';
@@ -1933,20 +1190,17 @@ function clickCard(id) {
   flyingCard.style.fontSize = `${game.cardDimensions.fontSize}px`;
   flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
   flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
-
   clickedCardEl.style.opacity = '0';
   clickedCardEl.style.pointerEvents = 'none';
-  
   const animationDuration = 150;
   const tempAppearanceDelay = 80;
-
   requestAnimationFrame(() => {
     const tempForPositionCalculation = [...game.temp, { icon: cardData.icon, id: cardData.id }];
     tempForPositionCalculation.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
     const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
     const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
     if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
-        console.error("飞行卡牌的结束槽位索引无效。中止动画。");
+        console.error("Invalid end slot index for flying card. Aborting animation.");
         if(flyingCard.parentNode) document.body.removeChild(flyingCard);
         game.lock = false;
         return;
@@ -1961,11 +1215,9 @@ function clickCard(id) {
     flyingCard.style.top = `${destTop}px`;
     flyingCard.style.transform = `scale(${flyingCardFinalWidth / parseFloat(startRect.width)})`;
   });
-
   setTimeout(() => {
     if (flyingCard.parentNode) document.body.removeChild(flyingCard);
   }, animationDuration);
-
   setTimeout(() => {
     cardData.matched = true;
     game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
@@ -1974,17 +1226,13 @@ function clickCard(id) {
     renderBoard();
     renderProgressAndScore();
     updateWigglingCatVisibility();
-
     let iconCnt = {};
     game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
     let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
-
     if (matchedIcon) {
       triggerMatchFeedback();
-      
       const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
       const matchedElements = [];
-
       game.temp.forEach((c, index) => {
           if (c.icon === matchedIcon) {
               c.matched = true;
@@ -1995,17 +1243,11 @@ function clickCard(id) {
               }
           }
       });
-
       matchedElements.forEach(({ slot, cardEl }) => {
-          if (cardEl) {
-              cardEl.classList.add('disappearing');
-          }
+          if (cardEl) cardEl.classList.add('disappearing');
           slot.classList.add('clearing');
-          slot.addEventListener('animationend', () => {
-              slot.classList.remove('clearing');
-          }, { once: true });
+          slot.addEventListener('animationend', () => slot.classList.remove('clearing'), { once: true });
       });
-
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
               displaySet.matched = true;
@@ -2049,37 +1291,28 @@ function clickCard(id) {
   }, tempAppearanceDelay);
 }
 
-// 修改: checkWin函数以显示用时
 function checkWin() {
     const allCardsMatched = game.board.every(c => c.matched);
     const scoreMet = game.score >= game.targetScore;
-
     if (allCardsMatched && scoreMet) {
         stopRandomEvents();
         stopCurtainRandomToggle();
-        game.lock = true; // 显示消息时锁定游戏
-
+        game.lock = true;
         const elapsedSeconds = ((Date.now() - game.levelStartTime) / 1000).toFixed(1);
         const message = `本关过关用时 ${elapsedSeconds} 秒`;
-
-        // 暂时将确认模态框改为提示模态框
         const originalYesText = confirmYes.textContent;
         const originalNoDisplay = confirmNo.style.display;
         confirmYes.textContent = '好的';
         confirmNo.style.display = 'none';
-
         showConfirm(message, () => {
-            // 用户点击“好的”后的回调
             if (game.level === 1) {
                 showLevelFinish('恭喜恭喜！第一关通关！');
             } else {
                 showLevelFinish('<p> <p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
             }
-            // 恢复模态框以供其他用途
             confirmYes.textContent = originalYesText;
             confirmNo.style.display = originalNoDisplay;
         });
-
     } else if (allCardsMatched && !scoreMet) {
         gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
     }
@@ -2117,7 +1350,6 @@ function shuffleStep(){
   game.lock = true;
   let unmatchedCardsElements = document.querySelectorAll('#card-stack-area .card:not(.matched)');
   unmatchedCardsElements.forEach(el => el.classList.add('card-shuffling-out'));
-
   setTimeout(() => {
       game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
       renderAll();
@@ -2135,9 +1367,7 @@ function hintStep(){
   let iconCounts = {};
   allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
   let targetIcon = Object.keys(iconCounts).find(icon => iconCounts[icon] >= 3);
-
   document.querySelectorAll('.hinted-shake').forEach(el => el.classList.remove('hinted-shake'));
-
   if (targetIcon) {
     let hintDone = 0;
     const hintedElements = [];
@@ -2171,8 +1401,8 @@ function hintStep(){
 
 function gameOver(msg){
   stopRandomEvents();
-  stopCurtainRandomToggle(); // 新增: 游戏结束时停止幕布切换
-  toggleCurtain(true); // 确保游戏结束时幕布打开
+  stopCurtainRandomToggle();
+  toggleCurtain(true);
   game.lock = true;
   document.getElementById('card-stack-area').innerHTML = '';
   document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
@@ -2185,16 +1415,16 @@ function gameOver(msg){
   setTimeout(() => {
     const gameOverScreen = document.getElementById('game-over');
     gameOverScreen.style.display = 'flex';
-    // 修改: 找到内部文本元素
     gameOverScreen.querySelector('#game-over-text').innerHTML = msg;
   }, 100);
 }
 
-// 修改: startGame包含计时器启动
 function startGame(level){
+  document.getElementById('header-bar').style.display = 'flex';
+  document.getElementById('main-area').style.display = 'flex';
   footer.style.display = 'block';
   game.level = level;
-  game.levelStartTime = Date.now(); // 启动关卡计时器
+  game.levelStartTime = Date.now();
   let lvData = genLevel(level);
   game.cards = lvData.cards;
   game.board = lvData.board;
@@ -2211,13 +1441,11 @@ function startGame(level){
   positionCatWalker();
   updateWigglingCatVisibility();
   startRandomEvents();
-  
-  // 新增: 游戏开始时的幕布逻辑
-  positionCurtain(); // 将幕布定位在显示区域上方
-  toggleCurtain(false); // 初始关闭幕布
+  positionCurtain();
+  toggleCurtain(false);
   setTimeout(() => {
-      toggleCurtain(true); // 2秒后打开幕布
-      startCurtainRandomToggle(); // 初始打开后开始随机切换
+      toggleCurtain(true);
+      startCurtainRandomToggle();
   }, 2000);
 }
 
@@ -2227,7 +1455,6 @@ function renderBoard(){
   let cardsToRender = game.board.filter(c => !c.matched);
   cardsToRender.sort((a, b) => a.z - b.z);
   const isInitialRenderForLevel = game.isNewLevel;
-
   cardsToRender.forEach((card, index) => {
     let el = document.createElement('div');
     const clickable = isCardClickable(card, game.board);
@@ -2268,7 +1495,6 @@ function renderTemp(){
   const tempCardBorderRadius = game.cardDimensions.borderRadius * tempCardScaleFactor;
   const tempCardBorderWidth = game.cardDimensions.borderWidth * tempCardScaleFactor;
   tempArea.style.minHeight = `${tempCardHeight + (tempCardBorderWidth * 2) + 16}px`;
-
   tempSlots.forEach((slot, i) => {
     slot.innerHTML = '';
     slot.style.width = `${tempCardWidth}px`;
@@ -2287,7 +1513,6 @@ function renderTemp(){
       slot.appendChild(el);
     }
   });
-
   let persistentHeart = document.getElementById('persistent-heart');
   if (game.temp.length === 7) {
     const seventhTempSlot = tempSlots[6];
@@ -2327,7 +1552,6 @@ function renderDisplay() {
     const displayGroupGap = displayCardWidth * 0.1;
     displayArea.style.width = `${cardStackArea.offsetWidth * 0.95}px`;
     displayArea.style.minHeight = `${displayCardHeight + displayCardBorderWidth * 2 + 20}px`;
-
     game.displayCards.forEach(displaySet => {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'display-group';
@@ -2362,14 +1586,11 @@ function showMessage(msg, color){
   if(msg) setTimeout(()=>{bar.textContent='';}, 2300);
 }
 
-// 修改: 更新工具按钮函数，现在包含方向检查
 function updateToolButtons() {
   document.getElementById('undo-count').textContent = game.toolUses.undo;
   document.getElementById('hint-count').textContent = game.toolUses.hint;
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
-  
   const undoDisabledByCount = game.toolUses.undo <= 0;
-  // 检查横屏方向
   if (isLandscape) {
     undoBtn.disabled = true;
     undoBtn.title = "横屏模式下不可用";
@@ -2377,7 +1598,6 @@ function updateToolButtons() {
     undoBtn.disabled = undoDisabledByCount;
     undoBtn.title = "撤销(需兑换码)";
   }
-
   hintBtn.disabled = game.toolUses.hint <= 0;
   shuffleBtn.disabled = game.toolUses.shuffle <= 0;
 }
@@ -2390,58 +1610,13 @@ function renderAll(){
   updateToolButtons();
   positionCatWalker();
   updateWigglingCatVisibility();
-  positionCurtain(); // 确保在所有渲染时正确定位幕布
+  positionCurtain();
 }
-
-/**
- * 占位函数，用于初始化或重新初始化自定义音乐播放器。
- * 实际的播放器控制逻辑应在 `js/index.js` 或其他相关文件中。
- * 此函数旨在确保当播放器元素可见时，其事件监听器能够被重新附加。
- */
-function initializeMusicPlayer() {
-    console.log("尝试初始化自定义音乐播放器...");
-    const playPauseBtn = document.querySelector('#player .play-pause');
-    const prevBtn = document.querySelector('#player .prev');
-    const nextBtn = document.querySelector('#player .next');
-
-    // 移除现有监听器以防止重复附加
-    if (playPauseBtn) {
-        // 使用命名函数以便可以正确移除
-        playPauseBtn.removeEventListener('click', handlePlayPauseClick);
-        playPauseBtn.addEventListener('click', handlePlayPauseClick);
-        console.log("Play/Pause按钮事件监听器已附加。");
-    }
-    if (prevBtn) {
-        prevBtn.removeEventListener('click', handlePrevClick);
-        prevBtn.addEventListener('click', handlePrevClick);
-        console.log("Prev按钮事件监听器已附加。");
-    }
-    if (nextBtn) {
-        nextBtn.removeEventListener('click', handleNextClick);
-        nextBtn.addEventListener('click', handleNextClick);
-        console.log("Next按钮事件监听器已附加。");
-    }
-
-    // 占位处理函数 (实际逻辑应在 index.js 中)
-    function handlePlayPauseClick() {
-        console.log("Play/Pause按钮被点击！");
-        // 在这里添加实际的播放/暂停逻辑
-    }
-    function handlePrevClick() {
-        console.log("Prev按钮被点击！");
-        // 在这里添加实际的上一曲逻辑
-    }
-    function handleNextClick() {
-        console.log("Next按钮被点击！");
-        // 在这里添加实际的下一曲逻辑
-    }
-}
-
 
 function showLevelFinish(msg){
   stopRandomEvents();
-  stopCurtainRandomToggle(); // 新增: 胜利时停止幕布切换
-  toggleCurtain(true); // 确保关卡结束时幕布打开
+  stopCurtainRandomToggle();
+  toggleCurtain(true);
   playBgm(false);
   if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
   if (outroVideo) {
@@ -2451,11 +1626,9 @@ function showLevelFinish(msg){
   level2OutroScreen.style.display = 'none';
   skipOutroBtn.style.display = 'none';
   game.lock = false;
-  
   const levelFinishScreen = document.getElementById('level-finish');
   levelFinishScreen.style.display='flex';
   levelFinishTextElement.innerHTML = msg;
-  
   const existingConfetti = levelFinishScreen.querySelector('.confetti-container');
   if (existingConfetti) existingConfetti.remove();
   const confettiContainer = document.createElement('div');
@@ -2473,19 +1646,14 @@ function showLevelFinish(msg){
       piece.style.transform = `rotate(${Math.random() * 360}deg)`;
       confettiContainer.appendChild(piece);
   }
-
   nextBtn.style.display = (game.level === 1) ? 'inline-block' : 'none';
-  
-  // 修改: 在应用新动画前重置按钮动画
   gobangBtn.classList.remove('animated-scale-fade');
   closeGameBtnLevel.classList.remove('animated-scale-fade');
-  
   if (game.level === 1) {
     levelFinishTextElement.style.animation = 'shake 6s infinite, show-card-property 15s forwards';
     levelFinishTextElement.innerHTML += '<br>下一关后有彩蛋🪅！';
-    playerDiv.style.display = 'block'; // 显示自定义播放器
+    playerDiv.style.display = 'block';
     neteasePlayerDiv.style.display = 'none';
-    initializeMusicPlayer(); // 调用自定义播放器初始化函数
     gobangBtn.style.display = 'none';
     restartGameBtn.style.display = 'none';
     retryBtnLevelFinish.style.display = 'inline-block';
@@ -2493,15 +1661,12 @@ function showLevelFinish(msg){
   } else if (game.level === 2) {
     levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
     playerDiv.style.display = 'none';
-    neteasePlayerDiv.style.display = 'block'; // 显示Bilibili播放器
+    neteasePlayerDiv.style.display = 'block';
     gobangBtn.style.display = 'inline-block';
     restartGameBtn.style.display = 'inline-block';
     retryBtnLevelFinish.style.display = 'none';
-    
-    // 修改: 为第二关的按钮添加动画类
     gobangBtn.classList.add('animated-scale-fade');
     closeGameBtnLevel.classList.add('animated-scale-fade');
-    
     closeGameBtnLevel.onclick = () => {
         document.getElementById('level-finish').style.display = 'none';
         playLevel2Outro();
@@ -2521,12 +1686,11 @@ function handleCloseGame(type) {
         setTimeout(() => {
             document.getElementById('game-container').style.display = 'none';
             let messageHtml = type === 'level' ? `<p>当前客户端暂不支持自动关闭，</p><p>请点击页面关闭标签关闭。</p><br> 如若重新开始游戏，请点击<br><br><button onclick="window.location.href='https://www.kaiyuanzhu.qzz.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>` : `<p>当前客户端暂不支持自动关闭</p><p>小提示：可输入"kaiyuan"兑换提示次数。</p><br> 如果想重新开始游戏，请点击<br><br><button onclick="window.location.href='https://www.kaiyuanzhu.qzz.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>`;
-            document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">${messageHtml}<br><small class="loading-footer mt-8">喵了个喵 &copy; 2025 | Designed by Kaiyuan</small></div>`;
+            document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">${messageHtml}<br><small class="loading-footer mt-8">喵了个喵 &copy; 2025 | Designed by 开元</small></div>`;
         }, 100);
     });
 }
 
-// 随机事件逻辑
 function showEventMessage(icon, text) {
     eventIconEl.textContent = icon;
     eventTextEl.innerHTML = text;
@@ -2601,31 +1765,25 @@ function stopRandomEvents() {
     randomEventTimer = null;
 }
 
-// 新增: 幕布控制函数
 function positionCurtain() {
     if (!curtainElement || !displayArea) return;
     const displayRect = displayArea.getBoundingClientRect();
     const mainAreaRect = document.getElementById('main-area').getBoundingClientRect();
-
-    // 将幕布相对于其父元素 (#main-area) 定位
     curtainElement.style.left = `${displayRect.left - mainAreaRect.left}px`;
     curtainElement.style.top = `${displayRect.top - mainAreaRect.top}px`;
     curtainElement.style.width = `${displayRect.width}px`;
     curtainElement.style.height = `${displayRect.height}px`;
     curtainElement.style.borderRadius = window.getComputedStyle(displayArea).borderRadius;
-    curtainElement.style.display = 'block'; // 确保它可见以便定位
+    curtainElement.style.display = 'block';
 }
 
 function toggleCurtain(open) {
     if (!curtainElement) return;
-
     if (!game.isCurtainEnabled) {
-        // 如果幕布被兑换码禁用，则始终保持打开状态
         curtainElement.classList.remove('closed');
         curtainElement.classList.add('open');
         return;
     }
-
     if (open) {
         curtainElement.classList.remove('closed');
         curtainElement.classList.add('open');
@@ -2636,25 +1794,22 @@ function toggleCurtain(open) {
 }
 
 function startCurtainRandomToggle() {
-    stopCurtainRandomToggle(); // 清除任何现有计时器
+    stopCurtainRandomToggle();
     curtainTimer = setInterval(() => {
         if (game.lock || !game.isCurtainEnabled || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
-            // 如果游戏被锁定、幕布被禁用或游戏结束/完成，则不切换
-            toggleCurtain(true); // 确保它保持打开
+            toggleCurtain(true);
             return;
         }
-
-        const shouldClose = Math.random() < 0.5; // 50%的几率关闭
-
+        const shouldClose = Math.random() < 0.5;
         if (shouldClose) {
-            toggleCurtain(false); // 关闭幕布
+            toggleCurtain(false);
             setTimeout(() => {
-                toggleCurtain(true); // 2秒后再次打开
-            }, 2000); // 隐形2秒
+                toggleCurtain(true);
+            }, 2000);
         } else {
-            toggleCurtain(true); // 确保它打开
+            toggleCurtain(true);
         }
-    }, randBetween(20000, 30000)); // 每20-30秒切换一次
+    }, randBetween(20000, 30000));
 }
 
 function stopCurtainRandomToggle() {
@@ -2664,48 +1819,35 @@ function stopCurtainRandomToggle() {
     }
 }
 
-
 function handleResize() {
-    if (!game.board || game.board.length === 0 || document.getElementById('start-screen').style.display === 'flex' || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+    if (!game.board || game.board.length === 0 || document.getElementById('start-screen').style.display !== 'none' || document.getElementById('level-finish').style.display !== 'none' || document.getElementById('game-over').style.display !== 'none') {
         positionCatWalker();
-        positionCurtain(); // 新增: 即使游戏未激活，也重新定位幕布
+        positionCurtain();
         return;
     }
-
     const currentAreaWidth = cardStackArea.offsetWidth;
     const currentAreaHeight = cardStackArea.offsetHeight;
-
     if (game.layout.areaWidth === currentAreaWidth && game.layout.areaHeight === currentAreaHeight) {
         return;
     }
-
     game.layout.areaWidth = currentAreaWidth;
     game.layout.areaHeight = currentAreaHeight;
-
     calculateResponsiveSizes();
-
     game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
-    
     renderAll();
 }
 
-// 新增: 摇动洗牌处理程序
 function handleDeviceMotion(event) {
-    if (game.lock || game.toolUses.shuffle <= 0) {
-        return;
-    }
-
+    if (game.lock || game.toolUses.shuffle <= 0) return;
     const currentTime = new Date().getTime();
-    if ((currentTime - lastShakeTime) > 1500) { // 1.5秒冷却时间以防止多次触发
+    if ((currentTime - lastShakeTime) > 1500) {
         const acceleration = event.accelerationIncludingGravity;
-        const shakeThreshold = 18; // m/s^2, 根据灵敏度调整
-
+        const shakeThreshold = 18;
         if (
             Math.abs(acceleration.x) > shakeThreshold ||
             Math.abs(acceleration.y) > shakeThreshold
         ) {
             lastShakeTime = currentTime;
-            
             shuffleStep();
             game.toolUses.shuffle--;
             updateToolButtons();
@@ -2714,69 +1856,302 @@ function handleDeviceMotion(event) {
     }
 }
 
+// ======================= OPTIMIZED LOADING LOGIC =======================
 
-// 事件监听器
+/**
+ * 优化点: 后台资源加载器
+ * 此函数在主加载完成后被调用，用于在后台静默加载非紧急资源。
+ * 这样不会阻塞游戏启动，同时能利用玩家在开始菜单停留或玩第一关的时间提前准备好后续资源。
+ */
+function loadSecondaryAssets() {
+    const secondaryAssets = [
+        { type: 'audio', src: 'Get.mp3' },      // 背景音乐
+        { type: 'image', src: 'mao1.webp' },     // 第一关通关背景
+        { type: 'video', src: 'mao2.mp4' },     // 第二关通关视频 (按要求加载)
+        { type: 'image', src: 'mao2.webp' }      // 第二关通关视频的备用图片
+    ];
+
+    console.log("开始在后台加载次要资源...");
+
+    secondaryAssets.forEach(asset => {
+        // 创建元素并设置src即可触发浏览器下载和缓存，无需添加到DOM中
+        try {
+            let element;
+            switch (asset.type) {
+                case 'image':
+                    element = new Image();
+                    element.src = asset.src;
+                    break;
+                case 'audio':
+                case 'video':
+                    element = document.createElement(asset.type);
+                    element.src = asset.src;
+                    break;
+            }
+            console.log(`  - 开始加载: ${asset.src}`);
+        } catch (e) {
+            console.error(`加载后台资源失败: ${asset.src}`, e);
+        }
+    });
+}
+
+
+/**
+ * 优化点: 核心资源加载器
+ * 此函数经过修改，现在只加载启动游戏绝对必要的资源。
+ * 加载列表被精简，以实现最快的初始加载速度。
+ */
+function initializeAndLoadAssets() {
+    const loadingScreen = document.getElementById('loading-screen');
+    const progressBar = document.getElementById('progress-bar');
+    const loadingText = document.getElementById('loading-text');
+    const LOAD_TIMEOUT = 5000; // 每个资源5秒超时
+
+    // 核心资源列表：这些是显示开始屏幕和启动第一关所必需的
+    const criticalAssets = [
+        { type: 'image', src: 'me.png', name: '图标' },
+        { type: 'image', src: 'mao3.webp', name: '加载背景' },
+        { type: 'image', src: 'mao.webp', name: '开始背景' },
+        { type: 'image', src: 'cat1.webp', name: '游戏背景' },
+        { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
+        { type: 'video', src: 'mao.mp4', name: '开始视频' },
+    ];
+
+    let assetsLoaded = 0;
+    const totalAssets = criticalAssets.length;
+
+    const updateProgress = () => {
+        assetsLoaded++;
+        const progress = (assetsLoaded / totalAssets) * 100;
+        progressBar.style.width = progress + '%';
+
+        if (assetsLoaded === totalAssets) {
+            loadingText.textContent = '完成!';
+            setTimeout(() => {
+                loadingScreen.style.opacity = '0';
+                loadingScreen.addEventListener('transitionend', () => {
+                    loadingScreen.style.display = 'none';
+                    document.title = "喵了个喵";
+                    document.getElementById('start-screen').style.display = 'flex';
+                    initializeGame();
+                    // 关键优化点：在核心资源加载完毕后，立即开始后台加载次要资源
+                    loadSecondaryAssets(); 
+                }, { once: true });
+            }, 400);
+        } else {
+            loadNextAsset();
+        }
+    };
+
+    const loadAsset = (asset) => {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => reject(new Error(`加载超时 ${asset.src}`)), LOAD_TIMEOUT);
+            
+            const successHandler = () => { clearTimeout(timeoutId); resolve(); };
+            const errorHandler = (e) => { clearTimeout(timeoutId); reject(new Error(`加载失败 ${asset.src}`)); };
+            
+            switch (asset.type) {
+                case 'image':
+                    const img = new Image();
+                    img.onload = successHandler;
+                    img.onerror = errorHandler;
+                    img.src = asset.src;
+                    break;
+                case 'audio':
+                case 'video':
+                    const media = document.createElement(asset.type);
+                    media.addEventListener('canplaythrough', successHandler, { once: true });
+                    media.onerror = errorHandler;
+                    media.src = asset.src;
+                    media.load(); // 某些浏览器需要调用load()
+                    break;
+            }
+        });
+    };
+
+    const loadNextAsset = async () => {
+        if (assetsLoaded >= totalAssets) return;
+
+        const asset = criticalAssets[assetsLoaded];
+        loadingText.textContent = `正在加载 ${asset.name}... (${assetsLoaded + 1}/${totalAssets})`;
+        
+        try {
+            await loadAsset(asset);
+        } catch (error) {
+            console.error(error.message);
+            // 即使某个资源加载失败，也继续加载下一个，以防卡死
+        } finally {
+            updateProgress();
+        }
+    };
+
+    // 启动顺序加载过程
+    loadNextAsset();
+}
+
+
+function attemptVideoAutoplay() {
+    const video = document.getElementById('start-screen-video');
+    if (!video) return;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log("Video direct play failed, waiting for user interaction.", error);
+            document.body.addEventListener('touchstart', function onFirstTouch() {
+                video.play().catch(e => console.error("Video playback failed after touch:", e));
+                document.body.removeEventListener('touchstart', onFirstTouch);
+            }, { once: true });
+        });
+    }
+    if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
+        WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed in WeixinJSBridge:", err)));
+    } else {
+        document.addEventListener("WeixinJSBridgeReady", () => WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed on WeixinJSBridgeReady:", err))), false);
+    }
+}
+
+function positionCatWalker() {
+    const displayArea = document.getElementById('display-area');
+    const catPath = document.getElementById('cat-path');
+    const mainArea = document.getElementById('main-area');
+    if (!displayArea || !catPath || !mainArea || mainArea.style.display === 'none') return;
+    const displayAreaBottomRelativeToMainArea = displayArea.offsetTop + displayArea.offsetHeight;
+    catPath.style.top = `${displayAreaBottomRelativeToMainArea}px`;
+    catPath.style.width = `${mainArea.offsetWidth}px`;
+}
+
+function positionWigglingCat(wigglingCatEl, slotIndex) {
+    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+    const cardStackArea = document.getElementById('card-stack-area');
+    const mainArea = document.getElementById('main-area');
+    if (!wigglingCatEl || tempSlots.length === 0 || !cardStackArea || !mainArea || slotIndex < 0 || slotIndex >= tempSlots.length) {
+        if(wigglingCatEl) wigglingCatEl.style.display = 'none';
+        return;
+    }
+    const targetTempSlot = tempSlots[slotIndex];
+    const cardStackRect = cardStackArea.getBoundingClientRect();
+    const targetTempSlotRect = targetTempSlot.getBoundingClientRect();
+    const mainAreaRect = mainArea.getBoundingClientRect();
+    const gapMidpointAbsolute = cardStackRect.bottom + (targetTempSlotRect.top - cardStackRect.bottom) / 2;
+    const topRelativeToMainArea = gapMidpointAbsolute - mainAreaRect.top;
+    const leftRelativeToMainArea = (targetTempSlotRect.left + targetTempSlot.offsetWidth / 2) - mainAreaRect.left;
+    wigglingCatEl.style.top = `${topRelativeToMainArea - (wigglingCatEl.offsetHeight / 2)}px`;
+    wigglingCatEl.style.left = `${leftRelativeToMainArea}px`;
+    wigglingCatEl.style.display = 'block';
+}
+
+function hideWigglingCats() {
+    wigglingCat1.style.display = 'none';
+    wigglingCat4.style.display = 'none';
+    wigglingCat7.style.display = 'none';
+}
+
+function updateWigglingCatVisibility() {
+    if (game.score >= game.targetScore) {
+        positionWigglingCat(wigglingCat1, 0);
+        positionWigglingCat(wigglingCat4, 3);
+        positionWigglingCat(wigglingCat7, 6);
+    } else {
+        hideWigglingCats();
+    }
+}
+
+function playLevel2Outro() {
+    game.lock = true;
+    playBgm(false);
+    level2OutroScreen.style.display = 'flex';
+    outroLoadingText.style.display = 'block';
+    skipOutroBtn.style.display = 'block';
+    outroVideo.style.display = 'none';
+    outroImage.style.display = 'none';
+    const finalCloseAction = () => handleCloseGame('level');
+    outroVideoTimeout = setTimeout(() => {
+        outroVideo.style.display = 'none';
+        outroImage.style.display = 'block';
+        outroLoadingText.textContent = '视频无法播放，显示图片...';
+        setTimeout(finalCloseAction, 3000);
+    }, 7000);
+    outroVideo.load();
+    const playPromise = outroVideo.play();
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            outroVideo.style.display = 'block';
+            outroLoadingText.style.display = 'none';
+            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        }).catch(error => {
+            outroVideo.style.display = 'none';
+            outroImage.style.display = 'block';
+            outroLoadingText.textContent = '视频无法播放，显示图片...';
+            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+            setTimeout(finalCloseAction, 3000);
+        });
+    }
+    outroVideo.onended = () => {
+        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        finalCloseAction();
+    };
+    outroVideo.onerror = (e) => {
+        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        outroVideo.style.display = 'none';
+        outroImage.style.display = 'block';
+        outroLoadingText.textContent = '视频加载失败，显示图片...';
+        setTimeout(finalCloseAction, 3000);
+    };
+}
+
+function debounce(func, delay) {
+  let timeout;
+  return function() {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+
+// ======================= EVENT LISTENERS =======================
 document.addEventListener('DOMContentLoaded', function() {
-    // 修改: 调用新的真实加载屏幕函数
-    initializeRealisticLoadingScreen();
+    // 启动优化后的加载流程
+    initializeAndLoadAssets();
     attemptVideoAutoplay();
     
-    // 修改: 处理屏幕方向变化
     const orientationQuery = window.matchMedia("(orientation: landscape)");
     isLandscape = orientationQuery.matches;
-    // 初始检查横屏消息 - 仅当游戏不在加载或开始屏幕时
-    if (isLandscape && !hasShownLandscapeMessage && 
-        document.getElementById('loading-screen').style.display === 'none' &&
-        document.getElementById('start-screen').style.display === 'none') {
+    if (isLandscape && !hasShownLandscapeMessage && document.getElementById('loading-screen').style.display === 'none' && document.getElementById('start-screen').style.display === 'none') {
         showEventMessage('✨', '发现了新功能！<br>横屏模式下，撤销按钮会暂时禁用哦！');
         hasShownLandscapeMessage = true;
     }
-
     function handleOrientationChange(event) {
         isLandscape = event.matches;
         updateToolButtons();
-        // 仅当进入横屏模式时显示消息，如果在此横屏会话中尚未显示，
-        // 并且加载和开始屏幕未激活。
-        if (isLandscape && !hasShownLandscapeMessage && 
-            document.getElementById('loading-screen').style.display === 'none' &&
-            document.getElementById('start-screen').style.display === 'none') {
+        if (isLandscape && !hasShownLandscapeMessage && document.getElementById('loading-screen').style.display === 'none' && document.getElementById('start-screen').style.display === 'none') {
             showEventMessage('✨', '发现了新功能！<br>横屏模式下，撤销按钮会暂时禁用哦！');
             hasShownLandscapeMessage = true;
         } else if (!isLandscape) {
-            // 返回竖屏时重置标记
             hasShownLandscapeMessage = false;
         }
     }
-    
     orientationQuery.addEventListener('change', handleOrientationChange);
 
-    // 新增: 添加摇动事件监听器
     if (window.DeviceMotionEvent) {
         window.addEventListener('devicemotion', handleDeviceMotion);
     } else {
         console.log("此设备不支持摇一摇功能。");
     }
 
-    // 修改: visibilitychange监听器以处理音频上下文
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
             bgm.pause();
         } else {
-            // 如果AudioContext被暂停，则恢复它
             if (audioContext && audioContext.state === 'suspended') {
-                audioContext.resume().catch(e => console.error("AudioContext在可见性变化时恢复失败。", e));
+                audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
             }
-            
-            const levelFinishScreen = document.getElementById('level-finish');
-            const gameOverScreen = document.getElementById('game-over');
-            const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
-
+            const isGameEndScreenVisible = document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex';
             if (game.bgmOn && !isGameEndScreenVisible) {
-                bgm.play().catch(e => console.error("背景音乐恢复失败", e));
+                bgm.play().catch(e => console.error("BGM resume failed", e));
             }
         }
     });
-
 
     const feedbackDiv = document.createElement('div');
     feedbackDiv.style.cssText = 'color: red; font-size: 12px; margin-top: 5px;';
@@ -2853,7 +2228,7 @@ shuffleBtn.onclick = function(){
 };
 restartCurrentLevelBtn.onclick = () => showConfirm('确定要重新开始当前关卡吗？', () => {
     stopRandomEvents();
-    stopCurtainRandomToggle(); // 新增: 重新开始时停止幕布切换
+    stopCurtainRandomToggle();
     startGame(game.level);
     showMessage('关卡已重新开始！', '#3e5a2b');
 });
@@ -2868,10 +2243,10 @@ codeBtn.onclick = function(){
       renderProgressAndScore();
       checkWin();
       showMessage(`兑换成功！当前关卡已跳过！`, "#3e5a2b");
-    } else if (rewards.type === "curtain_off") { // 新增: 处理"xianshi"码
+    } else if (rewards.type === "curtain_off") {
         game.isCurtainEnabled = false;
-        toggleCurtain(true); // 立即打开幕布
-        stopCurtainRandomToggle(); // 停止本关卡的随机切换
+        toggleCurtain(true);
+        stopCurtainRandomToggle();
         showMessage(`兑换成功！幕布已在本关卡关闭！`, "#3e5a2b");
     }
     else {
@@ -2912,277 +2287,7 @@ gobangBtn.onclick = () => window.open('https://www.kaiyuanzhu.qzz.io/kaiyuan/', 
 restartGameBtn.onclick = () => window.location.href = 'https://www.kaiyuanzhu.qzz.io/cat/';
 closeGameBtnLevel.onclick = () => handleCloseGame('level');
 closeGameBtnGameOver.onclick = () => handleCloseGame('gameover');
-
-// 修改: 用一个健壮的、顺序加载的资源加载器替换了旧的加载屏幕函数。
-function initializeRealisticLoadingScreen() {
-    const loadingScreen = document.getElementById('loading-screen');
-    const progressBar = document.getElementById('progress-bar');
-    const loadingText = document.getElementById('loading-text');
-    const LOAD_TIMEOUT = 5000; // 每个资源的超时时间（5秒）
-
-    // 定义按优先级加载的资源
-    const assetsToLoad = [
-        // 优先级1: 初始显示和游戏启动的关键资源
-        { type: 'image', src: 'me.png', name: '图标' },
-        { type: 'image', src: 'mao3.webp', name: '加载背景' },
-        { type: 'image', src: 'cat1.webp', name: '游戏背景' }, // 主游戏背景
-        { type: 'image', src: 'mao.webp', name: '开始屏幕背景图片' }, // 开始视频的备用图片
-        
-        // 优先级2: 音频文件 (可以在后台加载，但对体验至关重要)
-        // 这些资源被启动，但在进度条中不等待其完成
-        { type: 'audio', src: 'kaa.mp3', name: '点击音效', background: true },
-        { type: 'audio', src: 'Get.mp3', name: '背景音乐', background: true },
-
-        // 优先级3: 视频 (最大文件，绝对后台加载)
-        { type: 'video', src: 'mao.mp4', name: '开始屏幕视频', background: true },
-        { type: 'video', src: 'mao.webm', name: '开始屏幕WebM视频', background: true },
-        { type: 'video', src: 'mao2.mp4', name: '结束动画视频', background: true },
-        
-        // 优先级4: 其他非关键图片
-        { type: 'image', src: 'mao1.webp', name: '关卡完成背景' },
-        { type: 'image', src: 'mao2.webp', name: '结束动画图片' }
-    ];
-
-    let assetsLoadedCount = 0;
-    let totalAssetsForProgressBar = assetsToLoad.filter(a => !a.background).length;
-    let backgroundAssetsLoaded = 0;
-    const totalBackgroundAssets = assetsToLoad.filter(a => a.background).length;
-
-    const updateProgressBar = () => {
-        assetsLoadedCount++;
-        const progress = (assetsLoadedCount / totalAssetsForProgressBar) * 100;
-        progressBar.style.width = Math.min(progress, 100) + '%'; // 限制在100%
-        if (assetsLoadedCount >= totalAssetsForProgressBar) {
-            loadingText.textContent = '所有核心资源加载完成！';
-            // 检查所有后台资源是否也已加载，或者是否已达到它们的超时时间
-            if (backgroundAssetsLoaded >= totalBackgroundAssets) {
-                finalizeLoadingScreen();
-            } else {
-                // 为后台资源再等待一小段时间，但不要无限期阻塞
-                setTimeout(finalizeLoadingScreen, 1000); 
-            }
-        } else {
-            loadNextAsset();
-        }
-    };
-
-    const finalizeLoadingScreen = () => {
-        loadingText.textContent = '完成！';
-        setTimeout(() => {
-            loadingScreen.style.opacity = '0';
-            loadingScreen.addEventListener('transitionend', () => {
-                loadingScreen.style.display = 'none';
-                document.title = "喵了个喵";
-                initializeGame();
-            }, { once: true });
-        }, 400);
-    };
-
-    const loadAsset = (asset) => {
-        return new Promise((resolve, reject) => {
-            const timeoutId = setTimeout(() => {
-                console.warn(`加载 ${asset.name} (${asset.src}) 超时`);
-                reject(new Error(`加载 ${asset.src} 超时`));
-            }, LOAD_TIMEOUT);
-
-            const clearListeners = (element) => {
-                element.onload = null;
-                element.onerror = null;
-                element.oncanplaythrough = null;
-                if(element.removeEventListener) {
-                    element.removeEventListener('canplaythrough', successHandler);
-                    element.removeEventListener('error', errorHandler);
-                }
-            };
-            
-            const successHandler = () => {
-                clearTimeout(timeoutId);
-                clearListeners(element); // 清除监听器以防止内存泄漏
-                resolve();
-            };
-
-            const errorHandler = () => {
-                clearTimeout(timeoutId);
-                clearListeners(element); // 清除监听器
-                console.error(`加载 ${asset.name} (${asset.src}) 失败`);
-                reject(new Error(`加载 ${asset.src} 失败`));
-            };
-            
-            let element;
-            switch (asset.type) {
-                case 'image':
-                    element = new Image();
-                    element.onload = successHandler;
-                    element.onerror = errorHandler;
-                    element.src = asset.src;
-                    break;
-                case 'audio':
-                    element = new Audio();
-                    element.addEventListener('canplaythrough', successHandler, { once: true });
-                    element.onerror = errorHandler;
-                    element.src = asset.src;
-                    break;
-                case 'video':
-                    element = document.createElement('video');
-                    element.addEventListener('canplaythrough', successHandler, { once: true });
-                    element.onerror = errorHandler;
-                    element.src = asset.src;
-                    break;
-            }
-        });
-    };
-
-    const loadNextAsset = async () => {
-        const currentAssetIndex = assetsLoadedCount + backgroundAssetsLoaded;
-        if (currentAssetIndex >= assetsToLoad.length) return;
-
-        const asset = assetsToLoad[currentAssetIndex];
-        
-        loadingText.textContent = `正在加载 ${asset.name}... (${assetsLoadedCount + 1}/${totalAssetsForProgressBar})`;
-
-        try {
-            await loadAsset(asset);
-        } catch (error) {
-            // 错误已在loadAsset中记录，继续加载下一个资源
-        } finally {
-            if (asset.background) {
-                backgroundAssetsLoaded++;
-            } else {
-                updateProgressBar(); // 仅更新非后台资源的进度条
-            }
-            // 如果是后台资源，或者进度条尚未满，则加载下一个资源。
-            if (assetsLoadedCount < totalAssetsForProgressBar || backgroundAssetsLoaded < totalBackgroundAssets) {
-                 loadNextAsset();
-            }
-        }
-    };
-
-    // 开始加载第一个非后台资源
-    loadNextAsset();
-}
-
-
-function attemptVideoAutoplay() {
-    const video = document.getElementById('start-screen-video');
-    if (!video) return;
-    const playPromise = video.play();
-    if (playPromise !== undefined) {
-        playPromise.catch(error => {
-            console.log("视频直接播放失败，等待用户交互。", error);
-            document.body.addEventListener('touchstart', function onFirstTouch() {
-                video.play().catch(e => console.error("触摸后视频播放失败:", e));
-                document.body.removeEventListener('touchstart', onFirstTouch);
-            }, { once: true });
-        });
-    }
-    if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
-        WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("在WeixinJSBridge中视频播放失败:", err)));
-    } else {
-        document.addEventListener("WeixinJSBridgeReady", () => WeixinJSBridge.invoke('getNetworkType', {}, e => WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("在WeixinJSBridgeReady时视频播放失败:", err)))), false);
-    }
-}
-
-function positionCatWalker() {
-    const displayArea = document.getElementById('display-area');
-    const catPath = document.getElementById('cat-path');
-    const mainArea = document.getElementById('main-area');
-    if (!displayArea || !catPath || !mainArea) return;
-    const displayAreaBottomRelativeToMainArea = displayArea.offsetTop + displayArea.offsetHeight;
-    catPath.style.top = `${displayAreaBottomRelativeToMainArea}px`;
-    catPath.style.width = `${mainArea.offsetWidth}px`;
-}
-
-function positionWigglingCat(wigglingCatEl, slotIndex) {
-    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-    const cardStackArea = document.getElementById('card-stack-area');
-    const mainArea = document.getElementById('main-area');
-    if (!wigglingCatEl || tempSlots.length === 0 || !cardStackArea || !mainArea || slotIndex < 0 || slotIndex >= tempSlots.length) {
-        if(wigglingCatEl) wigglingCatEl.style.display = 'none';
-        return;
-    }
-    const targetTempSlot = tempSlots[slotIndex];
-    const cardStackRect = cardStackArea.getBoundingClientRect();
-    const targetTempSlotRect = targetTempSlot.getBoundingClientRect();
-    const mainAreaRect = mainArea.getBoundingClientRect();
-    const gapMidpointAbsolute = cardStackRect.bottom + (targetTempSlotRect.top - cardStackRect.bottom) / 2;
-    const topRelativeToMainArea = gapMidpointAbsolute - mainAreaRect.top;
-    const leftRelativeToMainArea = (targetTempSlotRect.left + targetTempSlot.offsetWidth / 2) - mainAreaRect.left;
-    wigglingCatEl.style.top = `${topRelativeToMainArea - (wigglingCatEl.offsetHeight / 2)}px`;
-    wigglingCatEl.style.left = `${leftRelativeToMainArea}px`;
-    wigglingCatEl.style.display = 'block';
-}
-
-function hideWigglingCats() {
-    wigglingCat1.style.display = 'none';
-    wigglingCat4.style.display = 'none';
-    wigglingCat7.style.display = 'none';
-}
-
-function updateWigglingCatVisibility() {
-    if (game.score >= game.targetScore) {
-        positionWigglingCat(wigglingCat1, 0);
-        positionWigglingCat(wigglingCat4, 3);
-        positionWigglingCat(wigglingCat7, 6);
-    } else {
-        hideWigglingCats();
-    }
-}
-
-function playLevel2Outro() {
-    game.lock = true;
-    playBgm(false);
-    level2OutroScreen.style.display = 'flex';
-    outroLoadingText.style.display = 'block';
-    skipOutroBtn.style.display = 'block';
-    outroVideo.style.display = 'none';
-    outroImage.style.display = 'none';
-
-    const finalCloseAction = () => handleCloseGame('level');
-
-    outroVideoTimeout = setTimeout(() => {
-        outroVideo.style.display = 'none';
-        outroImage.style.display = 'block';
-        outroLoadingText.textContent = '视频无法播放，显示图片...';
-        setTimeout(finalCloseAction, 3000);
-    }, 7000);
-
-    outroVideo.load();
-    const playPromise = outroVideo.play();
-    if (playPromise !== undefined) {
-        playPromise.then(() => {
-            outroVideo.style.display = 'block';
-            outroLoadingText.style.display = 'none';
-            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
-        }).catch(error => {
-            outroVideo.style.display = 'none';
-            outroImage.style.display = 'block';
-            outroLoadingText.textContent = '视频无法播放，显示图片...';
-            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
-            setTimeout(finalCloseAction, 3000);
-        });
-    }
-    outroVideo.onended = () => {
-        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
-        finalCloseAction();
-    };
-    outroVideo.onerror = (e) => {
-        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
-        outroVideo.style.display = 'none';
-        outroImage.style.display = 'block';
-        outroLoadingText.textContent = '视频加载失败，显示图片...';
-        setTimeout(finalCloseAction, 3000);
-    };
-}
-
-function debounce(func, delay) {
-  let timeout;
-  return function() {
-    const context = this;
-    const args = arguments;
-    clearTimeout(timeout);
-    timeout = setTimeout(() => func.apply(context, args), delay);
-  };
-}
 </script>
+
 </body>
 </html>
