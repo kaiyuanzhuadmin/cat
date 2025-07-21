@@ -2871,19 +2871,19 @@ function initializeRealisticLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
     const progressBar = document.getElementById('progress-bar');
     const loadingText = document.getElementById('loading-text');
-    const LOAD_TIMEOUT = 10000; // 10 seconds timeout for each asset
+    const LOAD_TIMEOUT = 3000; // 3 seconds timeout for each asset
 
     const assetsToLoad = [
         { type: 'image', src: 'me.png', name: '图标' },
         { type: 'image', src: 'mao3.webp', name: '加载背景' },
         { type: 'image', src: 'mao1.webp', name: '通关背景' },
-        { type: 'image', src: 'mao.webp', name: '主页背景' },
+        { type: 'image', src: 'mao.webp', name: '开始背景' },
         { type: 'image', src: 'mao2.webp', name: '彩蛋图' },
         { type: 'image', src: 'cat1.webp', name: '游戏背景' },
         { type: 'audio', src: 'Get.mp3', name: '背景音乐' },
         { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
-        { type: 'video', src: 'mao.mp4', name: '主页视频' },
-        { type: 'video', src: 'mao2.mp4', name: '彩蛋视频' }
+        { type: 'video', src: 'mao.mp4', name: '猫咪' },
+        { type: 'video', src: 'mao2.mp4', name: '彩蛋' }
     ];
 
     let assetsLoaded = 0;
