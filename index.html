@@ -332,7 +332,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      position: relative; /* Crucial for absolute positioning of cat-path */
+      position: relative; /* Crucial for absolute positioning of cat-path and curtain */
       padding-top: 10px; /* Add some top padding */
     }
 
@@ -391,6 +391,44 @@
         opacity: 0; /* Fade out when matched */
     }
 
+    /* NEW: Curtain effect for display-area */
+    #curtain {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white */
+        z-index: 1050; /* Above display-area, below event-overlay */
+        display: none; /* Hidden by default, controlled by JS */
+        border-radius: 15px; /* Match display-area border-radius */
+        transition: opacity 0.5s ease-in-out; /* Smooth fade */
+        overflow: hidden; /* For curtain animation */
+        /* Initial state for curtain is closed (fully opaque) */
+        opacity: 1;
+    }
+
+    /* Curtain texture/animation (optional, using solid color for now) */
+    #curtain::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* You can add a curtain texture here if you have one, e.g., url('path/to/curtain_texture.png') */
+        background: linear-gradient(to bottom, #f7f0e8, #e0d8cf); /* Simple gradient */
+        opacity: 0.9;
+    }
+
+    /* Animation for opening the curtain (fading out) */
+    #curtain.open {
+        opacity: 0;
+        pointer-events: none; /* Allow clicks through when open */
+    }
+
+    /* Animation for closing the curtain (fading in) */
+    #curtain.closed {
+        opacity: 1;
+        pointer-events: all; /* Block clicks when closed */
+    }
+
     /* Cat Animation Path (Left Cat) */
     #cat-path {
         position: absolute;
@@ -398,7 +436,7 @@
         height: 20px; /* Height of the gap */
         left: 0; /* Align with parent's left edge */
         /* top will be set by JS */
-        z-index: 1000; /* Ensure it's visible */
+        z-index: 1060; /* MODIFIED: Ensure it's visible above the curtain */
         pointer-events: none; /* Crucial: allows clicks to pass through to cards */
         overflow: visible; /* Allow cat to overflow if it's larger than path height */
         /* background-color: rgba(255, 0, 0, 0.1); /* For debugging positioning */
@@ -1308,6 +1346,7 @@
   <div id="main-area">
     <div id="display-area">
         </div>
+    <div id="curtain"></div> <!-- NEW CURTAIN ELEMENT ADDED HERE -->
     <div id="cat-path">
         <div id="walking-cat">🐈</div>
     </div>
@@ -1460,7 +1499,8 @@ const REDEMPTION_CODES = {
   "喵了个喵": { undo: 50, hint: 50, shuffle: 50 },
   "不知道": { undo: 3, hint: 1, shuffle: 1 },
   "开元": { undo: 10, hint: 10, shuffle: 10 },
-  "通关": { type: "skip_level" }
+  "通关": { type: "skip_level" },
+  "xianshi": { type: "curtain_off" } // NEW: Redemption code for disabling curtain
 };
 
 // DOM Elements
@@ -1495,6 +1535,7 @@ const displayArea = document.getElementById('display-area');
 const cardStackArea = document.getElementById('card-stack-area');
 const catPath = document.getElementById('cat-path');
 const walkingCat = document.getElementById('walking-cat');
+const curtainElement = document.getElementById('curtain'); // NEW: Curtain element
 
 const wigglingCat1 = document.getElementById('wiggling-cat-1');
 const wigglingCat4 = document.getElementById('wiggling-cat-4');
@@ -1516,6 +1557,7 @@ let confirmCallback = null;
 let outroVideoTimeout = null;
 let isCatMirrored = true;
 let randomEventTimer = null;
+let curtainTimer = null; // NEW: Timer for random curtain toggling
 let isLandscape = false; 
 let hasShownLandscapeMessage = false; // NEW: Flag to track if landscape message has been shown
 let lastShakeTime = 0; // NEW: for shake detection cooldown
@@ -1543,7 +1585,8 @@ let game = {
   isNewLevel: false,
   lock: false,
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
-  layout: { areaWidth: 0, areaHeight: 0 }
+  layout: { areaWidth: 0, areaHeight: 0 },
+  isCurtainEnabled: true // NEW: Controls if the curtain effect is active
 };
 
 // Utility Functions
@@ -1784,6 +1827,7 @@ function genLevel(levelIdx){
   game.score = 0;
   game.targetScore = lv.targetScore;
   game.totalDisplaySetsGenerated = 0;
+  game.isCurtainEnabled = true; // Reset curtain for new level
 
   let allIcons = [];
   const requiredUniqueIcons = Math.ceil(lv.total / 3);
@@ -2009,6 +2053,7 @@ function checkWin(){
 
   if(allCardsMatched && scoreMet){
     stopRandomEvents();
+    stopCurtainRandomToggle(); // NEW: Stop curtain toggle on win
     setTimeout(()=>{
       if(game.level===1){
         showLevelFinish('恭喜恭喜！第一关通关！');
@@ -2107,6 +2152,8 @@ function hintStep(){
 
 function gameOver(msg){
   stopRandomEvents();
+  stopCurtainRandomToggle(); // NEW: Stop curtain toggle on game over
+  toggleCurtain(true); // Ensure curtain is open on game over
   game.lock = true;
   document.getElementById('card-stack-area').innerHTML = '';
   document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
@@ -2143,6 +2190,14 @@ function startGame(level){
   positionCatWalker();
   updateWigglingCatVisibility();
   startRandomEvents();
+  
+  // NEW: Curtain logic for game start
+  positionCurtain(); // Position the curtain over display area
+  toggleCurtain(false); // Close the curtain initially
+  setTimeout(() => {
+      toggleCurtain(true); // Open the curtain after 2 seconds
+      startCurtainRandomToggle(); // Start random toggling after initial open
+  }, 2000);
 }
 
 function renderBoard(){
@@ -2314,10 +2369,13 @@ function renderAll(){
   updateToolButtons();
   positionCatWalker();
   updateWigglingCatVisibility();
+  positionCurtain(); // Ensure curtain is positioned correctly on all renders
 }
 
 function showLevelFinish(msg){
   stopRandomEvents();
+  stopCurtainRandomToggle(); // NEW: Stop curtain toggle on win
+  toggleCurtain(true); // Ensure curtain is open on level finish
   playBgm(false);
   if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
   if (outroVideo) {
@@ -2476,9 +2534,74 @@ function stopRandomEvents() {
     randomEventTimer = null;
 }
 
+// NEW: Curtain control functions
+function positionCurtain() {
+    if (!curtainElement || !displayArea) return;
+    const displayRect = displayArea.getBoundingClientRect();
+    const mainAreaRect = document.getElementById('main-area').getBoundingClientRect();
+
+    // Position the curtain relative to its parent (#main-area)
+    curtainElement.style.left = `${displayRect.left - mainAreaRect.left}px`;
+    curtainElement.style.top = `${displayRect.top - mainAreaRect.top}px`;
+    curtainElement.style.width = `${displayRect.width}px`;
+    curtainElement.style.height = `${displayRect.height}px`;
+    curtainElement.style.borderRadius = window.getComputedStyle(displayArea).borderRadius;
+    curtainElement.style.display = 'block'; // Ensure it's visible for positioning
+}
+
+function toggleCurtain(open) {
+    if (!curtainElement) return;
+
+    if (!game.isCurtainEnabled) {
+        // If curtain is disabled by redemption code, always keep it open
+        curtainElement.classList.remove('closed');
+        curtainElement.classList.add('open');
+        return;
+    }
+
+    if (open) {
+        curtainElement.classList.remove('closed');
+        curtainElement.classList.add('open');
+    } else {
+        curtainElement.classList.remove('open');
+        curtainElement.classList.add('closed');
+    }
+}
+
+function startCurtainRandomToggle() {
+    stopCurtainRandomToggle(); // Clear any existing timer
+    curtainTimer = setInterval(() => {
+        if (game.lock || !game.isCurtainEnabled || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+            // If game is locked, curtain is disabled, or game is over/finished, do not toggle
+            toggleCurtain(true); // Ensure it stays open
+            return;
+        }
+
+        const shouldClose = Math.random() < 0.5; // 50% chance to close
+
+        if (shouldClose) {
+            toggleCurtain(false); // Close the curtain
+            setTimeout(() => {
+                toggleCurtain(true); // Open it again after 2 seconds
+            }, 2000); // Invisible for 2 seconds
+        } else {
+            toggleCurtain(true); // Ensure it's open
+        }
+    }, randBetween(20000, 30000)); // Toggle every 20-30 seconds
+}
+
+function stopCurtainRandomToggle() {
+    if (curtainTimer) {
+        clearInterval(curtainTimer);
+        curtainTimer = null;
+    }
+}
+
+
 function handleResize() {
     if (!game.board || game.board.length === 0 || document.getElementById('start-screen').style.display === 'flex' || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
         positionCatWalker();
+        positionCurtain(); // NEW: Reposition curtain on resize even if game not active
         return;
     }
 
@@ -2656,6 +2779,7 @@ shuffleBtn.onclick = function(){
 };
 restartCurrentLevelBtn.onclick = () => showConfirm('确定要重新开始当前关卡吗？', () => {
     stopRandomEvents();
+    stopCurtainRandomToggle(); // NEW: Stop curtain toggle on restart
     startGame(game.level);
     showMessage('关卡已重新开始！', '#3e5a2b');
 });
@@ -2670,7 +2794,13 @@ codeBtn.onclick = function(){
       renderProgressAndScore();
       checkWin();
       showMessage(`兑换成功！当前关卡已跳过！`, "#3e5a2b");
-    } else {
+    } else if (rewards.type === "curtain_off") { // NEW: Handle "xianshi" code
+        game.isCurtainEnabled = false;
+        toggleCurtain(true); // Immediately open the curtain
+        stopCurtainRandomToggle(); // Stop random toggling for this level
+        showMessage(`兑换成功！幕布已在本关卡关闭！`, "#3e5a2b");
+    }
+    else {
       game.toolUses.undo += rewards.undo;
       game.toolUses.hint += rewards.hint;
       game.toolUses.shuffle += rewards.shuffle;
@@ -2758,7 +2888,7 @@ function attemptVideoAutoplay() {
     if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
         WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed in WeixinJSBridge:", err)));
     } else {
-        document.addEventListener("WeixinJSBridgeReady", () => WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed on WeixinJSBridgeReady:", err))), false);
+        document.addEventListener("WeixinJSBridgeReady", () => WeixinJSBridge.invoke('getNetworkType', {}, e => WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed on WeixinJSBridgeReady:", err)))), false);
     }
 }
 
