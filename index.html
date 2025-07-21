@@ -1191,11 +1191,10 @@
         top: 50%;
         left: 50%;
         transform: translate(-50%, -50%);
-        min-width: 100%;
-        min-height: 100%;
-        width: auto;
-        height: auto;
-        object-fit: cover;
+        /* 移除 min-width 和 min-height，因为 height: 100% 和 object-fit: cover 会处理填充 */
+        height: 100%;   /* 确保视频高度填充其父容器 */
+        width: auto;    /* 允许宽度根据视频原始比例自动调整 */
+        object-fit: cover; /* 关键：使视频覆盖整个区域，当高度填充时，宽度超出部分会被裁剪 */
         border-radius: 0;
         box-shadow: none;
     }
