@@ -1803,7 +1803,8 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
         let x = 0, y = 0;
         let foundPosition = false;
 
-        for (let attempt = 0; attempt = maxAttempts; attempt++) {
+        // FIX: Changed assignment operator to comparison operator
+        for (let attempt = 0; attempt < maxAttempts; attempt++) { 
             let tempX = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
             let tempY = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
             tempX += (s * 5 * (Math.random() - 0.5));
@@ -1830,6 +1831,7 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
             }
         }
         if (!foundPosition) {
+            // Fallback if no valid position found after maxAttempts
             x = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
             y = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
         }
@@ -2487,6 +2489,9 @@ function initializeGame(){
   musicToggleBtn.innerHTML = game.bgmOn ? '🎼' : '🔇';
   updateToolButtons();
   // BGM volume is now handled by Web Audio API gain node if needed, not directly on element
+
+  // Set the game background image after it's loaded
+  document.body.style.backgroundImage = `url('cat1.webp')`;
 }
 
 function handleCloseGame(type) {
@@ -2998,12 +3003,11 @@ function initializeRealisticLoadingScreen() {
         loadingScreen.addEventListener('transitionend', () => {
             loadingScreen.style.display = 'none';
             document.title = "喵了个喵";
-            // No need to call initializeGame() here, as start screen is next
         }, { once: true });
 
         // Phase 2: Load start screen assets
         currentPhase = 2;
-        loadingText.textContent = '加载开始界面资源...';
+        loadingText.textContent = '加载开始界面资源...'; // This text won't be visible as loading screen is hidden
         await loadPhase(phase2Assets);
         
         // Set start screen video sources and image fallback
@@ -3026,12 +3030,15 @@ function initializeRealisticLoadingScreen() {
 
         // Phase 3: Load remaining game assets in background
         currentPhase = 3;
-        loadingText.textContent = '后台加载其他游戏资源...';
+        // The loading text for phase 3 won't be visible to the user as the loading screen is gone.
+        // It's just for console logging or internal tracking.
+        console.log('开始后台加载其他游戏资源...');
         await loadPhase(phase3Assets);
 
         // All assets are now loaded or loading in background.
-        // initAudio is called on startBtn click, which is now enabled.
-        console.log("All game assets are loaded or loading in background.");
+        // Initialize the game after all assets are loaded.
+        initializeGame();
+        console.log("所有游戏资源已加载或正在后台加载。游戏已完全初始化。");
     };
 
     startLoadingProcess();
