@@ -2470,16 +2470,16 @@ function initializeAndLoadAssets() {
     const loadingScreen = document.getElementById('loading-screen');
     const progressBar = document.getElementById('progress-bar');
     const loadingText = document.getElementById('loading-text');
-    const LOAD_TIMEOUT = 5000; // 每个资源5秒超时
+    const LOAD_TIMEOUT = 6000; // 每个资源6秒超时
 
     // 核心资源列表：这些是显示开始屏幕和启动第一关所必需的
     const criticalAssets = [
         { type: 'image', src: 'me.png', name: '图标' },
-        { type: 'image', src: 'mao3.webp', name: '加载背景' },
+        { type: 'image', src: 'mao3.webp', name: '主题背景' },
         { type: 'image', src: 'mao.webp', name: '开始背景' },
         { type: 'image', src: 'cat1.webp', name: '游戏背景' },
         { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
-        { type: 'video', src: 'mao.mp4', name: '开始视频' },
+        { type: 'video', src: 'mao.mp4', name: '游戏动画' },
     ];
 
     let assetsLoaded = 0;
