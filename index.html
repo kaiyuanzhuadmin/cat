@@ -1565,18 +1565,17 @@ let isLandscape = false;
 let hasShownLandscapeMessage = false; // NEW: Flag to track if landscape message has been shown
 let lastShakeTime = 0; // NEW: for shake detection cooldown
 
-// MODIFICATION START: Changed Web Audio API variables for pre-loading
+// --- AUDIO REFACTOR START ---
+// Web Audio API variables and fallback flags
 let audioContext;
-let clickSoundBuffer; // This will hold the DECODED audio data for clicks
-let bgmAudioBuffer; // This will hold the DECODED audio data for BGM
-let clickSoundArrayBuffer = null; // This will hold the RAW fetched audio data for clicks
-let bgmArrayBuffer = null; // This will hold the RAW fetched audio data for BGM
-// MODIFICATION END
+let clickSoundBuffer;
+let clickAudioFailed = false; // Flag for click sound fallback
+// --- AUDIO REFACTOR END ---
 
 // Game State Object
 let game = {
   level: 1,
-  levelStartTime: 0, // MODIFIED: Added for level timer
+  levelStartTime: 0,
   cards: [],
   board: [],
   temp: [],
@@ -1594,7 +1593,7 @@ let game = {
   lock: false,
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
   layout: { areaWidth: 0, areaHeight: 0 },
-  isCurtainEnabled: true // NEW: Controls if the curtain effect is active
+  isCurtainEnabled: true
 };
 
 // Utility Functions
@@ -1615,73 +1614,87 @@ function deepClone(obj) {
 
 function randBetween(a, b) { return a + Math.random() * (b - a); }
 
-// Modified playBgm to use Web Audio API for better control and preloading
-function playBgm(on) {
-    if (!audioContext || !bgmAudioBuffer) return;
+// --- AUDIO REFACTOR START ---
 
-    if (on) {
-        // Stop any currently playing BGM
-        if (game.bgmSource) {
-            game.bgmSource.stop();
-            game.bgmSource.disconnect();
-        }
-
-        const source = audioContext.createBufferSource();
-        source.buffer = bgmAudioBuffer;
-        source.loop = true;
-        source.connect(audioContext.destination);
-        source.start(0);
-        game.bgmSource = source; // Store the source to stop it later
-    } else {
-        if (game.bgmSource) {
-            game.bgmSource.stop();
-            game.bgmSource.disconnect();
-            game.bgmSource = null;
-        }
-    }
-}
-
-// MODIFICATION START: initAudio now DECODES pre-fetched data instead of fetching it.
-// This is called after the first user click to initialize the AudioContext.
+/**
+ * Initializes the Web Audio API for short sound effects.
+ * If this process fails, it sets a fallback flag.
+ * BGM is handled separately by the HTML5 <audio> tag.
+ */
 async function initAudio() {
     try {
+        // Attempt to create and resume the AudioContext.
         if (!audioContext) {
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
         }
-        
         if (audioContext.state === 'suspended') {
             await audioContext.resume();
         }
 
-        // Decode the click sound if it was fetched and hasn't been decoded yet
-        if (clickSoundArrayBuffer && !clickSoundBuffer) {
-            clickSoundBuffer = await audioContext.decodeAudioData(clickSoundArrayBuffer);
-            clickSoundArrayBuffer = null; // Free up memory
-        }
-
-        // Decode the BGM sound if it was fetched and hasn't been decoded yet
-        if (bgmArrayBuffer && !bgmAudioBuffer) {
-            bgmAudioBuffer = await audioContext.decodeAudioData(bgmArrayBuffer);
-            bgmArrayBuffer = null; // Free up memory
+        // Try to load click sound (kaa.mp3) via Web Audio API
+        if (!clickSoundBuffer) {
+            const response = await fetch('kaa.mp3');
+            const arrayBuffer = await response.arrayBuffer();
+            clickSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
         }
     } catch (e) {
-        console.error("Failed to initialize Web Audio or decode audio files:", e);
+        console.error("Web Audio API failed for click sound (kaa.mp3). Falling back to HTML5 Audio.", e);
+        clickAudioFailed = true; // Set fallback flag for click sound
     }
 }
-// MODIFICATION END
 
-// NEW: Play sound using Web Audio API
+/**
+ * Plays or pauses the background music using the HTML5 <audio> element.
+ * This method is better for long audio files as it supports streaming.
+ * @param {boolean} on - True to play, false to pause.
+ */
+function playBgm(on) {
+    const bgmElement = document.getElementById('bgm');
+    if (on) {
+        // Set src only if not already set, to prevent re-loading
+        if (bgmElement.src.indexOf('Get.mp3') === -1) {
+           bgmElement.src = 'Get.mp3';
+        }
+        // The play() method returns a Promise, which should be handled.
+        const playPromise = bgmElement.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.error("BGM playback failed:", error);
+                // Autoplay might be blocked, user interaction is needed.
+                // The music toggle button will still work.
+            });
+        }
+    } else {
+        bgmElement.pause();
+    }
+}
+
+/**
+ * Plays the click sound effect.
+ * Uses Web Audio API by default for low latency, but creates a new Audio() object
+ * on-the-fly as a fallback if the API failed to initialize.
+ */
 function playClickSound() {
-    if (!clickSoundBuffer || !audioContext || !game.bgmOn) return;
-    try {
-        const source = audioContext.createBufferSource();
-        source.buffer = clickSoundBuffer;
-        source.connect(audioContext.destination);
-        source.start(0);
-    } catch (e) {
-        console.error("Failed to play click sound:", e);
+    if (!game.bgmOn) return; // Respect the user's global sound setting
+
+    if (clickAudioFailed) {
+        // Fallback: Use HTML5 Audio by creating a temporary element
+        const clickAudio = new Audio('kaa.mp3');
+        clickAudio.play().catch(e => console.error("HTML5 Audio fallback for click sound failed:", e));
+    } else {
+        // Primary method: Use Web Audio API
+        if (!clickSoundBuffer || !audioContext) return;
+        try {
+            const source = audioContext.createBufferSource();
+            source.buffer = clickSoundBuffer;
+            source.connect(audioContext.destination);
+            source.start(0);
+        } catch (e) {
+            console.error("Failed to play click sound via Web Audio API:", e);
+        }
     }
 }
+// --- AUDIO REFACTOR END ---
 
 
 // NEW: Function to trigger vibration or sound on match
@@ -2230,8 +2243,9 @@ function startGame(level){
   game.isNewLevel = true;
   renderAll();
   updateToolButtons();
-  // Ensure BGM starts only after initAudio has loaded it
-  if (game.bgmOn && bgmAudioBuffer) playBgm(true);
+  
+  if (game.bgmOn) playBgm(true);
+
   positionCatWalker();
   updateWigglingCatVisibility();
   startRandomEvents();
@@ -2490,7 +2504,6 @@ function showLevelFinish(msg){
 function initializeGame(){
   musicToggleBtn.innerHTML = game.bgmOn ? '🎼' : '🔇';
   updateToolButtons();
-  // BGM volume is now handled by Web Audio API gain node if needed, not directly on element
 }
 
 function handleCloseGame(type) {
@@ -2738,14 +2751,10 @@ document.addEventListener('DOMContentLoaded', function() {
     // MODIFIED: visibilitychange listener to handle audio context
     document.addEventListener('visibilitychange', () => {
         if (document.hidden) {
-            // Pause BGM when tab is hidden
-            if (game.bgmSource) {
-                game.bgmSource.stop();
-                game.bgmSource.disconnect();
-                game.bgmSource = null;
-            }
+            // When tab is hidden, pause audio regardless of method
+            playBgm(false);
         } else {
-            // Resume AudioContext if it was suspended
+            // When tab becomes visible again...
             if (audioContext && audioContext.state === 'suspended') {
                 audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
             }
@@ -2754,8 +2763,9 @@ document.addEventListener('DOMContentLoaded', function() {
             const gameOverScreen = document.getElementById('game-over');
             const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
 
-            if (game.bgmOn && !isGameEndScreenVisible && bgmAudioBuffer) {
-                playBgm(true); // Resume BGM if it was on and not on end screen
+            // Resume BGM if it was on and not on an end screen
+            if (game.bgmOn && !isGameEndScreenVisible) {
+                playBgm(true);
             }
         }
     });
@@ -2872,23 +2882,15 @@ codeBtn.onclick = function(){
 musicToggleBtn.onclick = function(){
   game.bgmOn = !game.bgmOn;
   this.innerHTML = game.bgmOn ? '🎼' : '🔇';
-  // Play/pause BGM using Web Audio API
-  if (game.bgmOn && bgmAudioBuffer) {
-      playBgm(true);
-  } else {
-      playBgm(false);
-  }
+  playBgm(game.bgmOn);
 };
-
-// MODIFICATION START: startBtn.onclick is now async to wait for audio decoding
-startBtn.onclick = async function(){
+startBtn.onclick = function(){
   document.getElementById('start-screen').style.display = 'none';
-  // Initialize Web Audio API and decode the pre-fetched sounds on first user interaction
-  await initAudio(); 
+  // Initialize Web Audio API on first user interaction.
+  // This is crucial for browser compatibility.
+  initAudio(); 
   startGame(1);
 };
-// MODIFICATION END
-
 nextBtn.onclick = function(){
   document.getElementById('level-finish').style.display = 'none';
   startGame(2);
@@ -2906,15 +2908,16 @@ restartGameBtn.onclick = () => window.location.href = 'https://www.kaiyuanzhu.qz
 closeGameBtnLevel.onclick = () => handleCloseGame('level');
 closeGameBtnGameOver.onclick = () => handleCloseGame('gameover');
 
-// MODIFICATION START: The loading screen function is now responsible for FETCHING audio data.
-// The DECODING happens later, after the user clicks the start button.
+// MODIFIED: Replaced the old loading screen function with a robust, sequential asset loader.
+// This function now only loads essential assets for the initial game experience.
+// Other assets like BGM are loaded via Web Audio API on first user interaction.
 function initializeRealisticLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
     const progressBar = document.getElementById('progress-bar');
     const loadingText = document.getElementById('loading-text');
     const LOAD_TIMEOUT = 5000; // 5 seconds timeout for each asset
 
-    // All assets, including audio, are now listed here for pre-loading.
+    // OPTIMIZED: Added BGM to the initial asset load list.
     const assetsToLoad = [
         { type: 'image', src: 'me.png', name: '图标' },
         { type: 'image', src: 'mao3.webp', name: '加载背景' },
@@ -2925,7 +2928,7 @@ function initializeRealisticLoadingScreen() {
         { type: 'video', src: 'mao2.mp4', name: '彩蛋视频' },
         { type: 'image', src: 'mao2.webp', name: '彩蛋图片' },
         { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
-        { type: 'audio', src: 'Get.mp3', name: '背景音乐' } // Added BGM to the loading list
+        { type: 'audio', src: 'Get.mp3', name: '背景音乐' } // BGM is now pre-fetched here
     ];
 
     let assetsLoaded = 0;
@@ -2976,21 +2979,14 @@ function initializeRealisticLoadingScreen() {
                     img.src = asset.src;
                     break;
                 case 'audio':
-                    // Fetch audio as an ArrayBuffer and store it for later decoding.
+                    // For audio, we just need to ensure it's fetched to be cached by the browser.
+                    // The <audio> tag or Web Audio API will handle the actual playback.
                     fetch(asset.src)
                         .then(response => {
                             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-                            return response.arrayBuffer();
+                            return response.blob(); // Fetch as blob to confirm download
                         })
-                        .then(arrayBuffer => {
-                            // Store the raw data in the appropriate global variable
-                            if (asset.src === 'kaa.mp3') {
-                                clickSoundArrayBuffer = arrayBuffer;
-                            } else if (asset.src === 'Get.mp3') {
-                                bgmArrayBuffer = arrayBuffer;
-                            }
-                            successHandler();
-                        })
+                        .then(() => successHandler())
                         .catch(errorHandler);
                     break;
                 case 'video':
@@ -3023,7 +3019,6 @@ function initializeRealisticLoadingScreen() {
     // Start the sequential loading process
     loadNextAsset();
 }
-// MODIFICATION END
 
 
 function attemptVideoAutoplay() {
