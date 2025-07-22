@@ -442,13 +442,18 @@
         z-index: 1060; /* MODIFIED: Ensure it's visible above the curtain */
         pointer-events: none; /* Crucial: allows clicks to pass through to cards */
         overflow: visible; /* Allow cat to overflow if it's larger than path height */
-        /* background-color: rgba(255, 0, 0, 0.1); /* For debugging positioning */
     }
 
+    /* --- CAT ANIMATION FIX START --- */
+    /* 从左到右是镜像，从右到左是正常 */
     @keyframes cat-walk {
-        0% { left: 0; }
-        100% { left: calc(100% - 55px); } /* Moves across the width of #cat-path */
+        0% { left: 0; transform: scaleX(-1); }
+        49% { transform: scaleX(-1); }
+        50% { left: calc(100% - 55px); transform: scaleX(1); }
+        99% { transform: scaleX(1); }
+        100% { left: 0; transform: scaleX(-1); }
     }
+    /* --- CAT ANIMATION FIX END --- */
 
     #walking-cat {
         position: absolute;
@@ -457,16 +462,30 @@
         font-size: 30px;
         line-height: 1;
         display: flex;
-        z-index: 10;
+        z-index: 10; /* MODIFIED: Ensure cat is above decorations */
         align-items: center;
         justify-content: center;
         color: #5d4037;
         top: -20px;
-        /* MODIFIED: Start mirrored as it moves left-to-right first */
-        transform: scaleX(-1); 
-        transition: transform 0.2s ease-in-out; /* Smooth transition for mirroring */
-        animation: cat-walk 15s linear infinite alternate;
+        animation: cat-walk 15s linear infinite;
     }
+
+    /* --- PATH DECORATION START --- */
+    .path-decoration {
+        position: absolute;
+        bottom: -5px; /* MODIFIED: Adjusted position */
+        font-size: 18px;
+        transition: transform 0.2s ease-in-out;
+        z-index: 9; /* MODIFIED: Ensure decorations are below the cat */
+    }
+    .path-decoration.shaking {
+        animation: gentle-shake 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes gentle-shake {
+        0% { transform: rotate(-2deg) scale(1.05); }
+        100% { transform: rotate(2deg) scale(1); }
+    }
+    /* --- PATH DECORATION END --- */
 
     /* New: Cat Wiggler Instances (Right Cat) */
     .wiggling-cat-instance {
@@ -1352,6 +1371,12 @@
     <div id="curtain"></div> <!-- NEW CURTAIN ELEMENT ADDED HERE -->
     <div id="cat-path">
         <div id="walking-cat">🐈</div>
+        <!-- --- PATH DECORATION START --- -->
+        <span class="path-decoration" style="left: 20%;">🌸</span>
+        <span class="path-decoration" style="left: 40%;">🌿</span>
+        <span class="path-decoration" style="left: 60%;">🌸</span>
+        <span class="path-decoration" style="left: 80%;">🌿</span>
+        <!-- --- PATH DECORATION END --- -->
     </div>
     <div id="card-stack-area"></div>
     <div id="wiggling-cat-1" class="wiggling-cat-instance">🥳</div>
@@ -1538,7 +1563,7 @@ const displayArea = document.getElementById('display-area');
 const cardStackArea = document.getElementById('card-stack-area');
 const catPath = document.getElementById('cat-path');
 const walkingCat = document.getElementById('walking-cat');
-const curtainElement = document.getElementById('curtain'); // NEW: Curtain element
+const curtainElement = document.getElementById('curtain');
 
 const wigglingCat1 = document.getElementById('wiggling-cat-1');
 const wigglingCat4 = document.getElementById('wiggling-cat-4');
@@ -1558,12 +1583,12 @@ const eventTextEl = eventMessageBox.querySelector('.event-text');
 
 let confirmCallback = null;
 let outroVideoTimeout = null;
-let isCatMirrored = true;
+let decorationInterval = null; // --- DECORATION: Interval timer
 let randomEventTimer = null;
-let curtainTimer = null; // NEW: Timer for random curtain toggling
+let curtainTimer = null;
 let isLandscape = false; 
-let hasShownLandscapeMessage = false; // NEW: Flag to track if landscape message has been shown
-let lastShakeTime = 0; // NEW: for shake detection cooldown
+let hasShownLandscapeMessage = false;
+let lastShakeTime = 0;
 
 // --- AUDIO REFACTOR START ---
 // Web Audio API variables and fallback flags
@@ -2093,6 +2118,7 @@ function checkWin() {
     if (allCardsMatched && scoreMet) {
         stopRandomEvents();
         stopCurtainRandomToggle();
+        stopDecorationUpdates(); // --- DECORATION: Stop interval
         game.lock = true; // Lock game while showing message
 
         const elapsedSeconds = ((Date.now() - game.levelStartTime) / 1000).toFixed(1);
@@ -2207,8 +2233,8 @@ function hintStep(){
 
 function gameOver(msg){
   stopRandomEvents();
-  stopCurtainRandomToggle(); // NEW: Stop curtain toggle on game over
-  toggleCurtain(true); // Ensure curtain is open on game over
+  stopCurtainRandomToggle();
+  stopDecorationUpdates(); // --- DECORATION: Stop interval
   game.lock = true;
   document.getElementById('card-stack-area').innerHTML = '';
   document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
@@ -2249,6 +2275,7 @@ function startGame(level){
   positionCatWalker();
   updateWigglingCatVisibility();
   startRandomEvents();
+  startDecorationUpdates(); // --- DECORATION: Start interval
   
   // NEW: Curtain logic for game start
   positionCurtain(); // Position the curtain over display area
@@ -2433,8 +2460,8 @@ function renderAll(){
 
 function showLevelFinish(msg){
   stopRandomEvents();
-  stopCurtainRandomToggle(); // NEW: Stop curtain toggle on win
-  toggleCurtain(true); // Ensure curtain is open on level finish
+  stopCurtainRandomToggle();
+  stopDecorationUpdates(); // --- DECORATION: Stop interval
   playBgm(false);
   if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
   if (outroVideo) {
@@ -2591,6 +2618,45 @@ function stopRandomEvents() {
     if (randomEventTimer) clearInterval(randomEventTimer);
     randomEventTimer = null;
 }
+
+// --- DECORATION START ---
+/**
+ * Starts an interval to check cat's proximity to decorations and trigger animations.
+ */
+function startDecorationUpdates() {
+    stopDecorationUpdates(); // Ensure no multiple intervals are running
+    const decorations = document.querySelectorAll('.path-decoration');
+    if (decorations.length === 0) return;
+
+    decorationInterval = setInterval(() => {
+        if (!walkingCat) return;
+        const catRect = walkingCat.getBoundingClientRect();
+        const catCenterX = catRect.left + catRect.width / 2;
+        
+        decorations.forEach(deco => {
+            const decoRect = deco.getBoundingClientRect();
+            const decoCenterX = decoRect.left + decoRect.width / 2;
+            const distance = Math.abs(catCenterX - decoCenterX);
+
+            if (distance < 50) { // Proximity threshold in pixels
+                deco.classList.add('shaking');
+            } else {
+                deco.classList.remove('shaking');
+            }
+        });
+    }, 100); // Check every 100ms
+}
+
+/**
+ * Stops the decoration update interval.
+ */
+function stopDecorationUpdates() {
+    if (decorationInterval) {
+        clearInterval(decorationInterval);
+        decorationInterval = null;
+    }
+}
+// --- DECORATION END ---
 
 // NEW: Curtain control functions
 function positionCurtain() {
@@ -2812,13 +2878,6 @@ document.addEventListener('DOMContentLoaded', function() {
     handleResize(); 
 
     skipOutroBtn.addEventListener('click', () => handleCloseGame('level'));
-
-    if (walkingCat) {
-        walkingCat.addEventListener('animationiteration', () => {
-            isCatMirrored = !isCatMirrored;
-            walkingCat.style.transform = isCatMirrored ? 'scaleX(-1)' : 'scaleX(1)';
-        });
-    }
 });
 
 undoBtn.onclick = function(){
@@ -2846,7 +2905,8 @@ shuffleBtn.onclick = function(){
 };
 restartCurrentLevelBtn.onclick = () => showConfirm('确定要重新开始当前关卡吗？', () => {
     stopRandomEvents();
-    stopCurtainRandomToggle(); // NEW: Stop curtain toggle on restart
+    stopCurtainRandomToggle();
+    stopDecorationUpdates(); // --- DECORATION: Stop interval
     startGame(game.level);
     showMessage('关卡已重新开始！', '#3e5a2b');
 });
