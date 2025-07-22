@@ -3,22 +3,30 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
-  <title>臭宝加载中...</title>
+  <title>小心肝加载中...</title>
   <link rel="icon" type="image/png" sizes="96x96" href="me.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+  <!-- Preload of critical assets for immediate use -->
   <link rel="preload" href="mao3.webp" as="image">
   <link rel="preload" href="mao1.webp" as="image">
   <link rel="preload" href="font/iconfont.css" as="style">
   <link rel="preload" href="css/style.css" as="style">
-  <link rel="preload" href="https://fonts.cdnfonts.com/s/72921/hanyisentyjilian.woff" as="font" crossorigin>
   <link rel="preload" href="mao.webp" as="image">
   <link rel="preload" href="mao.mp4" as="video">
   <link rel="preload" href="cat1.webp" as="image">
   <link rel="preload" href="js/index.js" as="script">
-  <link rel="preload" href="Get.mp3" as="audio">
-  <link rel="preload" href="kaa.mp3" as="audio">
-  <!-- Preload mao2.mp4 and mao2.webp for level 2 outro -->
-  <link rel="preload" href="mao2.mp4" as="video">
-  <link rel="preload" href="mao2.webp" as="image">
+  
+  <!-- Critical audio/video assets for specific game moments, prioritized for loading screen -->
+  <link rel="preload" href="kaa.mp3" as="audio"> <!-- Critical for click sound -->
+  <link rel="preload" href="mao2.mp4" as="video"> <!-- Critical for Level 2 outro -->
+  <link rel="preload" href="mao2.webp" as="image"> <!-- Fallback image for Level 2 outro -->
+
+  <!-- Other audio/video assets that can be loaded later or on demand -->
+  <!-- <link rel="preload" href="Get.mp3" as="audio"> -->
+  <!-- <link rel="preload" href="Get.ogg" as="audio"> -->
+
   <style>
     /* Keyframe animations */
     @keyframes card-entry {
@@ -27,19 +35,32 @@
       100% { opacity: 1; transform: scale(1) translateY(0); }
     }
 
-    @font-face {
-        font-family: 'HanyiSentyLotus';
-        src: url('https://fonts.cdnfonts.com/s/72921/hanyisentyjilian.woff') format('woff');
-        font-weight: normal;
-        font-style: normal;
+    /* Animation for matched cards disappearing from temp area */
+    @keyframes card-disappear {
+        from {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.4) rotate(20deg);
+        }
     }
-    /* Fallback for FangSong, using local system fonts */
-    @font-face {
-        font-family: 'FangSong';
-        src: local('FangSong'), local('方正仿宋简体'), local('FZFSJW');
-        font-weight: normal;
-        font-style: normal;
+    .temp-card.disappearing {
+        animation: card-disappear 0.3s ease-out forwards;
     }
+
+    /* NEW: Animation for temp slots when cards are cleared */
+    @keyframes slot-flash {
+        0% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
+        50% { background-color: #fff8dc; box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.5); }
+        100% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
+    }
+    .temp-slot.clearing {
+        animation: slot-flash 0.4s ease-out;
+    }
+
+
     @keyframes pulse-scale {
       0%, 100% { transform: scale(1); opacity: 0.8; }
       50% { transform: scale(1.05); opacity: 1; }
@@ -115,32 +136,105 @@
       z-index: 1000; /* Ensure it's above cards but below cat wiggler if needed */
       text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
     }
+    
+    /* NEW: Confetti Animation */
+    .confetti-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 9999;
+    }
+    .confetti-piece {
+        position: absolute;
+        width: 8px;
+        height: 16px;
+        background: #f00; /* Will be randomized by JS */
+        top: -20px;
+        opacity: 0;
+        animation: fall linear forwards;
+    }
+    @keyframes fall {
+        0% {
+            transform: translateY(0) rotateZ(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(110vh) rotateZ(720deg);
+            opacity: 0;
+        }
+    }
+
+    /* NEW: Dynamic Scaling Animation for Buttons */
+    @keyframes button-scale-pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.08);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+    }
+
+    /* NEW: Scaling and Fading Animation for Buttons */
+    @keyframes button-scale-fade-pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+    }
+    .animated-scale-fade {
+        animation: button-scale-fade-pulse 1.8s infinite ease-in-out;
+    }
+
+
+    /* NEW: Cloud passing animation */
+    @keyframes cloud-pass {
+      from {
+        transform: translateX(-250px);
+      }
+      to {
+        transform: translateX(100vw);
+      }
+    }
+
 
     /* Global body styles */
     body {
       margin: 0;
       min-height: 100vh;
       overflow-x: hidden;
-      font-family: 'FangSong', 'Segoe UI', 'PingFang SC', 'Helvetica Neue', Arial, 'Microsoft Yahei', sans-serif;
+      /* NEW: Applied new font */
+      font-family: 'ZCOOL KuaiLe', 'HanyiSentyLotus', 'FangSong', cursive, sans-serif;
       color: #3e2723;
       position: relative; /* Key: provides positioning reference for pseudo-elements */
     }
     /* Body background image */
     body::before {
       content: "";
-      position: absolute;
+      position: fixed; /* Use fixed to cover the whole viewport */
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      background: #f7f0e8 url('cat1.webp') no-repeat center center fixed;
+      background: #f7f0e8 url('cat1.webp') no-repeat center center;
       background-size: cover;
       z-index: -2; /* Placed below content */
     }
     /* Body overlay for transparency */
     body::after {
       content: "";
-      position: absolute;
+      position: fixed; /* Use fixed to cover the whole viewport */
       top: 0;
       left: 0;
       width: 100%;
@@ -181,6 +275,8 @@
         /* For iPhone X/XR/XS Max/11/12/13/14/15 series with notches and rounded corners */
         padding-top: env(safe-area-inset-top);
         padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
       }
     }
     /* Desktop adjustments */
@@ -204,6 +300,7 @@
       background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0));
       border-top-left-radius: 22px;
       border-top-right-radius: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
     }
     #progress-info {
       font-size: 1.55rem;
@@ -241,7 +338,7 @@
       flex-direction: column;
       align-items: center;
       justify-content: flex-start;
-      position: relative; /* Crucial for absolute positioning of cat-path */
+      position: relative; /* Crucial for absolute positioning of cat-path and curtain */
       padding-top: 10px; /* Add some top padding */
     }
 
@@ -300,6 +397,44 @@
         opacity: 0; /* Fade out when matched */
     }
 
+    /* NEW: Curtain effect for display-area */
+    #curtain {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white */
+        z-index: 1050; /* Above display-area, below event-overlay */
+        display: none; /* Hidden by default, controlled by JS */
+        border-radius: 15px; /* Match display-area border-radius */
+        transition: opacity 0.5s ease-in-out; /* Smooth fade */
+        overflow: hidden; /* For curtain animation */
+        /* Initial state for curtain is closed (fully opaque) */
+        opacity: 1;
+    }
+
+    /* Curtain texture/animation (optional, using solid color for now) */
+    #curtain::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* You can add a curtain texture here if you have one, e.g., url('path/to/curtain_texture.png') */
+        background: linear-gradient(to bottom, #f7f0e8, #e0d8cf); /* Simple gradient */
+        opacity: 0.9;
+    }
+
+    /* Animation for opening the curtain (fading out) */
+    #curtain.open {
+        opacity: 0;
+        pointer-events: none; /* Allow clicks through when open */
+    }
+
+    /* Animation for closing the curtain (fading in) */
+    #curtain.closed {
+        opacity: 1;
+        pointer-events: all; /* Block clicks when closed */
+    }
+
     /* Cat Animation Path (Left Cat) */
     #cat-path {
         position: absolute;
@@ -307,33 +442,33 @@
         height: 20px; /* Height of the gap */
         left: 0; /* Align with parent's left edge */
         /* top will be set by JS */
-        z-index: 1000; /* Ensure it's visible */
+        z-index: 1060; /* MODIFIED: Ensure it's visible above the curtain */
         pointer-events: none; /* Crucial: allows clicks to pass through to cards */
         overflow: visible; /* Allow cat to overflow if it's larger than path height */
         /* background-color: rgba(255, 0, 0, 0.1); /* For debugging positioning */
     }
 
-    /* MODIFICATION: Updated cat-walk keyframes - removed transform */
     @keyframes cat-walk {
         0% { left: 0; }
         100% { left: calc(100% - 55px); } /* Moves across the width of #cat-path */
     }
 
     #walking-cat {
-        position: absolute; /* Position within #cat-path */
-        width: 40px; /* New size */
-        height: 40px; /* New size */
-        font-size: 40px; /* Match font size to element size for emoji */
-        line-height: 1; /* Ensure emoji sits correctly */
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        font-size: 30px;
+        line-height: 1;
         display: flex;
         z-index: 10;
         align-items: center;
         justify-content: center;
-        color: #5d4037; /* Cat color */
-        top: -20px; /* (20px - 35px) / 2 = -7.5px to center 35px cat in 20px path */
-        transform: scaleX(1); /* Initial state */
-        transition: transform 0.01s linear, opacity 0.01s linear; /* Quick transition for mirroring */
-        animation: cat-walk 10s linear infinite alternate; /* Animation */
+        color: #5d4037;
+        top: -20px;
+        /* MODIFIED: Start mirrored as it moves left-to-right first */
+        transform: scaleX(-1); 
+        transition: transform 0.2s ease-in-out; /* Smooth transition for mirroring */
+        animation: cat-walk 15s linear infinite alternate;
     }
 
     /* New: Cat Wiggler Instances (Right Cat) */
@@ -406,15 +541,15 @@
       z-index: 1;
       overflow: hidden;
       color: #5d4037;
-      -webkit-user-select: none; /* For WebKit browsers (Chrome, Safari) */
-      -moz-user-select: none; /* For Firefox */
+      -webkit-user-select: none;
+      -moz-user-select: none;
       -ms-user-select: none;
     }
     .card-entering {
-      animation: card-entry 0.5s ease-out forwards; /* Adjust duration and easing as needed */
+      animation: card-entry 0.5s ease-out forwards;
     }
     .hint-animation {
-      animation: show-card-property 2s forwards; /* Example duration and fill-mode */
+      animation: show-card-property 2s forwards;
     }
     .card.selected {
       border: 3.5px solid #a0522d;
@@ -425,7 +560,7 @@
     .card.disabled {
       pointer-events: none;
       position: absolute;
-      opacity: 1; /* Keep opacity for disabled cards */
+      opacity: 1;
     }
     .card.disabled::before {
       content: '';
@@ -465,9 +600,8 @@
       -ms-user-select: none;
     }
     
-    /* NEW: Styles for Cat Nap (Sleeping Card) effect */
     .card.napping {
-        pointer-events: none !important; /* Ensure it's not clickable */
+        pointer-events: none !important;
     }
     .card.napping::after {
         content: '💤';
@@ -479,7 +613,7 @@
         z-index: 5;
     }
     .card.napping::before {
-        background: rgba(100, 100, 150, 0.3) !important; /* Blueish tint for sleeping */
+        background: rgba(100, 100, 150, 0.3) !important;
     }
 
 
@@ -487,11 +621,11 @@
     #temp-area {
       margin: 20px auto 0 auto;
       display: flex;
-      justify-content: space-evenly; /* Changed from center to space-evenly for better distribution */
+      justify-content: space-evenly;
       align-items: center;
       min-height: 80px;
-      width: 90%; /* Use percentage for responsiveness */
-      max-width: 500px; /* Keep a max-width */
+      width: 90%;
+      max-width: 500px;
       border-radius: 12px;
       background: #fffcf0;
       border: 2px dashed #b8860b;
@@ -500,8 +634,7 @@
       box-shadow: inset 0 1px 5px rgba(0,0,0,0.08);
     }
     .temp-slot {
-      /* Width, height, font-size will be set dynamically by JS */
-      margin: 0; /* Removed fixed margin, now handled by flexbox justify-content */
+      margin: 0;
       background: #fdf5e6;
       border-radius: 9px;
       border: 2px dashed #d4a762;
@@ -512,7 +645,7 @@
       box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
       position: relative;
       overflow: hidden;
-      flex-shrink: 0; /* Prevent shrinking below calculated size */
+      flex-shrink: 0;
     }
     .temp-card {
       width: 100%;
@@ -536,7 +669,6 @@
 
     /* Flying Card Animation */
     .flying-card {
-      /* Width, height, font-size will be set dynamically by JS */
       background: #fffdf7;
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
@@ -546,7 +678,7 @@
       align-items: center;
       justify-content: center;
       user-select: none;
-      z-index: 10000; /* Ensured it's on top */
+      z-index: 10000;
       transition: top 0.3s ease-in-out, left 0.3s ease-in-out, transform 0.3s ease-in-out;
       overflow: hidden;
       color: #5d4037;
@@ -559,8 +691,8 @@
       align-items: center;
       justify-content: center;
       gap: 18px;
-      width: 90%; /* Use percentage for responsiveness */
-      max-width: 500px; /* Keep a max-width */
+      width: 90%;
+      max-width: 500px;
       flex-wrap: wrap;
     }
     #tools-bar button {
@@ -577,6 +709,7 @@
       position: relative;
       min-width: 75px;
       box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive; /* Apply font */
     }
     #tools-bar button:hover {
       background: #e9d9c6;
@@ -606,12 +739,12 @@
       align-items: center;
       justify-content: center;
       gap: 8px;
-      width: 90%; /* Use percentage for responsiveness */
-      max-width: 450px; /* Keep a max-width */
+      width: 90%;
+      max-width: 450px;
     }
     #code-bar input {
-      flex-grow: 1; /* Allow input to grow */
-      max-width: 180px; /* Keep a max-width */
+      flex-grow: 1;
+      max-width: 180px;
       padding: 7px 10px;
       border-radius: 8px;
       border: 2px solid #b8860b;
@@ -620,6 +753,7 @@
       color: #5d4037;
       background: #fffdf7;
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
     }
     #code-bar input::placeholder {
       color: #a0a0a0;
@@ -636,6 +770,7 @@
       transition: background 0.15s;
       min-width: 65px;
       box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
     }
     #code-bar button:hover {
       background: #d2e5bb;
@@ -683,31 +818,6 @@
         margin-bottom: 10px;
     }
 
-    /* NEW: Custom Message Modal (for screen rotation) */
-    #custom-message-modal {
-        position: fixed;
-        top: 0; left: 0; width: 100%; height: 100%;
-        background: rgba(0,0,0,0.6);
-        z-index: 2600; /* Higher than confirm modal */
-        display: none;
-        align-items: center;
-        justify-content: center;
-    }
-    #custom-message-content {
-        background: #fffdf7;
-        padding: 30px 40px;
-        border-radius: 15px;
-        text-align: center;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
-        border: 3px solid #d4a762;
-    }
-    #custom-message-content p {
-        font-size: 1.5rem;
-        color: #5d4037;
-        margin: 0;
-        font-weight: bold;
-    }
-
 
     /* Overlay Screens (Start, Level Finish, Game Over) */
     #start-screen, #level-finish, #game-over {
@@ -726,11 +836,10 @@
     /* Start Screen Specific Styles */
     #start-screen {
       padding-top: 10vh;
-      overflow: hidden; /* Ensure background video/image doesn't overflow */
+      overflow: hidden;
       box-sizing: border-box;
     }
     
-    /* MODIFICATION START: Video Background */
     #start-screen-video {
         position: absolute;
         top: 50%;
@@ -740,14 +849,11 @@
         min-height: 100%;
         width: auto;
         height: auto;
-        z-index: -1; /* Sits on top of the ::before pseudo-element */
+        z-index: -1;
         opacity: 0.99;
-        /* MODIFICATION: Added object-fit for video element */
         object-fit: cover; 
     }
-    /* MODIFICATION END: Video Background */
 
-    /* Start Screen background image (FALLBACK) */
     #start-screen::before {
       content: "";
       position: absolute;
@@ -755,11 +861,12 @@
       background-image: url('mao.webp');
       background-size: cover;
       background-position: center;
-      opacity: 0.5; /* 50% opacity */
-      z-index: -2; /* MODIFIED: Place it behind the video */
+      opacity: 0.5;
+      z-index: -2;
     }
     #start-screen h1 {
-      font-size: 4rem;
+      /* NEW: Responsive font size */
+      font-size: clamp(3rem, 12vw, 5rem);
       margin: 0 0 25px 0;
       letter-spacing: 3px;
       text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
@@ -773,7 +880,7 @@
     #start-screen h1 span:nth-child(2) { animation-delay: -0.2s; }
     #start-screen h1 span:nth-child(3) { animation-delay: 0s; }
     #start-screen h1 span:nth-child(4) { animation-delay: 0.2s; }
-    #start-screen h1 span:nth-child(5) { animation-delay: 0.4s; } /* For the last emoji */
+    #start-screen h1 span:nth-child(5) { animation-delay: 0.4s; }
     #start-screen .start-btn {
       margin-top: 30px;
       padding: 15px 50px;
@@ -787,6 +894,7 @@
       box-shadow: 0 4px 15px rgba(160, 195, 136, 0.5);
       animation: pulse-scale 1.5s infinite ease-in-out;
       transition: background 0.2s, transform 0.1s;
+      font-family: 'ZCOOL KuaiLe', cursive;
     }
     #start-screen .start-btn:hover {
       background: linear-gradient(90deg, #88b368, #a0c388);
@@ -796,7 +904,7 @@
         color: #5d4037;
         line-height: 1.6;
         margin: 0 40px 15px;
-        margin-top: 15vh; /* Pushed down from title */
+        margin-top: 15vh;
     }
     #start-screen span {
         color: #c0392b;
@@ -812,7 +920,6 @@
         left: 0;
         right: 0;
         text-align: center;
-        font-family: 'FangSong', 'Comic Sans MS', cursive;
         letter-spacing: 1.5px;
         text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
     }
@@ -820,18 +927,67 @@
     /* Level Finish and Game Over Screens */
     #level-finish, #game-over {
       font-size: 1.8rem;
-      font-family: 'Segoe UI', 'PingFang SC', 'Helvetica Neue', Arial, 'Microsoft Yahei', sans-serif;
       color: #5d4037;
       background: rgba(255,243,245,0.99);
       border-radius: 25px;
       position: absolute;
-      overflow: hidden; /* Ensure background image doesn't overflow */
-      border: 3px solid #8B4513; /* Consistent with game container border */
-      box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3); /* Consistent with game container shadow */
+      overflow: hidden;
+      border: 3px solid #8B4513;
+      box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
     }
+    
+    /* MODIFIED: Game Over Screen for Cloud Animation */
     #game-over {
-      animation: wave 2s infinite; /* Add these lines */
+      overflow: hidden; /* Hide clouds when they are outside the container */
     }
+    /* MODIFIED: Apply wave animation to inner content, not the whole screen */
+    #game-over-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: wave 2s infinite;
+    }
+    /* NEW: Cloud styling for Game Over screen */
+    .cloud-layer {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .cloud-layer::before,
+    .cloud-layer::after {
+      content: '🌧️';
+      position: absolute;
+      opacity: 0.88;
+      color: #888;
+      animation-name: cloud-pass;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+    .cloud-layer::before {
+      font-size: 120px;
+      top: 10%;
+      animation-duration: 20s;
+      animation-delay: -5s;
+    }
+    .cloud-layer::after {
+      font-size: 80px;
+      top: 25%;
+      animation-duration: 15s;
+    }
+    /* Make sure game over content is above clouds */
+    #game-over > * {
+      position: relative;
+      z-index: 1;
+    }
+
     #level-finish::before, #game-over::before {
       content: "";
       position: absolute;
@@ -839,14 +995,14 @@
       right: 0;
       top: 0;
       bottom: 0;
-      background-image: url('mao1.webp'); /* Use same background image as start screen */
+      background-image: url('mao1.webp');
       background-size: cover;
       background-position: center;
-      opacity: 0.4; /* 40% opacity */
-      z-index: -1; /* Ensure background is behind content */
+      opacity: 0.4;
+      z-index: -1;
     }
     #level-finish button, #game-over button {
-      margin-top: 25px;
+      margin-top: 20px;
       padding: 12px 35px;
       font-size: 1.25rem;
       background: #e6f6d3;
@@ -857,6 +1013,7 @@
       cursor: pointer;
       transition: background 0.15s, transform 0.1s;
       box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
     }
     #level-finish button:hover, #game-over button:hover {
       background: #d2e5bb;
@@ -881,6 +1038,12 @@
       transform: translateY(-1px);
     }
 
+    /* MODIFIED: Apply scaling animation to specific buttons */
+    #retry-btn2,
+    #next-btn {
+       animation: button-scale-pulse 1.5s infinite ease-in-out;
+    }
+
     /* Main Game Footer */
     #footer {
       margin: 20px auto 0 auto;
@@ -888,50 +1051,13 @@
       text-align: center;
       font-size: 1rem;
       color: #8B4513;
-      font-family: 'FangSong', 'Comic Sans MS', cursive;
       letter-spacing: 1.5px;
       text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
     }
 
-    /* REMOVED: Styles for Level 2 on ALL devices to reduce difficulty */
-    /* body.level-2-active .card {
-      width: 50px;
-      height: 65px;
-      font-size: 2rem;
-      border-width: 2px;
-      border-radius: 8px;
-    }
-    body.level-2-active .flying-card {
-      width: 50px;
-      height: 65px;
-      font-size: 2rem;
-      border-width: 2px;
-      border-radius: 8px;
-    }
-    body.level-2-active .temp-slot {
-      width: 45px;
-      height: 60px;
-      margin: 0 4px;
-      border-width: 1.5px;
-      border-radius: 7px;
-    }
-    body.level-2-active .temp-card {
-      font-size: 1.8rem;
-      border-width: 1.5px;
-      border-radius: 7px;
-    }
-    body.level-2-active #temp-area {
-      width: 380px;
-      min-height: 65px;
-      padding: 6px 0;
-    }
-    body.level-2-active #card-stack-area {
-      height: 420px;
-    } */
-
     /* Hint Animation */
     .hinted-shake {
-      animation: shake 0.5s ease-in-out 4; /* Adjust duration and iteration count as needed */
+      animation: shake 0.5s ease-in-out 4;
     }
 
     /* Custom Confirm Modal Styles */
@@ -939,7 +1065,7 @@
         position: fixed;
         top: 0; left: 0; width: 100%; height: 100%;
         background: rgba(0,0,0,0.6);
-        z-index: 2500; /* Increased z-index to ensure modal is on top */
+        z-index: 2500;
         display: none;
         align-items: center;
         justify-content: center;
@@ -969,6 +1095,7 @@
         cursor: pointer;
         margin: 0 10px;
         transition: background 0.15s, transform 0.1s;
+        font-family: 'ZCOOL KuaiLe', cursive;
     }
     #confirm-yes {
         background: #e6f6d3;
@@ -984,37 +1111,34 @@
 
     /* Level Finish Text */
     #level-finish-text {
-      font-family: 'Microsoft Yahei','Segoe UI', 'PingFang SC', 'Helvetica Neue', Arial, sans-serif;
       color: #3e2723;
-      font-size: 1.2em; /* Adjust font size as needed */
+      font-size: 1.2em;
       text-align: center;
+      margin-top: 20px; /* 这里改为 margin-top */
       margin-bottom: 20px;
     }
 
     /* Loading Screen Styles */
     #loading-screen {
-      /* Changed from fixed to absolute, so it's relative to #game-container */
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
-      z-index: 1199; /* Keep a high z-index to cover content within game-container */
+      z-index: 1199;
       display: flex;
       align-items: center;
       justify-content: center;
-      background-color: #f7f0e8; /* Game's main background color */
+      background-color: #f7f0e8;
       background-size: cover;
       transition: opacity 0.5s ease-out;
-      border-radius: 25px; /* Inherit parent's border-radius for visual consistency */
-      overflow: hidden; /* Hide overflow if content goes beyond rounded corners */
+      border-radius: 25px;
+      overflow: hidden;
     }
     #loading-screen::before {
       content: '';
-      /* Changed from fixed to absolute */
       position: absolute;
       top: 0; left: 0; width: 100%; height: 100%;
       background-image: url('mao3.webp');
       background-repeat: no-repeat;
       background-position: center center;
-      /* Removed background-attachment: fixed; as it's no longer full screen */
       background-size: cover;
       opacity: 0.6;
     }
@@ -1035,7 +1159,6 @@
     .loading-title {
       font-size: 2.8rem;
       margin: 0 0 40px 0;
-      font-family: 'FangSong', 'Segoe UI', 'PingFang SC', 'Helvetica Neue', Arial, 'Microsoft Yahei', sans-serif;
       color: #3e2723;
       letter-spacing: 3px;
       text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
@@ -1054,7 +1177,7 @@
       overflow: hidden;
       margin-bottom: 15px;
       box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
-      margin-top: 40vh; /* Pushed down from the title */
+      margin-top: 40vh;
       z-index: 1004;
     }
     #progress-bar {
@@ -1100,18 +1223,29 @@
         left: 0;
         width: 100%;
         height: 100%;
-        background-color: rgba(0, 0, 0, 0.9); /* Dark overlay */
-        z-index: 2000; /* Above all game elements */
-        display: none; /* Hidden by default */
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 2000;
+        display: none;
         flex-direction: column;
         align-items: center;
         justify-content: center;
-        border-radius: 25px; /* Inherit game container border-radius */
+        border-radius: 25px;
         overflow: hidden;
     }
 
-    /* MODIFICATION: Fullscreen video styles for outro */
     #level2-outro-screen video {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        /* 移除 min-width 和 min-height，因为 height: 100% 和 object-fit: cover 会处理填充 */
+        height: 100%;   /* 确保视频高度填充其父容器 */
+        width: auto;    /* 允许宽度根据视频原始比例自动调整 */
+        object-fit: cover; /* 关键：使视频覆盖整个区域，当高度填充时，宽度超出部分会被裁剪 */
+        border-radius: 0;
+        box-shadow: none;
+    }
+    #level2-outro-screen img {
         position: absolute;
         top: 50%;
         left: 50%;
@@ -1120,23 +1254,9 @@
         min-height: 100%;
         width: auto;
         height: auto;
-        object-fit: cover; /* This is key for full-screen without black borders */
-        border-radius: 0; /* Remove border-radius for full screen effect */
-        box-shadow: none; /* Remove shadow for full screen effect */
-    }
-    /* MODIFICATION: Fullscreen image styles for outro */
-    #level2-outro-screen img {
-        position: absolute; /* Added position absolute */
-        top: 50%; /* Added top 50% */
-        left: 50%; /* Added left 50% */
-        transform: translate(-50%, -50%); /* Added transform for centering */
-        min-width: 100%; /* Added min-width */
-        min-height: 100%; /* Added min-height */
-        width: auto; /* Added width auto */
-        height: auto; /* Added height auto */
-        object-fit: cover; /* Changed from 'contain' to 'cover' */
-        border-radius: 0; /* Removed border-radius */
-        box-shadow: none; /* Removed box-shadow */
+        object-fit: cover;
+        border-radius: 0;
+        box-shadow: none;
     }
     #level2-outro-screen .loading-text {
         color: white;
@@ -1156,7 +1276,7 @@
         font-size: 1rem;
         color: #333;
         cursor: pointer;
-        z-index: 2001; /* Above video and loading text */
+        z-index: 2001;
         transition: background 0.2s, transform 0.2s;
     }
     #skip-outro-btn:hover {
@@ -1182,30 +1302,6 @@
         width: 98vw;
         margin: 15px auto 0 auto;
       }
-      .temp-slot {
-        width: 12vw;
-        height: 16vw;
-        /* margin: 0 0.8vw; REMOVED: Managed by flexbox now */
-      }
-      .temp-card {
-        font-size: 6vw;
-      }
-      /* REMOVED: Fixed card sizes in media query */
-      /* .card {
-        width: 15vw;
-        height: 20vw;
-        font-size: 8vw;
-      }
-      body.level-2-active .card {
-        width: 12vw;
-        height: 16vw;
-        font-size: 6vw;
-      }
-      body.level-2-active .temp-slot {
-        width: 11vw;
-        height: 15vw;
-        margin: 0 0.8vw;
-      } */
       #code-bar input {
         width: 50%;
       }
@@ -1213,25 +1309,19 @@
         width: 96vw;
         padding: 5px;
       }
-      .display-card {
-        width: 10vw;
-        height: 13vw;
-        font-size: 4.5vw;
-      }
-      /* New styles for level-finish and game-over on small screens */
       #level-finish, #game-over {
-        font-size: 1.2rem; /* Reduce base font size */
-        padding: 20px; /* Add some padding */
+        font-size: 1.2rem;
+        padding: 20px;
         box-sizing: border-box;
       }
 
       #level-finish button, #game-over button, #retry-btn {
-          font-size: 1rem; /* Reduce button font size */
-          padding: 10px 20px; /* Adjust padding */
+          font-size: 1rem;
+          padding: 10px 20px;
       }
 
       #level-finish-text {
-          font-size: 1em; /* Make it relative to the parent's font-size */
+          font-size: 1em;
       }
     }
   </style>
@@ -1247,7 +1337,7 @@
         <div id="progress-bar"></div>
       </div>
       <p id="loading-text">正在加载资源...</p>
-      <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
+      <small class="loading-footer">喵了个喵 &copy; 2025 | Designed by 开元</small>
     </div>
   </div>
 
@@ -1262,13 +1352,11 @@
   <div id="main-area">
     <div id="display-area">
         </div>
-    <!-- Cat path element, positioned absolutely -->
+    <div id="curtain"></div> <!-- NEW CURTAIN ELEMENT ADDED HERE -->
     <div id="cat-path">
-        <!-- MODIFICATION: Changed snail to cat -->
         <div id="walking-cat">🐈</div>
     </div>
     <div id="card-stack-area"></div>
-    <!-- MODIFICATION: Removed cat-wiggler-path and wiggling-cat. Added three wiggling cat instances -->
     <div id="wiggling-cat-1" class="wiggling-cat-instance">🥳</div>
     <div id="wiggling-cat-4" class="wiggling-cat-instance">🎉</div>
     <div id="wiggling-cat-7" class="wiggling-cat-instance">🍻</div>
@@ -1295,22 +1383,14 @@
     <div id="message-bar"></div>
   </div>
   <div id="footer">
-    喵了个咪 &copy; 2025 | Designed by 开元
+    喵了个喵 &copy; 2025 | Designed by 开元
   </div>
 
-  <!-- NEW: Random Event Overlay -->
   <div id="event-overlay">
       <div id="event-message-box">
           <div class="event-icon"></div>
           <p class="event-text"></p>
       </div>
-  </div>
-
-  <!-- NEW: Custom Message Modal for Screen Rotation -->
-  <div id="custom-message-modal" class="modal-overlay">
-    <div id="custom-message-content">
-      <p>恭喜你发现了新功能</p>
-    </div>
   </div>
 
   <div id="start-screen">
@@ -1319,16 +1399,15 @@
   <source src="mao.mp4" type="video/mp4">
   <img src="mao.webp" alt="背景图">
 </video>
-    <h1><span>喵</span><span>了</span><span>个</span><span>咪</span><span> 🐾</span></h1>
+    <h1><span>喵</span><span>了</span><span>个</span><span>喵</span><span> 🐾</span></h1>
     <p> </p> <p>
       <button class="start-btn" id="start-btn">开始游戏</button>
     </p>
-    <p>收集卡牌，分数达标、全部清空过关<br>
+    <p>收集卡牌获得分数、全部清空过关<br>
     <span style="color:#c0392b;">第二关难度略有升级<br></span>可使用兑换码解锁道具</p>
-    <small class="loading-footer">喵了个咪 &copy; 2025 | Designed by 开元</small>
+    <small class="loading-footer">喵了个喵 &copy; 2025 | Designed by 开元</small>
   </div>
 
-  <!-- MODIFICATION: New Level 2 Outro Screen -->
   <div id="level2-outro-screen" style="display:none;">
     <video id="outro-video" playsinline muted>
         <source src="mao2.mp4" type="video/mp4">
@@ -1336,12 +1415,12 @@
     </video>
     <img id="outro-image" src="mao2.webp" alt="Level 2 Outro Image" style="display:none;">
     <div class="loading-text" style="display:none;">正在加载...</div>
-    <button id="skip-outro-btn" style="display:none;">跳过动画</button> <!-- Added skip button -->
+    <button id="skip-outro-btn" style="display:none;">跳过动画</button>
   </div>
 
   <div id="level-finish" style="display:none;">
     <div id="netease-player" class="responsive-video-container" style="display:none;">
-      <iframe allow="autoplay *; encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="https://embed.music.apple.com/cn/playlist/favourite-music/pl.u-MDAWvoqtWXGMZrz"></iframe>
+      <iframe allow="encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="https://player.bilibili.com/player.html?isOutside=true&aid=114878413148199&bvid=BV1X9uQz6E6v&cid=31143166462&p=1"></iframe>
     </div>
     <div id="player" style="display:none;">
         <div id="player-content1">
@@ -1360,12 +1439,12 @@
         <div id="player-content2">
             <div class="music-imgs">
                 <div class="img"></div>
-                <div id="buffer-box">缓冲,稍等…</div>
+                <div id="buffer-box">缓冲,稍等...</div>
             </div>
             <div class="player-controls">
-                <div class="btn prev iconfont">&#xe603;</div>
+                <div class="btn prev iconfont"></div>
                 <div class="btn play-pause icon-jiediankaishi iconfont"></div>
-                <div class="btn next iconfont">&#xe602;</div>
+                <div class="btn next iconfont"></div>
             </div>
         </div>
     </div>
@@ -1378,9 +1457,12 @@
   </div>
 
   <div id="game-over" style="display:none;">
-    <div id="game-over-text"></div>
-    <button id="retry-btn2">重试</button>
-    <button id="close-game-btn-gameover" style="margin-left:10px;">关闭游戏</button>
+    <div class="cloud-layer"></div>
+    <div id="game-over-content">
+        <div id="game-over-text"></div>
+        <button id="retry-btn2">重试</button>
+        <button id="close-game-btn-gameover" style="margin-left:10px;">关闭游戏</button>
+    </div>
   </div>
 </div>
 
@@ -1394,45 +1476,40 @@
   </div>
 </div>
 
+<!-- BGM audio element, will be loaded dynamically -->
 <audio id="bgm" loop preload="auto">
-  <source src="Get.mp3" type="audio/mpeg">
-  <source src="Get.ogg" type="audio/ogg">
+  <!-- Source will be set by JavaScript for deferred loading -->
   您的浏览器不支持音频元素。
 </audio>
-<audio id="click-sound" src="kaa.mp3" preload="auto"></audio>
 
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/index.js"></script>
 
 <script>
-// 游戏配置常量
+// Game configuration constants
 const CARD_ICONS = [
   "🐈", "💐", "🪼", "👒", "🏵️", "🧸", "🍬", "🔮", "🎡", "🐈‍⬛", "🍫", "🪭",
-  "🐖", "🧶", "🌻", "🦋", "💎"
+  "🐖", "🧶", "🌻", "🦋", "💎", "🌈", "🍂"
 ];
 const LEVELS = [
-  {num: 1, visible: 18, total: 27, stack: 1, rows: 3, cols: 6, overlap: 30, targetScore: 25, totalDisplaySets: 5},
-  {num: 2, visible: 50, total: 168, stack: 2, rows: 7, cols: 9, overlap: 23, targetScore: 100, totalDisplaySets: 20}
+  {num: 1, visible: 20, total: 27, stack: 2, rows: 3, cols: 5, overlap: 24, targetScore: 30, totalDisplaySets: 9},
+  {num: 2, visible: 18, total: 168, stack: 3, rows: 7, cols: 8, overlap: 24, targetScore: 150, totalDisplaySets: 25}
 ];
-const TEMP_LIMIT = 7; // 暂存区最大卡片数量
-const DISPLAY_CARD_MATCH_SCORE = 5; // 匹配一组展示卡片的分数
-const INITIAL_DISPLAY_SETS_VISIBLE = 2; // 初始可见的展示卡片组数量
+const TEMP_LIMIT = 7;
+const DISPLAY_CARD_MATCH_SCORE = 5;
+const INITIAL_DISPLAY_SETS_VISIBLE = 2;
 
-/*
- * 兑换码配置。
- * 键是兑换码（小写）。
- * 值是指定每个工具数量或特殊类型的对象。
- */
 const REDEMPTION_CODES = {
   "kaiyuan": { undo: 20, hint: 20, shuffle: 20 },
   "兑换码": { undo: 5, hint: 5, shuffle: 5 },
-  "喵了个咪": { undo: 50, hint: 50, shuffle: 50 },
+  "喵了个喵": { undo: 50, hint: 50, shuffle: 50 },
   "不知道": { undo: 3, hint: 1, shuffle: 1 },
   "开元": { undo: 10, hint: 10, shuffle: 10 },
-  "通关": { type: "skip_level" } // 添加了“跳过关卡”兑换码
+  "通关": { type: "skip_level" },
+  "xianshi": { type: "curtain_off" } // NEW: Redemption code for disabling curtain
 };
 
-// DOM 元素
+// DOM Elements
 const bgm = document.getElementById('bgm');
 const confirmModal = document.getElementById('confirm-modal');
 const confirmMsg = document.getElementById('confirm-msg');
@@ -1456,79 +1533,75 @@ const codeInput = document.getElementById('code-input');
 const codeBtn = document.getElementById('code-btn');
 const levelFinishTextElement = document.getElementById('level-finish-text');
 const neteasePlayerDiv = document.getElementById('netease-player');
-const playerDiv = document.getElementById('player'); // 自定义音乐播放器
+const playerDiv = document.getElementById('player');
 const currentScoreElement = document.getElementById('current-score');
 const targetScoreElement = document.getElementById('target-score');
 const levelInfoElement = document.getElementById('level-info');
-// const cardCountInfoElement = document.getElementById('card-count-info'); // 移除此行
 const displayArea = document.getElementById('display-area');
-const cardStackArea = document.getElementById('card-stack-area'); // 获取卡片堆栈区域元素
-const catPath = document.getElementById('cat-path'); // 获取小猫路径元素
-const walkingCat = document.getElementById('walking-cat'); // 获取行走猫咪元素
+const cardStackArea = document.getElementById('card-stack-area');
+const catPath = document.getElementById('cat-path');
+const walkingCat = document.getElementById('walking-cat');
+const curtainElement = document.getElementById('curtain'); // NEW: Curtain element
 
-// MODIFICATION: Get references to the three wiggling cat instances
 const wigglingCat1 = document.getElementById('wiggling-cat-1');
 const wigglingCat4 = document.getElementById('wiggling-cat-4');
 const wigglingCat7 = document.getElementById('wiggling-cat-7');
 
-// MODIFICATION: Level 2 Outro Screen elements
 const level2OutroScreen = document.getElementById('level2-outro-screen');
 const outroVideo = document.getElementById('outro-video');
 const outroImage = document.getElementById('outro-image');
 const outroLoadingText = level2OutroScreen.querySelector('.loading-text');
-const skipOutroBtn = document.getElementById('skip-outro-btn'); // Get the new skip button
+const skipOutroBtn = document.getElementById('skip-outro-btn');
 
-// NEW: Random Event elements
 const eventOverlay = document.getElementById('event-overlay');
 const eventMessageBox = document.getElementById('event-message-box');
 const eventIconEl = eventMessageBox.querySelector('.event-icon');
 const eventTextEl = eventMessageBox.querySelector('.event-text');
 
-// NEW: Custom Message Modal elements for screen rotation
-const customMessageModal = document.getElementById('custom-message-modal');
 
+let confirmCallback = null;
+let outroVideoTimeout = null;
+let isCatMirrored = true;
+let randomEventTimer = null;
+let curtainTimer = null; // NEW: Timer for random curtain toggling
+let isLandscape = false; 
+let hasShownLandscapeMessage = false; // NEW: Flag to track if landscape message has been shown
+let lastShakeTime = 0; // NEW: for shake detection cooldown
 
-let confirmCallback = null; // 确认模态框的回调函数
-let outroVideoTimeout = null; // 用于视频播放超时的计时器
-let isCatMirrored = false; // To track current orientation of walking cat
-let randomEventTimer = null; // NEW: Timer for random cat events
-let lastOrientation = window.innerWidth > window.innerHeight ? 'landscape' : 'portrait'; // Track initial orientation
+// NEW: Web Audio API variables
+let audioContext;
+let clickSoundBuffer;
+let bgmAudioBuffer; // Buffer for the background music
 
-// 游戏状态对象
+// Game State Object
 let game = {
   level: 1,
+  levelStartTime: 0, // MODIFIED: Added for level timer
   cards: [],
   board: [],
   temp: [],
   matched: [],
   usedIcons: [],
   toolUses: {undo: 0, hint: 0, shuffle: 0},
-  score: 0, // 当前玩家分数
-  targetScore: 0, // 当前关卡目标分数
-  displayCards: [], // 展示卡片组数组 [{icon: "X", id: 1}, {icon: "X", id: 2}, {icon: "X", id: 3}]
-  totalDisplaySetsGenerated: 0, // 当前关卡已生成的展示组总数
-  progress: 0, // 未直接用于当前进度显示，但保留
-  stepStack: [], // 用于撤销功能
+  score: 0,
+  targetScore: 0,
+  displayCards: [],
+  totalDisplaySetsGenerated: 0,
+  progress: 0,
+  stepStack: [],
   bgmOn: true,
-  isNewLevel: false, // 控制新关卡加载时卡片入场动画的标志
-  lock: false, // 防止动画/过渡期间多次点击导致问题
-  cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 } // NEW: Store calculated card dimensions
+  isNewLevel: false,
+  lock: false,
+  cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
+  layout: { areaWidth: 0, areaHeight: 0 },
+  isCurtainEnabled: true // NEW: Controls if the curtain effect is active
 };
 
-// 工具函数
-/**
- * 随机打乱数组。
- * @param {Array} arr - 要打乱的数组。
- * @returns {Array} 新的打乱后的数组。
- */
+// Utility Functions
 function randArr(arr) {
   return arr.slice().sort(() => Math.random() - 0.5);
 }
 
-/**
- * 使用 Fisher-Yates 算法原地打乱数组。
- * @param {Array} arr - 要打乱的数组。
- */
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
@@ -1536,235 +1609,253 @@ function shuffle(arr) {
   }
 }
 
-/**
- * 使用 JSON 序列化创建对象的深拷贝。
- * @param {Object} obj - 要克隆的对象。
- * @returns {Object} 对象的深拷贝。
- */
 function deepClone(obj) {
   return JSON.parse(JSON.stringify(obj));
 }
 
-/**
- * 在两个值之间生成一个随机数（包含）。
- * @param {number} a - 第一个数字。
- * @param {number} b - 第二个数字。
- * @returns {number} 在 a 和 b 之间的一个随机数。
- */
 function randBetween(a, b) { return a + Math.random() * (b - a); }
 
-/**
- * 播放或暂停背景音乐。
- * @param {boolean} on - true 为播放，false 为暂停。
- */
+// Modified playBgm to use Web Audio API for better control and preloading
 function playBgm(on) {
-  if (!bgm) return;
-  if (on) {
-    const playPromise = bgm.play();
-    if (playPromise !== undefined) {
-      playPromise.catch(error => {
-        console.error("BGM 自动播放被阻止：", error);
-        game.bgmOn = false; // 如果自动播放失败，更新状态
-        musicToggleBtn.innerHTML = '▶️'; // 更新 UI
-      });
+    if (!audioContext || !bgmAudioBuffer) return;
+
+    if (on) {
+        // Stop any currently playing BGM
+        if (game.bgmSource) {
+            game.bgmSource.stop();
+            game.bgmSource.disconnect();
+        }
+
+        const source = audioContext.createBufferSource();
+        source.buffer = bgmAudioBuffer;
+        source.loop = true;
+        source.connect(audioContext.destination);
+        source.start(0);
+        game.bgmSource = source; // Store the source to stop it later
+    } else {
+        if (game.bgmSource) {
+            game.bgmSource.stop();
+            game.bgmSource.disconnect();
+            game.bgmSource = null;
+        }
     }
-  } else {
-    bgm.pause();
-  }
 }
 
-// 用于高效播放的点击音效池
-let clickSoundPool = [];
-const MAX_CLICK_SOUNDS = 10; // 最大并发点击音效
-
-/**
- * 为点击音效创建一个新的 Audio 实例。
- * @returns {HTMLAudioElement} 新的 Audio 元素。
- */
-function createClickSoundInstance() {
-    const audio = new Audio(); // Create an empty audio element
-    audio.preload = 'auto';
-    audio.volume = 0.4;
-
-    // Add multiple source elements for better browser compatibility
-    const mp3Source = document.createElement('source');
-    mp3Source.src = 'kaa.mp3';
-    mp3Source.type = 'audio/mpeg';
-    audio.appendChild(mp3Source);
-
-    const oggSource = document.createElement('source');
-    oggSource.src = 'kaa.ogg'; // Assuming kaa.ogg exists for fallback
-    oggSource.type = 'audio/ogg';
-    audio.appendChild(oggSource);
-
-    // Add an error listener to the audio element itself for better debugging
-    audio.addEventListener('error', (e) => {
-        console.error("Audio element error:", e);
-        console.error("Audio sources:", Array.from(audio.children).map(s => s.src));
-        console.error("Current src:", audio.src);
-    });
-
-    return audio;
+// NEW: Initialize Web Audio API and load critical sounds
+async function initAudio() {
+    try {
+        // Create AudioContext after a user gesture (e.g., click)
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        // If context is suspended, resume it
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+        // Fetch and decode the click sound file if not already done
+        if (!clickSoundBuffer) {
+            const response = await fetch('kaa.mp3');
+            const arrayBuffer = await response.arrayBuffer();
+            clickSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        }
+        // Fetch and decode the BGM file if not already done
+        if (!bgmAudioBuffer) {
+            const response = await fetch('Get.mp3');
+            const arrayBuffer = await response.arrayBuffer();
+            bgmAudioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        }
+    } catch (e) {
+        console.error("Failed to initialize Web Audio or load audio files:", e);
+    }
 }
 
-// 初始化点击音效池
-for (let i = 0; i < MAX_CLICK_SOUNDS; i++) {
-    clickSoundPool.push(createClickSoundInstance());
-}
-
-/**
- * 从音效池中播放点击音效。
- */
+// NEW: Play sound using Web Audio API
 function playClickSound() {
-  if (game.bgmOn) { // 仅在 BGM 启用时播放（作为通用音效开关）
-    let soundInstance = clickSoundPool.find(audio => audio.paused || audio.ended);
-    if (!soundInstance) {
-        soundInstance = createClickSoundInstance();
-        // 可选：如果池已满，替换最旧的实例，或者只是临时创建
+    if (!clickSoundBuffer || !audioContext || !game.bgmOn) return;
+    try {
+        const source = audioContext.createBufferSource();
+        source.buffer = clickSoundBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+    } catch (e) {
+        console.error("Failed to play click sound:", e);
     }
-    soundInstance.currentTime = 0; // 重置到开始以便立即播放
-    soundInstance.play().catch(e => console.error("点击音效播放失败：", e));
-  }
 }
 
-/**
- * 显示自定义确认模态框。
- * @param {string} msg - 要显示的消息。
- * @param {Function} callback - 如果点击“确定”则调用的函数。
- */
+
+// NEW: Function to trigger vibration or sound on match
+function triggerMatchFeedback() {
+    if (navigator.vibrate) {
+        navigator.vibrate(100); // Vibrate for 100ms
+    }
+    playClickSound(); // Always play sound, even with vibration
+}
+
+
 function showConfirm(msg, callback) {
-  confirmMsg.textContent = msg;
+  confirmMsg.innerHTML = msg; // Use innerHTML to allow basic HTML like <br>
   confirmCallback = callback;
   confirmModal.style.display = 'flex';
 }
 
-/**
- * 隐藏自定义确认模态框。
- */
 function hideConfirm() {
   confirmModal.style.display = 'none';
   confirmCallback = null;
 }
 
-// 确认模态框按钮的事件监听器
 confirmYes.onclick = () => {
   const callback = confirmCallback;
   hideConfirm();
   if (callback) {
-    setTimeout(callback, 20); // 允许模态框隐藏的短延迟
+    setTimeout(callback, 20);
   }
 };
 confirmNo.onclick = hideConfirm;
 
-/**
- * 显示自定义消息模态框（无按钮，自动消失）。
- * @param {string} msg - 要显示的消息。
- * @param {number} duration - 消息显示持续时间（毫秒）。
- */
-function showCustomMessage(msg, duration = 2000) {
-    const customMessageContent = document.getElementById('custom-message-content').querySelector('p');
-    customMessageContent.textContent = msg;
-    customMessageModal.style.display = 'flex';
-
-    setTimeout(() => {
-        customMessageModal.style.display = 'none';
-    }, duration);
-}
-
-/**
- * 生成一组展示卡片（3 张相同图标的卡片）。
- * 图标从游戏板上当前可用的唯一图标中选择。
- * @param {Array<string>} excludeIcons - 要从选择中排除的图标数组。
- * @returns {Array} 包含 3 个用于展示的卡片对象的数组，如果没有合适的图标则返回 null。
- */
 function generateDisplayCardSet(excludeIcons = []) {
     let chosenIcon = null;
-
-    // --- 新增逻辑：优先从前 1-4 层（堆栈 0-3）的可见卡片中选择 ---
-    const visibleLayeredCards = game.board.filter(c =>
-        !c.matched && isCardClickable(c, game.board) && c.stack >= 0 && c.stack <= 3
-    );
+    const visibleLayeredCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.stack >= 0 && c.stack <= 3);
     const visibleLayeredIconCounts = {};
     visibleLayeredCards.forEach(c => visibleLayeredIconCounts[c.icon] = (visibleLayeredIconCounts[c.icon] || 0) + 1);
 
-    let potentialVisibleLayeredIcons = Object.keys(visibleLayeredIconCounts).filter(icon => {
-        if (excludeIcons.includes(icon)) return false;
-        return visibleLayeredIconCounts[icon] >= 3;
-    });
+    let potentialVisibleLayeredIcons = Object.keys(visibleLayeredIconCounts).filter(icon => !excludeIcons.includes(icon) && visibleLayeredIconCounts[icon] >= 3);
 
     if (potentialVisibleLayeredIcons.length > 0) {
         chosenIcon = potentialVisibleLayeredIcons[Math.floor(Math.random() * potentialVisibleLayeredIcons.length)];
     } else {
-        // --- 现有逻辑（如果可见分层卡片中没有三联牌则回退） ---
-        // 1. 主要来源：从游戏板上所有可点击卡片 + 暂存区中查找三联牌
         const allClickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
         const combinedClickableIcons = [...allClickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
         const combinedClickableIconCounts = {};
         combinedClickableIcons.forEach(icon => combinedClickableIconCounts[icon] = (combinedClickableIconCounts[icon] || 0) + 1);
 
-        let potentialCombinedIcons = Object.keys(combinedClickableIconCounts).filter(icon => {
-            if (excludeIcons.includes(icon)) return false;
-            return combinedClickableIconCounts[icon] >= 3;
-        });
+        let potentialCombinedIcons = Object.keys(combinedClickableIconCounts).filter(icon => !excludeIcons.includes(icon) && combinedClickableIconCounts[icon] >= 3);
 
         if (potentialCombinedIcons.length > 0) {
             chosenIcon = potentialCombinedIcons[Math.floor(Math.random() * potentialCombinedIcons.length)];
         } else {
-            // 2. 次要来源（回退）：如果仍然没有可点击卡片中的三联牌，则从游戏中所有卡片（即使被覆盖）中查找
             const allIconsInGame = game.cards.map(c => c.icon);
             const allIconCounts = {};
             allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
-
-            const anyTripletIcons = Object.keys(allIconCounts).filter(icon => {
-                if (excludeIcons.includes(icon)) return false;
-                return allIconCounts[icon] >= 3;
-            });
+            const anyTripletIcons = Object.keys(allIconCounts).filter(icon => !excludeIcons.includes(icon) && allIconCounts[icon] >= 3);
 
             if (anyTripletIcons.length > 0) {
                 chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
             } else {
-                // 最后手段：如果根本没有三联牌，选择任何存在的图标（这种情况应该很少发生）
                 const availableIconsWithoutExclusion = allIconsInGame.filter(icon => !excludeIcons.includes(icon));
                 if (availableIconsWithoutExclusion.length > 0) {
                     chosenIcon = availableIconsWithoutExclusion[Math.floor(Math.random() * availableIconsWithoutExclusion.length)];
-                } else if (allIconsInGame.length > 0) { // 如果所有图标都在排除列表中，则只选择任何一个
+                } else if (allIconsInGame.length > 0) {
                     chosenIcon = allIconsInGame[Math.floor(Math.random() * allIconsInGame.length)];
                 } else {
-                    return null; // 没有可用的卡片图标
+                    return null;
                 }
             }
         }
     }
 
     if (chosenIcon) {
-        // 返回 3 个具有所选图标的卡片对象
         return [
             { icon: chosenIcon, id: Date.now() + 1 },
             { icon: chosenIcon, id: Date.now() + 2 },
             { icon: chosenIcon, id: Date.now() + 3 }
         ];
     } else {
-        return null; // 如果 game.cards 已正确初始化，则不应到达此处
+        return null;
     }
 }
 
+function calculateResponsiveSizes() {
+    const areaW = cardStackArea.offsetWidth;
+    const lv = LEVELS[game.level - 1];
+    const baseCardWidth = areaW / (lv.cols + 2);
+    const clampedCardWidth = Math.max(40, Math.min(baseCardWidth, 80));
+    const cardAspectRatio = 65 / 85;
+    const finalCardW = clampedCardWidth;
+    const finalCardH = finalCardW / cardAspectRatio;
 
-/**
- * 为给定关卡生成卡片和游戏板布局。
- * @param {number} levelIdx - 当前关卡号（1 或 2）。
- * @returns {Object} 包含生成的卡片、游戏板和已使用的图标。
- */
+    game.cardDimensions = {
+        width: finalCardW,
+        height: finalCardH,
+        fontSize: finalCardW * 0.45,
+        borderRadius: finalCardW * 0.15,
+        borderWidth: Math.max(2, finalCardW * 0.04)
+    };
+}
+
+function repositionCardsAndLayout(currentBoard, levelConfig) {
+    const lv = levelConfig;
+    const newUnmatchedBoard = [];
+    const unmatchedCards = currentBoard.filter(c => !c.matched);
+    const matchedCards = currentBoard.filter(c => c.matched); 
+
+    game.layout.areaWidth = cardStackArea.offsetWidth;
+    game.layout.areaHeight = cardStackArea.offsetHeight;
+    calculateResponsiveSizes();
+
+    let stackDepth = lv.stack;
+    const cardsPerStackLayer = Math.ceil(unmatchedCards.length / stackDepth);
+    const placementOverlapFactor = 0.9;
+    let maxAttempts = 150;
+
+    let cardsToPlace = unmatchedCards.map(c => ({ ...c }));
+    shuffle(cardsToPlace);
+
+    for (let i = 0; i < cardsToPlace.length; i++) {
+        const card = cardsToPlace[i];
+        const s = Math.min(Math.floor(i / cardsPerStackLayer), stackDepth - 1);
+        let x = 0, y = 0;
+        let foundPosition = false;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            let tempX = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
+            let tempY = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
+            tempX += (s * 5 * (Math.random() - 0.5));
+            tempY += (s * 5 * (Math.random() - 0.5));
+            tempX = Math.max(5, Math.min(tempX, game.layout.areaWidth - game.cardDimensions.width - 5));
+            tempY = Math.max(5, Math.min(tempY, game.layout.areaHeight - game.cardDimensions.height - 5));
+
+            let overlap = false;
+            for (const existingCard of newUnmatchedBoard) {
+                if (existingCard.stack <= s) {
+                    const dx = Math.abs(tempX - existingCard.x);
+                    const dy = Math.abs(tempY - existingCard.y);
+                    if (dx < game.cardDimensions.width * placementOverlapFactor && dy < game.cardDimensions.height * placementOverlapFactor) {
+                        overlap = true;
+                        break;
+                    }
+                }
+            }
+            if (!overlap) {
+                x = tempX;
+                y = tempY;
+                foundPosition = true;
+                break;
+            }
+        }
+        if (!foundPosition) {
+            x = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
+            y = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
+        }
+        const z = s * 1000 + i;
+        newUnmatchedBoard.push({ ...card, x, y, z, stack: s });
+    }
+
+    const finalBoard = [...newUnmatchedBoard, ...matchedCards];
+    finalBoard.sort((a, b) => (a.z || 0) - (b.z || 0));
+    return finalBoard;
+}
+
+
 function genLevel(levelIdx){
   const lv = LEVELS[levelIdx - 1];
-
-  // 初始化关卡分数和目标分数
   game.score = 0;
   game.targetScore = lv.targetScore;
-  game.totalDisplaySetsGenerated = 0; // 新关卡加载时重置计数
+  game.totalDisplaySetsGenerated = 0;
+  game.isCurtainEnabled = true; // Reset curtain for new level
 
   let allIcons = [];
   const requiredUniqueIcons = Math.ceil(lv.total / 3);
-  let availableIcons = randArr(CARD_ICONS).slice(0, Math.min(CARD_ICONS.length, requiredUniqueIcons + 2)); // 确保足够的唯一图标
+  let availableIcons = randArr(CARD_ICONS).slice(0, Math.min(CARD_ICONS.length, requiredUniqueIcons + 2));
 
   let iconPool = [];
   for (let i = 0; i < requiredUniqueIcons; i++) {
@@ -1772,213 +1863,79 @@ function genLevel(levelIdx){
       iconPool.push(availableIcons[i % availableIcons.length]);
     }
   }
-  // 填充剩余空位以达到总卡片数
   while (iconPool.length < lv.total) {
       const remaining = lv.total - iconPool.length;
-      if (remaining < 3) { // 如果剩余不足 3 张卡片，则逐一添加
-          for (let i = 0; i < remaining; i++) {
-              iconPool.push(availableIcons[i % availableIcons.length]);
-          }
-      } else { // 否则，添加一个三联牌
+      if (remaining < 3) {
+          for (let i = 0; i < remaining; i++) iconPool.push(availableIcons[i % availableIcons.length]);
+      } else {
           const iconToAdd = availableIcons[Math.floor(Math.random() * availableIcons.length)];
           iconPool.push(iconToAdd, iconToAdd, iconToAdd);
       }
   }
-  shuffle(iconPool); // 打乱最终的图标池
+  shuffle(iconPool);
   allIcons = iconPool;
 
   let cards = [];
   for(let i = 0; i < lv.total; i++){
-    cards.push({
-      id: i,
-      icon: allIcons[i],
-      matched: false
-    });
+    cards.push({ id: i, icon: allIcons[i], matched: false });
   }
-  // 在生成展示卡片之前在此处设置 game.cards，以便 generateDisplayCardSet 可以使用它。
   game.cards = cards;
 
-  let board = [];
-  const areaW = cardStackArea.offsetWidth;
-  const areaH = cardStackArea.offsetHeight;
+  game.board = repositionCardsAndLayout(cards.map(c => ({...c, covered: false, isNapping: false})), lv);
 
-  // NEW: Dynamically calculate card dimensions based on area and level configuration
-  const cardAspectRatio = 65 / 85; // Standard card aspect ratio (width / height)
-  const minCardWidth = 50; // Minimum allowed card width
-  const maxCardWidth = 80; // Maximum allowed card width
-  const cardPadding = 10; // Estimated internal padding/spacing around cards for layout
-
-  const totalCards = lv.total;
-
-  // Calculate estimated card dimensions based on total cards and area
-  // This heuristic aims to fill the area reasonably while maintaining aspect ratio
-  let estimatedCardArea = (areaW * areaH) / totalCards; // Average area per card
-  let estimatedCardH = Math.sqrt(estimatedCardArea / cardAspectRatio);
-  let estimatedCardW = estimatedCardH * cardAspectRatio;
-
-  // Adjust for padding and clamp to reasonable min/max values
-  let finalCardW = estimatedCardW - cardPadding;
-  let finalCardH = estimatedCardH - cardPadding;
-
-  finalCardW = Math.max(minCardWidth, Math.min(finalCardW, maxCardWidth));
-  finalCardH = finalCardW / cardAspectRatio; // Recalculate height to maintain aspect ratio
-
-  game.cardDimensions = {
-      width: finalCardW,
-      height: finalCardH,
-      fontSize: finalCardW * 0.4, // Adjust font size relative to card width
-      borderRadius: finalCardW * 0.15, // Adjust border radius relative to card width
-      borderWidth: finalCardW * 0.04 // Adjust border width relative to card width
-  };
-
-  let stackDepth = lv.stack;
-
-  const cardsPerStackLayer = Math.ceil(lv.total / stackDepth);
-
-  // 在游戏板上定位卡片
-  for (let cardIdx = 0; cardIdx < lv.total; cardIdx++) {
-    const s = Math.min(Math.floor(cardIdx / cardsPerStackLayer), stackDepth - 1); // 确定堆栈层
-
-    let x = 0, y = 0;
-    let maxAttempts = 50; // 查找非重叠位置的最大尝试次数
-    let foundPosition = false;
-    for (let attempt = 0; attempt < maxAttempts; attempt++) {
-      let tempX = randBetween(5, areaW - game.cardDimensions.width - 5);
-      let tempY = randBetween(5, areaH - game.cardDimensions.height - 5);
-
-      // 根据堆栈添加轻微偏移以实现视觉深度
-      tempX += (s * 5 * (Math.random() - 0.5));
-      tempY += (s * 5 * (Math.random() - 0.5));
-
-      // 将位置限制在边界内
-      tempX = Math.max(5, Math.min(tempX, areaW - game.cardDimensions.width - 5));
-      tempY = Math.max(5, Math.min(tempY, areaH - game.cardDimensions.height - 5));
-
-      let overlap = false;
-      // 检查与相同或更低堆栈层中的卡片是否重叠
-      for (const existingCard of board) {
-        if (existingCard.stack <= s) {
-          const dx = Math.abs(tempX - existingCard.x);
-          const dy = Math.abs(tempY - existingCard.y);
-          
-          // Original general overlap check
-          if (dx < game.cardDimensions.width * 0.7 && dy < game.cardDimensions.height * 0.7) {
-            // NEW: Additional check for identical cards stacking too perfectly
-            if (cards[cardIdx].icon === existingCard.icon && dx < game.cardDimensions.width * 0.2 && dy < game.cardDimensions.height * 0.2) {
-                // If same icon and almost perfectly stacked, force re-attempt
-                overlap = true;
-                break;
-            } else if (dx < game.cardDimensions.width * 0.7 && dy < game.cardDimensions.height * 0.7) {
-                // General overlap, but allow if icons are different or overlap is not too perfect
-                overlap = true; // Mark as overlap, but it's okay if not identical card stacking
-            }
-          }
-        }
-      }
-
-      if (!overlap) {
-        x = tempX;
-        y = tempY;
-        foundPosition = true;
-        break;
-      }
-    }
-
-    // 如果未找到非重叠位置的备用方案
-    if (!foundPosition) {
-        x = randBetween(5, areaW - game.cardDimensions.width - 5);
-        y = randBetween(5, areaH - game.cardDimensions.height - 5);
-    }
-
-    const z = s * 1000 + cardIdx; // 用于分层的 Z 索引
-
-    board.push({
-      id: cards[cardIdx].id,
-      icon: cards[cardIdx].icon,
-      x, y, z,
-      matched: false,
-      covered: false, // 未明确使用但为了清晰起见
-      stack: s,
-      isNapping: false // NEW: For cat nap event
-    });
-  }
-
-  board.sort((a, b) => a.z - b.z); // 按 z 索引排序以确定渲染顺序
-  game.board = board; // 将游戏板分配给游戏状态
-
-  // 生成初始展示卡片，确保图标唯一
   game.displayCards = [];
-  const usedDisplayIconsForLevel = new Set(); // 跟踪此关卡中展示组使用的图标
+  const usedDisplayIconsForLevel = new Set();
   for (let i = 0; i < INITIAL_DISPLAY_SETS_VISIBLE; i++) {
       const newSet = generateDisplayCardSet(Array.from(usedDisplayIconsForLevel));
       if (newSet) {
           game.displayCards.push({ id: `display-set-${i}`, cards: newSet, matched: false });
-          usedDisplayIconsForLevel.add(newSet[0].icon); // 添加新生成的集合的图标
+          usedDisplayIconsForLevel.add(newSet[0].icon);
           game.totalDisplaySetsGenerated++;
       }
   }
-
   return {cards: game.cards, board: game.board, usedIcons: availableIcons.slice(0, Math.ceil(lv.total/3))};
 }
 
-/**
- * 检查卡片是否可点击（未匹配且未被其他卡片覆盖）。
- * @param {Object} card - 要检查的卡片。
- * @param {Array} board - 当前游戏板。
- * @returns {boolean} 如果卡片可点击则为 true，否则为 false。
- */
 function isCardClickable(card, board){
-  if(card.matched || card.isNapping) return false; // MODIFIED: Check for napping status
+  if(card.matched || card.isNapping) return false;
 
-  const activeCards = board.filter(c => !c.matched); // 只考虑未匹配的卡片
-
-  const cardW = game.cardDimensions.width; // Use dynamic width
-  const cardH = game.cardDimensions.height; // Use dynamic height
-  const overlapThresholdX = cardW * 0.7; // X 轴重叠阈值
-  const overlapThresholdY = cardH * 0.7; // Y 轴重叠阈值
+  const activeCards = board.filter(c => !c.matched);
+  const cardW = game.cardDimensions.width;
+  const cardH = game.cardDimensions.height;
+  const currentLevelConfig = LEVELS[game.level - 1];
+  const clickableOverlapFactor = 1 - (currentLevelConfig.overlap / 100);
+  const overlapThresholdX = cardW * clickableOverlapFactor;
+  const overlapThresholdY = cardH * clickableOverlapFactor;
 
   for (const otherCard of activeCards) {
-    if (card.id === otherCard.id) {
-      continue;
-    }
-
-    // 如果另一张 Z 索引更高的卡片明显重叠，则卡片被覆盖
+    if (card.id === otherCard.id) continue;
     if (otherCard.z > card.z) {
       const dx = Math.abs(otherCard.x - card.x);
       const dy = Math.abs(otherCard.y - card.y);
-
-      if (dx < overlapThresholdX && dy < overlapThresholdY) {
-        return false; // 卡片被覆盖
-      }
+      if (dx < overlapThresholdX && dy < overlapThresholdY) return false;
     }
   }
-  return true; // 卡片可点击
+  return true;
 }
 
-/**
- * 处理卡片的点击事件。
- * @param {number} id - 被点击卡片的 ID。
- */
 function clickCard(id) {
-  if (game.lock) return; // 防止动画期间多次点击
-
+  if (game.lock) return;
   let cardData = game.board.find(c => c.id === id);
-
   if (!cardData || cardData.matched || !isCardClickable(cardData, game.board)) return;
 
-  // 预检查添加此卡片是否会在没有匹配的情况下超出暂存区限制
+  playClickSound();
+
   let tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
   let iconCntCheck = {};
   tempCheck.forEach(c => iconCntCheck[c.icon] = (iconCntCheck[c.icon] || 0) + 1);
   let matchedIconCheck = Object.keys(iconCntCheck).find(k => iconCntCheck[k] === 3);
-
   if (game.temp.length >= TEMP_LIMIT && !matchedIconCheck) {
       gameOver('暂存区已超限，游戏失败！');
       return;
   }
 
-  saveStep(); // 保存当前游戏状态以供撤销
-  game.lock = true; // 获取锁定
+  saveStep();
+  game.lock = true;
 
   const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
   if (!clickedCardEl) {
@@ -1987,96 +1944,95 @@ function clickCard(id) {
   }
 
   const startRect = clickedCardEl.getBoundingClientRect();
-
-  // 创建并设置飞行卡片元素的样式
   const flyingCard = document.createElement('div');
   flyingCard.className = 'flying-card';
   flyingCard.innerHTML = cardData.icon;
   document.body.appendChild(flyingCard);
-
   flyingCard.style.left = `${startRect.left}px`;
   flyingCard.style.top = `${startRect.top}px`;
   flyingCard.style.width = `${startRect.width}px`;
   flyingCard.style.height = `${startRect.height}px`;
-  flyingCard.style.fontSize = `${game.cardDimensions.fontSize}px`; // Set font size
-  flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`; // Set border radius
-  flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`; // Set border width
+  flyingCard.style.fontSize = `${game.cardDimensions.fontSize}px`;
+  flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
+  flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
 
-
-  // 隐藏原始卡片
   clickedCardEl.style.opacity = '0';
   clickedCardEl.style.pointerEvents = 'none';
+  
+  const animationDuration = 150;
+  const tempAppearanceDelay = 80;
 
-  playClickSound(); // 播放点击音效
-
-  const animationDuration = 150; // 飞行卡片动画持续时间
-  const tempAppearanceDelay = 80; // 卡片出现在暂存区之前的延迟
-
-  // 计算飞行卡片的目的地
   requestAnimationFrame(() => {
-    // 模拟将卡片添加到暂存区以查找其正确的排序位置
     const tempForPositionCalculation = [...game.temp, { icon: cardData.icon, id: cardData.id }];
     tempForPositionCalculation.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
     const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
     const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-
     if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
-        console.error("计算飞行卡片的结束槽索引无效。中止动画。");
-        document.body.removeChild(flyingCard);
+        console.error("Invalid end slot index for flying card. Aborting animation.");
+        if(flyingCard.parentNode) document.body.removeChild(flyingCard);
         game.lock = false;
         return;
     }
-
     const endRect = tempSlots[endSlotIndex].getBoundingClientRect();
     const tempSlotStyle = window.getComputedStyle(tempSlots[endSlotIndex]);
     const flyingCardFinalWidth = parseFloat(tempSlotStyle.width) * 0.9;
     const flyingCardFinalHeight = parseFloat(tempSlotStyle.height) * 0.9;
-
     const destLeft = endRect.left + (endRect.width - flyingCardFinalWidth) / 2;
     const destTop = endRect.top + (endRect.height - flyingCardFinalHeight) / 2;
-
-    // 应用动画的目标样式
     flyingCard.style.left = `${destLeft}px`;
     flyingCard.style.top = `${destTop}px`;
     flyingCard.style.transform = `scale(${flyingCardFinalWidth / parseFloat(startRect.width)})`;
   });
 
-  // 动画结束后移除飞行卡片
   setTimeout(() => {
-    document.body.removeChild(flyingCard);
+    if (flyingCard.parentNode) document.body.removeChild(flyingCard);
   }, animationDuration);
 
-  // 飞行动画后更新游戏状态并渲染
   setTimeout(() => {
-    cardData.matched = true; // 将卡片标记为已匹配
-    game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false }); // 添加到暂存区
-    game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id); // 暂存区排序
+    cardData.matched = true;
+    game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
+    game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
+    renderTemp();
+    renderBoard();
+    renderProgressAndScore();
+    updateWigglingCatVisibility();
 
-    renderTemp(); // 重新渲染暂存区
-    renderBoard(); // 重新渲染游戏板（更新可点击状态）
-    renderProgressAndScore(); // 更新进度和分数显示
-    updateWigglingCatVisibility(); // MODIFICATION: Update wiggling cat visibility
-
-    // 检查暂存区中是否存在三联牌匹配
     let iconCnt = {};
-    game.temp.forEach(c => {
-      if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1;
-    });
-
+    game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
     let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
 
     if (matchedIcon) {
-      // 标记暂存区中匹配的卡片
-      game.temp.forEach(c => { if (c.icon === matchedIcon) c.matched = true; });
+      triggerMatchFeedback();
+      
+      const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+      const matchedElements = [];
 
-      // 检查匹配的图标是否也与任何展示卡片匹配
+      game.temp.forEach((c, index) => {
+          if (c.icon === matchedIcon) {
+              c.matched = true;
+              const slot = tempSlots[index];
+              if (slot) {
+                  const cardEl = slot.querySelector('.temp-card');
+                  matchedElements.push({ slot, cardEl });
+              }
+          }
+      });
+
+      matchedElements.forEach(({ slot, cardEl }) => {
+          if (cardEl) {
+              cardEl.classList.add('disappearing');
+          }
+          slot.classList.add('clearing');
+          slot.addEventListener('animationend', () => {
+              slot.classList.remove('clearing');
+          }, { once: true });
+      });
+
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
-              displaySet.matched = true; // 将展示组标记为已匹配
-              game.score += DISPLAY_CARD_MATCH_SCORE; // 添加分数
-              renderProgressAndScore(); // 立即更新分数显示
-
-              // 在匹配的展示组旁边添加分数动画
+              displaySet.matched = true;
+              game.score += DISPLAY_CARD_MATCH_SCORE;
+              renderProgressAndScore();
               const matchedDisplayGroupEl = document.querySelector(`#display-area .display-group[data-id='${displaySet.id}']`);
               if (matchedDisplayGroupEl) {
                   const groupRect = matchedDisplayGroupEl.getBoundingClientRect();
@@ -2084,369 +2040,269 @@ function clickCard(id) {
                   scoreAnimDiv.className = 'score-animation';
                   scoreAnimDiv.textContent = `+${DISPLAY_CARD_MATCH_SCORE}`;
                   document.body.appendChild(scoreAnimDiv);
-
-                  // 定位动画相对于匹配的展示组
                   scoreAnimDiv.style.left = `${groupRect.left + groupRect.width / 2}px`;
                   scoreAnimDiv.style.top = `${groupRect.top + groupRect.height / 2}px`;
-                  scoreAnimDiv.style.transform = 'translate(-50%, -50%)'; // 水平和垂直居中
-
-                  // 动画结束后移除元素
-                  scoreAnimDiv.addEventListener('animationend', () => {
-                      scoreAnimDiv.remove();
-                  }, { once: true });
+                  scoreAnimDiv.style.transform = 'translate(-50%, -50%)';
+                  scoreAnimDiv.addEventListener('animationend', () => scoreAnimDiv.remove(), { once: true });
               }
-
-
-              // 延迟后用新的一组替换匹配的展示组
               setTimeout(() => {
-                  const currentLevelConfig = LEVELS[game.level - 1];
-                  // 传递当前已使用的展示图标以尽可能避免重复
                   const newSet = generateDisplayCardSet(game.displayCards.map(ds => ds.cards[0].icon));
                   if (newSet) {
-                      displaySet.cards = newSet; // 替换内容
-                      displaySet.matched = false; // 重置匹配状态
-                      game.totalDisplaySetsGenerated++;
+                      displaySet.cards = newSet;
+                      displaySet.matched = false;
                   } else {
-                      // 如果所有 totalDisplaySets 都已生成，则只移除此组
                       game.displayCards = game.displayCards.filter(ds => ds.id !== displaySet.id);
                   }
-                  renderDisplay(); // 重新渲染展示区
-              }, 400); // 短暂延迟以实现视觉效果
+                  renderDisplay();
+              }, 400);
           }
       });
-
       setTimeout(() => {
-        game.temp = game.temp.filter(c => !c.matched); // 从暂存区中移除匹配的卡片
+        game.temp = game.temp.filter(c => !c.matched);
         renderTemp();
         renderBoard();
-        checkWin(); // 检查游戏是否胜利
-        game.lock = false; // 释放锁定
-      }, 100); // 匹配的视觉效果的短延迟
+        checkWin();
+        game.lock = false;
+      }, 450);
     } else {
       checkWin();
-      game.lock = false; // 释放锁定
+      game.lock = false;
     }
   }, tempAppearanceDelay);
 }
 
-/**
- * 检查游戏是否已胜利。
- */
-function checkWin(){
-  const allCardsMatched = game.board.every(c=>c.matched);
-  const scoreMet = game.score >= game.targetScore;
+// MODIFIED: checkWin function to show time taken
+function checkWin() {
+    const allCardsMatched = game.board.every(c => c.matched);
+    const scoreMet = game.score >= game.targetScore;
 
-  if(allCardsMatched && scoreMet){
-    stopRandomEvents(); // NEW: Stop events on win
-    setTimeout(()=>{
-      if(game.level===1){
-        showLevelFinish('恭喜恭喜！第一关通关！');
-      }else{
-        // MODIFICATION: Call playLevel2Outro for Level 2 completion
-        playLevel2Outro();
-      }
-    },330); // 显示胜利屏幕前的短延迟
-  } else if (allCardsMatched && !scoreMet) {
-      // 所有卡片已清除但分数未达标
-      gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
-  }
+    if (allCardsMatched && scoreMet) {
+        stopRandomEvents();
+        stopCurtainRandomToggle();
+        game.lock = true; // Lock game while showing message
+
+        const elapsedSeconds = ((Date.now() - game.levelStartTime) / 1000).toFixed(1);
+        const message = `本关过关用时 ${elapsedSeconds} 秒`;
+
+        // Temporarily change the confirm modal to an alert modal
+        const originalYesText = confirmYes.textContent;
+        const originalNoDisplay = confirmNo.style.display;
+        confirmYes.textContent = '好的';
+        confirmNo.style.display = 'none';
+
+        showConfirm(message, () => {
+            // Callback for when user clicks "好的"
+            if (game.level === 1) {
+                showLevelFinish('恭喜恭喜！第一关通关！');
+            } else {
+                showLevelFinish('<p> <p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
+            }
+            // Restore the modal for other uses
+            confirmYes.textContent = originalYesText;
+            confirmNo.style.display = originalNoDisplay;
+        });
+
+    } else if (allCardsMatched && !scoreMet) {
+        gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
+    }
 }
 
-/**
- * 将当前游戏状态保存到步骤堆栈以供撤销。
- */
 function saveStep(){
   game.stepStack.push({
     board: deepClone(game.board),
     temp: deepClone(game.temp),
-    score: game.score, // 保存分数以供撤销
-    displayCards: deepClone(game.displayCards), // 保存展示卡片以供撤销
-    totalDisplaySetsGenerated: game.totalDisplaySetsGenerated // 保存生成计数
+    score: game.score,
+    displayCards: deepClone(game.displayCards),
+    totalDisplaySetsGenerated: game.totalDisplaySetsGenerated
   });
-  if(game.stepStack.length > 20) game.stepStack.shift(); // 限制堆栈大小
+  if(game.stepStack.length > 20) game.stepStack.shift();
 }
 
-/**
- * 撤销上一个游戏步骤。
- */
 function undoStep(){
   if(game.stepStack.length > 0){
     let prev = game.stepStack.pop();
     game.board = deepClone(prev.board);
     game.temp = deepClone(prev.temp);
-    game.score = prev.score; // 恢复分数
-    game.displayCards = deepClone(prev.displayCards); // 恢复展示卡片
-    game.totalDisplaySetsGenerated = prev.totalDisplaySetsGenerated; // 恢复生成计数
+    game.score = prev.score;
+    game.displayCards = deepClone(prev.displayCards);
+    game.totalDisplaySetsGenerated = prev.totalDisplaySetsGenerated;
     renderAll();
     showMessage('已撤销');
-    updateWigglingCatVisibility(); // MODIFICATION: Update wiggling cat visibility
+    updateWigglingCatVisibility();
   } else {
     showMessage('无法撤销更多', '#888');
   }
 }
 
-/**
- * 打乱游戏板上未匹配的卡片。
- */
 function shuffleStep(){
-  saveStep(); // 打乱前保存状态以供撤销
-  game.lock = true; // 动画期间锁定游戏
-
+  saveStep();
+  game.lock = true;
   let unmatchedCardsElements = document.querySelectorAll('#card-stack-area .card:not(.matched)');
-  unmatchedCardsElements.forEach(el => {
-      el.classList.add('card-shuffling-out');
-  });
+  unmatchedCardsElements.forEach(el => el.classList.add('card-shuffling-out'));
 
   setTimeout(() => {
-      let unmatched = game.board.filter(c=>!c.matched);
-      let icons = unmatched.map(c=>c.icon);
-      shuffle(icons); // 打乱图标
-
-      unmatched.forEach((c,i)=>{
-          c.icon = icons[i]; // 分配新的打乱后的图标
-      });
-
-      // 重新渲染将创建新元素，自动应用卡片入场动画
+      game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
       renderAll();
       showMessage('已洗牌');
-      game.lock = false; // 重新渲染后释放锁定
-      updateWigglingCatVisibility(); // MODIFICATION: Update wiggling cat visibility
-  }, 300); // card-shuffle-out 动画持续时间
+      game.lock = false;
+      updateWigglingCatVisibility();
+  }, 300);
 }
 
-/**
- * 通过突出显示可以形成三联牌的卡片来提供提示。
- */
 function hintStep(){
   let tempIcons = game.temp.map(c => c.icon);
   let clickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
   let clickableBoardIcons = clickableBoardCards.map(c => c.icon);
-
   let allAvailableIcons = [...tempIcons, ...clickableBoardIcons];
-
   let iconCounts = {};
-  allAvailableIcons.forEach(icon => {
-    iconCounts[icon] = (iconCounts[icon] || 0) + 1;
-  });
+  allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
+  let targetIcon = Object.keys(iconCounts).find(icon => iconCounts[icon] >= 3);
 
-  let targetIcon = null; // 可以形成三联牌的图标
-  for (let icon in iconCounts) {
-    if (iconCounts[icon] >= 3) {
-      targetIcon = icon;
-      break;
-    }
-  }
-
-  // 在应用新提示之前移除任何现有提示动画/样式
-  document.querySelectorAll('.card.hinted-shake').forEach(el => {
-      el.classList.remove('hinted-shake');
-      el.style.borderColor = '';
-      el.style.boxShadow = '';
-  });
-  document.querySelectorAll('#temp-area .temp-card.hinted-shake').forEach(el => {
-      el.classList.remove('hinted-shake');
-      el.style.borderColor = '';
-      el.style.boxShadow = '';
-  });
+  document.querySelectorAll('.hinted-shake').forEach(el => el.classList.remove('hinted-shake'));
 
   if (targetIcon) {
     let hintDone = 0;
-    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-    const hintedElements = []; // 记录需要动画的元素
-
-    // 突出显示暂存区中的卡片
+    const hintedElements = [];
     for (let i = 0; i < game.temp.length && hintDone < 3; i++) {
       if (game.temp[i].icon === targetIcon && !game.temp[i].matched) {
-        const tempCardElement = tempSlots[i].querySelector('.temp-card');
+        const tempCardElement = document.querySelectorAll('#temp-area .temp-slot .temp-card')[i];
         if (tempCardElement) {
-          tempCardElement.style.borderColor = '#e65c4f';
-          tempCardElement.style.boxShadow = '0 0 16px #ff8c69';
           tempCardElement.classList.add('hinted-shake');
           hintedElements.push(tempCardElement);
           hintDone++;
         }
       }
     }
-
-    // 突出显示游戏板上可点击的卡片
     for (let i = 0; i < clickableBoardCards.length && hintDone < 3; i++) {
       let boardCard = clickableBoardCards[i];
       if (boardCard.icon === targetIcon) {
         let doms = document.querySelector(`#card-stack-area .card[data-id='${boardCard.id}']`);
         if (doms) {
           doms.classList.add('hinted-shake');
-          doms.style.borderColor = '#e65c4f';
-          doms.style.boxShadow = '0 0 16px #ff8c69';
           hintedElements.push(doms);
           hintDone++;
         }
       }
     }
-
     showMessage('已提示可消除三张');
-
-    // 短暂延迟后移除动画类并重置样式
-    setTimeout(() => {
-        hintedElements.forEach(el => {
-            el.classList.remove('hinted-shake');
-            el.style.borderColor = '';
-            el.style.boxShadow = '';
-        });
-        renderAll(); // 重新渲染以确保样式干净
-    }, 1200);
+    setTimeout(() => hintedElements.forEach(el => el.classList.remove('hinted-shake')), 2000);
   } else {
     showMessage('当前无可三消', "#888");
   }
 }
 
-/**
- * 显示游戏结束屏幕。
- * @param {string} msg - 游戏结束消息。
- */
 function gameOver(msg){
-  stopRandomEvents(); // NEW: Stop events on game over
-  game.lock = true; // 锁定游戏交互
+  stopRandomEvents();
+  stopCurtainRandomToggle(); // NEW: Stop curtain toggle on game over
+  toggleCurtain(true); // Ensure curtain is open on game over
+  game.lock = true;
   document.getElementById('card-stack-area').innerHTML = '';
   document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
-  displayArea.innerHTML = ''; // 清空展示区
+  displayArea.innerHTML = '';
   document.getElementById('level-info').textContent = '';
-  // cardCountInfoElement.textContent = ''; // 移除此行
   currentScoreElement.textContent = '0';
   targetScoreElement.textContent = '0';
   document.getElementById('message-bar').textContent = '';
-
-  // MODIFICATION: Hide wiggling cats on game over
   hideWigglingCats();
-
   setTimeout(() => {
-    document.getElementById('game-over').style.display = 'flex';
-    document.getElementById('game-over-text').innerHTML = msg;
+    const gameOverScreen = document.getElementById('game-over');
+    gameOverScreen.style.display = 'flex';
+    // MODIFIED: Find the inner text element
+    gameOverScreen.querySelector('#game-over-text').innerHTML = msg;
   }, 100);
 }
 
-/**
- * 初始化新的游戏关卡。
- * @param {number} level - 要开始的关卡号。
- */
+// MODIFIED: startGame to include timer start
 function startGame(level){
-  footer.style.display = 'block'; // 确保页脚可见
-
+  footer.style.display = 'block';
   game.level = level;
-  // 为 CSS 调整应用/移除关卡特定的 body 类
-  // REMOVED: Level-specific body class as card sizes are now dynamic
-  // if (level === 2) {
-  //   document.body.classList.add('level-2-active');
-  // } else {
-  //   document.body.classList.remove('level-2-active');
-  // }
-
-  let lvData = genLevel(level); // 生成关卡数据
-  game.cards = lvData.cards; // 确保 game.cards 已设置
-  game.board = lvData.board; // 确保 game.board 已设置
+  game.levelStartTime = Date.now(); // Start timer for the level
+  let lvData = genLevel(level);
+  game.cards = lvData.cards;
+  game.board = lvData.board;
   game.usedIcons = lvData.usedIcons;
   game.temp = [];
   game.matched = [];
-  game.toolUses = {undo: 0, hint: 0, shuffle: 0}; // 重置工具使用次数
-  game.stepStack = []; // 清空撤销堆栈
-  game.lock = false; // 释放任何锁定
-  game.isNewLevel = true; // 设置卡片入场动画标志
-  renderAll(); // 渲染所有游戏元素
-  updateToolButtons(); // 更新工具按钮状态
-  // MODIFICATION START
-  // 确保在开始任何关卡时 BGM 应该播放
-  if (game.bgmOn) {
-      playBgm(true);
-  }
-  // MODIFICATION END
-  positionCatWalker(); // 游戏开始后定位猫咪行走者
-  // positionWigglingCat(); // MODIFICATION: This is now handled by updateWigglingCatVisibility
-  updateWigglingCatVisibility(); // Initial check for wiggling cat visibility
-  startRandomEvents(); // NEW: Start random events for the new level
+  game.toolUses = {undo: 0, hint: 0, shuffle: 0};
+  game.stepStack = [];
+  game.lock = false;
+  game.isNewLevel = true;
+  renderAll();
+  updateToolButtons();
+  // Ensure BGM starts only after initAudio has loaded it
+  if (game.bgmOn && bgmAudioBuffer) playBgm(true);
+  positionCatWalker();
+  updateWigglingCatVisibility();
+  startRandomEvents();
+  
+  // NEW: Curtain logic for game start
+  positionCurtain(); // Position the curtain over display area
+  toggleCurtain(false); // Close the curtain initially
+  setTimeout(() => {
+      toggleCurtain(true); // Open the curtain after 2 seconds
+      startCurtainRandomToggle(); // Start random toggling after initial open
+  }, 2000);
 }
 
-/**
- * 渲染游戏板上的卡片。
- */
 function renderBoard(){
   const area = document.getElementById('card-stack-area');
-  area.innerHTML = ''; // 清除现有卡片
-  let cardsToRender = game.board.filter(c => !c.matched); // 只渲染未匹配的卡片
-
-  cardsToRender.sort((a, b) => a.z - b.z); // 按 Z 索引排序以实现正确分层
-
-  const isInitialRenderForLevel = game.isNewLevel; // 捕获动画状态
+  area.innerHTML = '';
+  let cardsToRender = game.board.filter(c => !c.matched);
+  cardsToRender.sort((a, b) => a.z - b.z);
+  const isInitialRenderForLevel = game.isNewLevel;
 
   cardsToRender.forEach((card, index) => {
     let el = document.createElement('div');
     const clickable = isCardClickable(card, game.board);
-    el.className = "card" + (clickable ? "" : " disabled"); // 如果不可点击则添加“disabled”类
-    
-    // NEW: Add napping class if card is napping
-    if (card.isNapping) {
-        el.classList.add('napping');
-    }
-
+    el.className = "card" + (clickable ? "" : " disabled");
+    if (card.isNapping) el.classList.add('napping');
     el.style.left = card.x + 'px';
     el.style.top = card.y + 'px';
     el.style.zIndex = card.z;
     el.innerHTML = card.icon;
-    el.dataset.id = card.id; // 将卡片 ID 存储为数据属性
-
-    // Apply dynamic card dimensions
+    el.dataset.id = card.id;
     el.style.width = `${game.cardDimensions.width}px`;
     el.style.height = `${game.cardDimensions.height}px`;
     el.style.fontSize = `${game.cardDimensions.fontSize}px`;
     el.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
     el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
-
-    if(clickable){
-      el.onclick = () => clickCard(card.id); // 附加点击处理程序
-    }
-    // 为新关卡应用入场动画
+    if(clickable) el.onclick = () => clickCard(card.id);
     if (isInitialRenderForLevel) {
         el.classList.add('card-entering');
-        el.style.animationDelay = `${index * 0.03}s`; // 错开动画
+        el.style.animationDelay = `${index * 0.03}s`;
         el.addEventListener('animationend', function handler() {
             el.classList.remove('card-entering');
-            el.style.animationDelay = ''; // 清理动画延迟
+            el.style.animationDelay = '';
             el.removeEventListener('animationend', handler);
         }, { once: true });
     }
     area.appendChild(el);
   });
-  game.isNewLevel = false; // 渲染后重置标志
+  game.isNewLevel = false;
 }
 
-/**
- * 渲染暂存区中的卡片。
- */
 function renderTemp(){
   const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
   const tempArea = document.getElementById('temp-area');
-
-  // 使用一个固定的缩放因子来计算暂存区卡片的尺寸，使其相对于主卡片尺寸更小
-  const tempCardScaleFactor = 0.8; // 暂存区卡片是主卡片尺寸的 80%
+  const tempCardScaleFactor = 0.8;
   const tempCardWidth = game.cardDimensions.width * tempCardScaleFactor;
   const tempCardHeight = game.cardDimensions.height * tempCardScaleFactor;
   const tempCardFontSize = game.cardDimensions.fontSize * tempCardScaleFactor;
   const tempCardBorderRadius = game.cardDimensions.borderRadius * tempCardScaleFactor;
   const tempCardBorderWidth = game.cardDimensions.borderWidth * tempCardScaleFactor;
-
-  // 根据计算出的暂存区卡片高度设置 tempArea 的最小高度
-  tempArea.style.minHeight = `${tempCardHeight + (tempCardBorderWidth * 2) + 16}px`; // 16px 用于内边距
+  tempArea.style.minHeight = `${tempCardHeight + (tempCardBorderWidth * 2) + 16}px`;
 
   tempSlots.forEach((slot, i) => {
-    slot.innerHTML = ''; // 清除现有内容
+    slot.innerHTML = '';
     slot.style.width = `${tempCardWidth}px`;
     slot.style.height = `${tempCardHeight}px`;
     slot.style.borderRadius = `${tempCardBorderRadius}px`;
     slot.style.borderWidth = `${tempCardBorderWidth}px`;
-    slot.style.margin = '0'; // 显式设置为 0，由 flexbox 的 justify-content: space-evenly 处理间距
-
+    slot.style.margin = '0';
     if (i < game.temp.length) {
       const c = game.temp[i];
       let el = document.createElement('div');
-      el.className = "temp-card" + (c.matched ? " matched" : ""); // 如果已匹配则添加“matched”类
+      el.className = "temp-card" + (c.matched ? " matched" : "");
       el.innerHTML = c.icon;
       el.style.fontSize = `${tempCardFontSize}px`;
       el.style.borderRadius = `${tempCardBorderRadius}px`;
@@ -2455,74 +2311,51 @@ function renderTemp(){
     }
   });
 
-  // --- 爱心动画逻辑 ---
   let persistentHeart = document.getElementById('persistent-heart');
-
   if (game.temp.length === 7) {
-    const seventhTempSlot = tempSlots[6]; // 获取第 7 个槽位（索引 6）
+    const seventhTempSlot = tempSlots[6];
     if (seventhTempSlot) {
       const mainArea = document.getElementById('main-area');
       const cardStackArea = document.getElementById('card-stack-area');
-
-      // 获取边界客户端矩形以实现相对于视口的精确绝对位置
       const seventhSlotRect = seventhTempSlot.getBoundingClientRect();
       const cardStackRect = cardStackArea.getBoundingClientRect();
       const mainAreaRect = mainArea.getBoundingClientRect();
-
-      // 计算爱心的垂直中点，在 cardStackArea 的底部和第 7 个暂存槽的顶部之间
       const heartVerticalMidpointAbsolute = cardStackRect.bottom + (seventhSlotRect.top - cardStackRect.bottom) / 2;
-
-      // 将此绝对位置转换为相对于 mainArea 顶部的位置
       const heartTopRelativeToMainArea = heartVerticalMidpointAbsolute - mainAreaRect.top;
-
-      // 计算第 7 个槽的水平中心相对于 mainArea
       const heartLeftRelativeToMainArea = (seventhTempSlot.left + seventhTempSlot.offsetWidth / 2) - mainAreaRect.left;
-
       if (!persistentHeart) {
         persistentHeart = document.createElement('div');
-        persistentHeart.id = 'persistent-heart'; // 为持久引用分配唯一 ID
+        persistentHeart.id = 'persistent-heart';
         persistentHeart.className = 'heart-animation';
         persistentHeart.innerHTML = '💝';
         mainArea.appendChild(persistentHeart);
       }
-
       persistentHeart.style.left = `${heartLeftRelativeToMainArea}px`;
       persistentHeart.style.top = `${heartTopRelativeToMainArea}px`;
-      persistentHeart.style.transform = 'translate(-50%, -50%)'; // 居中爱心图标本身
-      persistentHeart.style.display = 'block'; // 确保可见
+      persistentHeart.style.transform = 'translate(-50%, -50%)';
+      persistentHeart.style.display = 'block';
     }
   } else {
-    // 如果第 7 个槽未满，则隐藏爱心
-    if (persistentHeart) {
-      persistentHeart.style.display = 'none';
-    }
+    if (persistentHeart) persistentHeart.style.display = 'none';
   }
 }
 
-/**
- * 渲染展示区中的卡片。
- */
 function renderDisplay() {
-    displayArea.innerHTML = ''; // 清除现有展示卡片
-
-    // NEW: Dynamically adjust display card dimensions
-    const displayCardWidth = game.cardDimensions.width * 0.7; // Smaller than main card
+    displayArea.innerHTML = '';
+    const displayCardWidth = game.cardDimensions.width * 0.7;
     const displayCardHeight = game.cardDimensions.height * 0.7;
     const displayCardFontSize = game.cardDimensions.fontSize * 0.7;
     const displayCardBorderRadius = game.cardDimensions.borderRadius * 0.7;
     const displayCardBorderWidth = game.cardDimensions.borderWidth * 0.7;
-    const displayGroupGap = displayCardWidth * 0.1; // Gap between cards in a group
-
-    // Adjust display area width and min-height if necessary
-    displayArea.style.width = `${cardStackArea.offsetWidth * 0.95}px`; // Make it slightly smaller than card stack area
-    displayArea.style.minHeight = `${displayCardHeight + displayCardBorderWidth * 2 + 20}px`; // 20 for padding
+    const displayGroupGap = displayCardWidth * 0.1;
+    displayArea.style.width = `${cardStackArea.offsetWidth * 0.95}px`;
+    displayArea.style.minHeight = `${displayCardHeight + displayCardBorderWidth * 2 + 20}px`;
 
     game.displayCards.forEach(displaySet => {
         const groupDiv = document.createElement('div');
         groupDiv.className = 'display-group';
-        groupDiv.dataset.id = displaySet.id; // Add data-id for selection
-        groupDiv.style.gap = `${displayGroupGap}px`; // Apply dynamic gap
-
+        groupDiv.dataset.id = displaySet.id;
+        groupDiv.style.gap = `${displayGroupGap}px`;
         displaySet.cards.forEach(card => {
             const cardDiv = document.createElement('div');
             cardDiv.className = 'display-card' + (displaySet.matched ? ' matched-display' : '');
@@ -2538,458 +2371,445 @@ function renderDisplay() {
     });
 }
 
-/**
- * 更新游戏进度、分数和目标显示。
- */
 function renderProgressAndScore(){
-  // let left = game.board.filter(c=>!c.matched).length; // 移除此行
   levelInfoElement.textContent = `关卡: ${game.level} / 2`;
-  // cardCountInfoElement.textContent = `剩余卡牌: ${left}`; // 移除此行
   currentScoreElement.textContent = game.score;
   targetScoreElement.textContent = game.targetScore;
-  updateWigglingCatVisibility(); // Call this when score or target score might change
+  updateWigglingCatVisibility();
 }
 
-/**
- * 向用户显示临时消息。
- * @param {string} msg - 要显示的消息。
- * @param {string} [color] - 消息的可选颜色。
- */
 function showMessage(msg, color){
   let bar = document.getElementById('message-bar');
-  bar.style.color = color || '#c0392b'; // 默认为红色
+  bar.style.color = color || '#c0392b';
   bar.textContent = msg || '';
-  if(msg) setTimeout(()=>{bar.textContent='';}, 2300); // 延迟后清除消息
+  if(msg) setTimeout(()=>{bar.textContent='';}, 2300);
 }
 
-/**
- * 更新工具按钮（撤销、提示、洗牌）及其计数器的显示。
- */
+// MODIFIED: Function to update tool buttons, now includes orientation check
 function updateToolButtons() {
   document.getElementById('undo-count').textContent = game.toolUses.undo;
   document.getElementById('hint-count').textContent = game.toolUses.hint;
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
-  undoBtn.disabled = game.toolUses.undo <= 0;
+  
+  const undoDisabledByCount = game.toolUses.undo <= 0;
+  // Check for landscape orientation
+  if (isLandscape) {
+    undoBtn.disabled = true;
+    undoBtn.title = "横屏模式下不可用";
+  } else {
+    undoBtn.disabled = undoDisabledByCount;
+    undoBtn.title = "撤销(需兑换码)";
+  }
+
   hintBtn.disabled = game.toolUses.hint <= 0;
   shuffleBtn.disabled = game.toolUses.shuffle <= 0;
 }
 
-/**
- * 渲染所有游戏元素（游戏板、暂存区、展示区、进度、工具按钮）。
- */
 function renderAll(){
   renderBoard();
   renderTemp();
-  renderDisplay(); // 渲染展示卡片
-  renderProgressAndScore(); // 更新进度和分数
+  renderDisplay();
+  renderProgressAndScore();
   updateToolButtons();
-  positionCatWalker(); // 确保所有元素渲染后猫咪行走者已定位
-  updateWigglingCatVisibility(); // Ensure wiggling cat visibility is updated
+  positionCatWalker();
+  updateWigglingCatVisibility();
+  positionCurtain(); // Ensure curtain is positioned correctly on all renders
 }
 
-/**
- * 显示关卡完成屏幕并根据当前关卡进行配置。
- * @param {string} msg - 要在关卡完成屏幕上显示的消息。
- */
 function showLevelFinish(msg){
-  stopRandomEvents(); // NEW: Stop events when level is finished
-  playBgm(false); // 关卡完成时暂停背景音乐
-  // Clear any existing video timeout
-  if (outroVideoTimeout) {
-      clearTimeout(outroVideoTimeout);
-      outroVideoTimeout = null;
-  }
-  // Pause and reset video if it was playing
+  stopRandomEvents();
+  stopCurtainRandomToggle(); // NEW: Stop curtain toggle on win
+  toggleCurtain(true); // Ensure curtain is open on level finish
+  playBgm(false);
+  if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
   if (outroVideo) {
       outroVideo.pause();
       outroVideo.currentTime = 0;
   }
-
-  level2OutroScreen.style.display = 'none'; // Hide outro screen if it's visible
-  skipOutroBtn.style.display = 'none'; // Hide skip button
-  game.lock = false; // Release lock after outro
-  document.getElementById('level-finish').style.display='flex';
+  level2OutroScreen.style.display = 'none';
+  skipOutroBtn.style.display = 'none';
+  game.lock = false;
+  
+  const levelFinishScreen = document.getElementById('level-finish');
+  levelFinishScreen.style.display='flex';
   levelFinishTextElement.innerHTML = msg;
+  
+  const existingConfetti = levelFinishScreen.querySelector('.confetti-container');
+  if (existingConfetti) existingConfetti.remove();
+  const confettiContainer = document.createElement('div');
+  confettiContainer.className = 'confetti-container';
+  levelFinishScreen.appendChild(confettiContainer);
+  const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+  for (let i = 0; i < 150; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      const duration = Math.random() * 3 + 4;
+      piece.style.animationDuration = `${duration}s`;
+      piece.style.animationDelay = `${Math.random() * 5}s`;
+      piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confettiContainer.appendChild(piece);
+  }
 
-  // 根据当前关卡显示/隐藏“下一关”按钮
   nextBtn.style.display = (game.level === 1) ? 'inline-block' : 'none';
-
+  
+  // MODIFIED: Reset button animations before applying new ones
+  gobangBtn.classList.remove('animated-scale-fade');
+  closeGameBtnLevel.classList.remove('animated-scale-fade');
+  
   if (game.level === 1) {
-    // 关卡 1 完成屏幕特定动画和内容
-    levelFinishTextElement.style.animation = 'shake 3s infinite, show-card-property 6s forwards';
+    levelFinishTextElement.style.animation = 'shake 6s infinite, show-card-property 15s forwards';
     levelFinishTextElement.innerHTML += '<br>下一关后有彩蛋🪅！';
-
-    // 显示自定义播放器，隐藏网易播放器，配置按钮
     playerDiv.style.display = 'block';
     neteasePlayerDiv.style.display = 'none';
     gobangBtn.style.display = 'none';
     restartGameBtn.style.display = 'none';
     retryBtnLevelFinish.style.display = 'inline-block';
-
+    closeGameBtnLevel.onclick = () => handleCloseGame('level');
   } else if (game.level === 2) {
-    // 关卡 2 完成屏幕特定动画和内容
     levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
-
-    // 隐藏自定义播放器，显示网易播放器，配置按钮
     playerDiv.style.display = 'none';
     neteasePlayerDiv.style.display = 'block';
     gobangBtn.style.display = 'inline-block';
     restartGameBtn.style.display = 'inline-block';
     retryBtnLevelFinish.style.display = 'none';
+    
+    // MODIFIED: Add animation class to buttons for level 2
+    gobangBtn.classList.add('animated-scale-fade');
+    closeGameBtnLevel.classList.add('animated-scale-fade');
+    
+    closeGameBtnLevel.onclick = () => {
+        document.getElementById('level-finish').style.display = 'none';
+        playLevel2Outro();
+    };
   }
 }
 
-/**
- * 加载后初始化游戏设置和元素。
- */
 function initializeGame(){
   musicToggleBtn.innerHTML = game.bgmOn ? '🎼' : '🔇';
   updateToolButtons();
-
-  // 设置 BGM 音量
-  if (bgm) {
-      bgm.volume = 0.3;
-      // 检查浏览器是否可以播放 MP3 和 OGG
-      console.log("Browser can play MP3:", bgm.canPlayType('audio/mpeg'));
-      console.log("Browser can play OGG:", bgm.canPlayType('audio/ogg'));
-  }
-  // 已从此处移除 playBgm(game.bgmOn)。
+  // BGM volume is now handled by Web Audio API gain node if needed, not directly on element
 }
 
-/**
- * 处理关闭游戏窗口的逻辑，并带有备用消息。
- * @param {string} type - 'level' 或 'gameover' 以区分消息。
- */
 function handleCloseGame(type) {
     showConfirm('确定要关闭游戏吗？', () => {
-        // 尝试关闭窗口。这可能只在窗口是由脚本（例如，通过您域中的 window.open()）打开的情况下才有效。
-        // 否则，浏览器通常会出于安全原因阻止它。
         window.close();
-
-        // 如果 window.close() 失败，则提供备用方案或消息
         setTimeout(() => {
             document.getElementById('game-container').style.display = 'none';
-
-            let messageHtml = '';
-            if (type === 'level') {
-                messageHtml = `
-                    <p>当前客户端暂不支持自动关闭，</p><p>请点击页面关闭标签关闭。</p>
-                    <br> 如若重新开始游戏，请点击<br><br>
-                    <button onclick="window.location.href='https://kaiyuanzhuadmin.github.io/cat/'"
-                            class="text-red-600 hover:text-red-800 font-medium transition-colors duration-300 flex items-center justify-center mt-4"
-                            style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">
-                      <span class="ml-1 flex items-center">重新开始<i class="fa fa-refresh ml-1"></i></span>
-                    </button>
-                `;
-            } else if (type === 'gameover') {
-                messageHtml = `
-                    <p>当前客户端暂不支持自动关闭</p><p>小提示：可输入“kaiyuan”兑换提示次数。</p>
-                    <br> 如果想重新开始游戏，请点击<br><br>
-                    <button onclick="window.location.href='https://kaiyuanzhuadmin.github.io/cat/'"
-                            class="text-red-600 hover:text-red-800 font-medium transition-colors duration-300 flex items-center justify-center mt-4"
-                            style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">
-                      <span class="ml-1 flex items-center">重新开始<i class="fa fa-refresh ml-1"></i></span>
-                    </button>
-                `;
-            }
-
-            document.body.innerHTML = `
-                <div class="game-thankyou-screen" style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">
-                  ${messageHtml}
-                  <br>
-                  <small class="loading-footer mt-8">喵了个咪 &copy; 2025 | Designed by 开元</small>
-                </div>
-            `;
-
-            // 动态加载 Font Awesome CSS 以便在备用消息中使用图标
-            const fontAwesomeLink = document.createElement('link');
-            fontAwesomeLink.href = 'https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css';
-            fontAwesomeLink.rel = 'stylesheet';
-            document.head.appendChild(fontAwesomeLink);
-        }, 100); // 稍作延迟以允许 window.close() 尝试
+            let messageHtml = type === 'level' ? `<p>当前客户端暂不支持自动关闭，</p><p>请点击页面关闭标签关闭。</p><br> 如若重新开始游戏，请点击<br><br><button onclick="window.location.href='https://www.kaiyuanzhu.qzz.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>` : `<p>当前客户端暂不支持自动关闭</p><p>小提示：可输入"kaiyuan"兑换提示次数。</p><br> 如果想重新开始游戏，请点击<br><br><button onclick="window.location.href='https://www.kaiyuanzhu.qzz.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>`;
+            document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">${messageHtml}<br><small class="loading-footer mt-8">喵了个喵 &copy; 2025 | Designed by 开元</small></div>`;
+        }, 100);
     });
 }
 
-// ===============================================================
-// NEW: RANDOM CAT EVENT LOGIC
-// ===============================================================
-
-/**
- * Displays a message in the central event overlay.
- * @param {string} icon - The emoji icon for the event.
- * @param {string} text - The message to display.
- */
+// Random Event Logic
 function showEventMessage(icon, text) {
     eventIconEl.textContent = icon;
-    eventTextEl.innerHTML = text; // Use innerHTML to allow for line breaks
+    eventTextEl.innerHTML = text;
     eventOverlay.style.display = 'flex';
-
-    // The fade-out is handled by the CSS animation
-    setTimeout(() => {
-        eventOverlay.style.display = 'none';
-    }, 3500); // Must match the animation duration
+    setTimeout(() => eventOverlay.style.display = 'none', 3500);
 }
-
-/**
- * Event: Cat Nap. Makes a few cards temporarily unclickable.
- */
 function eventCatNap() {
     const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
-    if (clickableCards.length < 3) return; // Not enough cards to make the event meaningful
-
+    if (clickableCards.length < 3) return;
     showEventMessage('💤', '猫咪在打盹...<br>有些卡牌暂时拿不到了！');
-    game.lock = true; // Briefly lock to prevent clicks while selecting cards
-
+    game.lock = true;
     const nappingCards = [];
     const centerCard = clickableCards[Math.floor(Math.random() * clickableCards.length)];
     nappingCards.push(centerCard);
-
-    // Find 2-3 nearby cards
     const otherCards = game.board.filter(c => !c.matched && c.id !== centerCard.id);
-    otherCards.sort((a, b) => {
-        const distA = Math.hypot(a.x - centerCard.x, a.y - centerCard.y);
-        const distB = Math.hypot(b.x - centerCard.x, b.y - centerCard.y);
-        return distA - distB;
-    });
-    nappingCards.push(...otherCards.slice(0, Math.floor(Math.random() * 2) + 2)); // 2 to 3 other cards
-
-    nappingCards.forEach(card => {
-        card.isNapping = true;
-    });
-
-    renderBoard(); // Re-render to apply the "napping" style
-    game.lock = false; // Unlock after rendering
-
+    otherCards.sort((a, b) => Math.hypot(a.x - centerCard.x, a.y - centerCard.y) - Math.hypot(b.x - centerCard.x, b.y - centerCard.y));
+    nappingCards.push(...otherCards.slice(0, Math.floor(Math.random() * 2) + 2));
+    nappingCards.forEach(card => card.isNapping = true);
+    renderBoard();
+    game.lock = false;
     setTimeout(() => {
         nappingCards.forEach(card => {
             const boardCard = game.board.find(c => c.id === card.id);
             if (boardCard) boardCard.isNapping = false;
         });
-        renderBoard(); // Re-render to remove the style
-    }, 10000); // Nap duration: 10 seconds
+        renderBoard();
+    }, 10000);
 }
-
-/**
- * Event: Curious Paw. Swaps the icons of one clickable card and one non-clickable, non-matched card.
- */
 function eventCuriousPaw() {
     const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
-    // Find non-matched, non-clickable cards (i.e., covered cards)
     const unclickableCards = game.board.filter(c => !c.matched && !isCardClickable(c, game.board));
-
-    if (clickableCards.length === 0 || unclickableCards.length === 0) {
-        // Not enough cards to perform a meaningful swap
-        return;
-    }
-
+    if (clickableCards.length === 0 || unclickableCards.length === 0) return;
     showEventMessage('🐾', '好奇的爪子...<br>一张可见卡牌和一张不可见卡牌的图标被交换了！');
     game.lock = true;
-
-    // Select one random clickable card
     const card1 = clickableCards[Math.floor(Math.random() * clickableCards.length)];
-    // Select one random unclickable card
     const card2 = unclickableCards[Math.floor(Math.random() * unclickableCards.length)];
-
-    // Swap icons in the game state
-    const tempIcon = card1.icon;
-    card1.icon = card2.icon;
-    card2.icon = tempIcon;
-
-    // Visual feedback: shake both cards' DOM elements
+    [card1.icon, card2.icon] = [card2.icon, card1.icon];
     const card1El = document.querySelector(`.card[data-id='${card1.id}']`);
     const card2El = document.querySelector(`.card[data-id='${card2.id}']`);
-    if (card1El) {
-        card1El.classList.add('hinted-shake');
-    }
-    // Note: card2El might not be directly visible or interactive, but we still apply shake if it exists
-    if (card2El) {
-        card2El.classList.add('hinted-shake');
-    }
-
+    if (card1El) card1El.classList.add('hinted-shake');
+    if (card2El) card2El.classList.add('hinted-shake');
     setTimeout(() => {
-        renderBoard(); // Re-render to show the swapped icons and update clickable status
+        renderBoard();
         game.lock = false;
-    }, 800); // Short delay for the shake animation
+    }, 800);
 }
-
-/**
- * Event: Gift Offering. Gives the player a random free tool use.
- */
 function eventGiftOffering() {
     const tools = ['undo', 'hint', 'shuffle'];
-    const toolNames = {
-        undo: '撤销',
-        hint: '提示',
-        shuffle: '洗牌'
-    };
+    const toolNames = { undo: '撤销', hint: '提示', shuffle: '洗牌' };
     const randomTool = tools[Math.floor(Math.random() * tools.length)];
-
     game.toolUses[randomTool]++;
     updateToolButtons();
     showEventMessage('🎁', `猫咪送来了礼物！<br>获得1次免费<b>${toolNames[randomTool]}</b>！`);
 }
-
-
 const randomEvents = [
     { name: 'catNap', func: eventCatNap, weight: 3 },
     { name: 'curiousPaw', func: eventCuriousPaw, weight: 3 },
     { name: 'giftOffering', func: eventGiftOffering, weight: 2 }
 ];
-
-/**
- * Starts the timer for triggering random events.
- */
 function startRandomEvents() {
-    stopRandomEvents(); // Ensure no multiple timers are running
+    stopRandomEvents();
     randomEventTimer = setInterval(() => {
-        if (game.lock || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
-            return; // Don't trigger events if game is locked or finished
-        }
-
+        if (game.lock || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') return;
         const weightedList = [];
-        randomEvents.forEach(event => {
-            for (let i = 0; i < event.weight; i++) {
-                weightedList.push(event.func);
-            }
-        });
-        
+        randomEvents.forEach(event => { for (let i = 0; i < event.weight; i++) weightedList.push(event.func); });
         const randomEventFunc = weightedList[Math.floor(Math.random() * weightedList.length)];
         randomEventFunc();
-
-    }, randBetween(20000, 30000)); // Trigger every 20-30 seconds
+    }, randBetween(20000, 30000));
+}
+function stopRandomEvents() {
+    if (randomEventTimer) clearInterval(randomEventTimer);
+    randomEventTimer = null;
 }
 
-/**
- * Stops the random event timer.
- */
-function stopRandomEvents() {
-    if (randomEventTimer) {
-        clearInterval(randomEventTimer);
-        randomEventTimer = null;
+// NEW: Curtain control functions
+function positionCurtain() {
+    if (!curtainElement || !displayArea) return;
+    const displayRect = displayArea.getBoundingClientRect();
+    const mainAreaRect = document.getElementById('main-area').getBoundingClientRect();
+
+    // Position the curtain relative to its parent (#main-area)
+    curtainElement.style.left = `${displayRect.left - mainAreaRect.left}px`;
+    curtainElement.style.top = `${displayRect.top - mainAreaRect.top}px`;
+    curtainElement.style.width = `${displayRect.width}px`;
+    curtainElement.style.height = `${displayRect.height}px`;
+    curtainElement.style.borderRadius = window.getComputedStyle(displayArea).borderRadius;
+    curtainElement.style.display = 'block'; // Ensure it's visible for positioning
+}
+
+function toggleCurtain(open) {
+    if (!curtainElement) return;
+
+    if (!game.isCurtainEnabled) {
+        // If curtain is disabled by redemption code, always keep it open
+        curtainElement.classList.remove('closed');
+        curtainElement.classList.add('open');
+        return;
+    }
+
+    if (open) {
+        curtainElement.classList.remove('closed');
+        curtainElement.classList.add('open');
+    } else {
+        curtainElement.classList.remove('open');
+        curtainElement.classList.add('closed');
+    }
+}
+
+function startCurtainRandomToggle() {
+    stopCurtainRandomToggle(); // Clear any existing timer
+    curtainTimer = setInterval(() => {
+        if (game.lock || !game.isCurtainEnabled || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+            // If game is locked, curtain is disabled, or game is over/finished, do not toggle
+            toggleCurtain(true); // Ensure it stays open
+            return;
+        }
+
+        const shouldClose = Math.random() < 0.5; // 50% chance to close
+
+        if (shouldClose) {
+            toggleCurtain(false); // Close the curtain
+            setTimeout(() => {
+                toggleCurtain(true); // Open it again after 2 seconds
+            }, 2000); // Invisible for 2 seconds
+        } else {
+            toggleCurtain(true); // Ensure it's open
+        }
+    }, randBetween(20000, 30000)); // Toggle every 20-30 seconds
+}
+
+function stopCurtainRandomToggle() {
+    if (curtainTimer) {
+        clearInterval(curtainTimer);
+        curtainTimer = null;
+    }
+}
+
+
+function handleResize() {
+    if (!game.board || game.board.length === 0 || document.getElementById('start-screen').style.display === 'flex' || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+        positionCatWalker();
+        positionCurtain(); // NEW: Reposition curtain on resize even if game not active
+        return;
+    }
+
+    const currentAreaWidth = cardStackArea.offsetWidth;
+    const currentAreaHeight = cardStackArea.offsetHeight;
+
+    if (game.layout.areaWidth === currentAreaWidth && game.layout.areaHeight === currentAreaHeight) {
+        return;
+    }
+
+    game.layout.areaWidth = currentAreaWidth;
+    game.layout.areaHeight = currentAreaHeight;
+
+    calculateResponsiveSizes();
+
+    game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+    
+    renderAll();
+}
+
+// NEW: Shake to shuffle handler
+function handleDeviceMotion(event) {
+    if (game.lock || game.toolUses.shuffle <= 0) {
+        return;
+    }
+
+    const currentTime = new Date().getTime();
+    if ((currentTime - lastShakeTime) > 1500) { // 1.5 second cooldown to prevent multiple triggers
+        const acceleration = event.accelerationIncludingGravity;
+        const shakeThreshold = 18; // m/s^2, adjusted for sensitivity
+
+        if (
+            Math.abs(acceleration.x) > shakeThreshold ||
+            Math.abs(acceleration.y) > shakeThreshold
+        ) {
+            lastShakeTime = currentTime;
+            
+            shuffleStep();
+            game.toolUses.shuffle--;
+            updateToolButtons();
+            showMessage('你摇动了手机，自动使用了一次洗牌！', '#3e5a2b');
+        }
     }
 }
 
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // 初始化加载屏幕
-    initializeLoadingScreen();
+    // MODIFIED: Call the new realistic loading screen function
+    initializeRealisticLoadingScreen();
     attemptVideoAutoplay();
-    // 代码输入反馈和自动兑换逻辑
-    const feedbackDiv = document.createElement('div');
-    feedbackDiv.style.color = 'red';
-    feedbackDiv.style.fontSize = '12px';
-    feedbackDiv.style.marginTop = '5px';
-    codeInput.parentNode.insertBefore(feedbackDiv, codeInput.nextSibling);
+    
+    // MODIFIED: Handle screen orientation changes
+    const orientationQuery = window.matchMedia("(orientation: landscape)");
+    isLandscape = orientationQuery.matches;
+    // Initial check for landscape message - only if game is not on loading or start screen
+    if (isLandscape && !hasShownLandscapeMessage && 
+        document.getElementById('loading-screen').style.display === 'none' &&
+        document.getElementById('start-screen').style.display === 'none') {
+        showEventMessage('✨', '发现了新功能！<br>横屏模式下，撤销按钮会暂时禁用哦！');
+        hasShownLandscapeMessage = true;
+    }
 
+    function handleOrientationChange(event) {
+        isLandscape = event.matches;
+        updateToolButtons();
+        // Show message only when entering landscape, if not shown before in this landscape session,
+        // and if the loading and start screens are not active.
+        if (isLandscape && !hasShownLandscapeMessage && 
+            document.getElementById('loading-screen').style.display === 'none' &&
+            document.getElementById('start-screen').style.display === 'none') {
+            showEventMessage('✨', '发现了新功能！<br>横屏模式下，撤销按钮会暂时禁用哦！');
+            hasShownLandscapeMessage = true;
+        } else if (!isLandscape) {
+            // Reset flag when returning to portrait
+            hasShownLandscapeMessage = false;
+        }
+    }
+    
+    orientationQuery.addEventListener('change', handleOrientationChange);
+
+    // NEW: Add shake event listener
+    if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', handleDeviceMotion);
+    } else {
+        console.log("此设备不支持摇一摇功能。");
+    }
+
+    // MODIFIED: visibilitychange listener to handle audio context
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            // Pause BGM when tab is hidden
+            if (game.bgmSource) {
+                game.bgmSource.stop();
+                game.bgmSource.disconnect();
+                game.bgmSource = null;
+            }
+        } else {
+            // Resume AudioContext if it was suspended
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
+            }
+            
+            const levelFinishScreen = document.getElementById('level-finish');
+            const gameOverScreen = document.getElementById('game-over');
+            const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
+
+            if (game.bgmOn && !isGameEndScreenVisible && bgmAudioBuffer) {
+                playBgm(true); // Resume BGM if it was on and not on end screen
+            }
+        }
+    });
+
+
+    const feedbackDiv = document.createElement('div');
+    feedbackDiv.style.cssText = 'color: red; font-size: 12px; margin-top: 5px;';
+    codeInput.parentNode.insertBefore(feedbackDiv, codeInput.nextSibling);
     codeInput.addEventListener('input', function() {
         const code = codeInput.value.trim();
         feedbackDiv.textContent = '';
         codeInput.style.borderColor = '';
-        // 支持中文、英文（不区分大小写）和数字的正则表达式
         const codeRegex = /^[\u4e00-\u9fa5a-zA-Z0-9]*$/;
-
         if (code.length === 7) {
-            const isValidFormat = codeRegex.test(code);
-            if (isValidFormat) {
+            if (codeRegex.test(code)) {
                 feedbackDiv.textContent = '字符数正确';
                 feedbackDiv.style.color = 'green';
                 codeInput.style.borderColor = 'green';
                 codeBtn.disabled = false;
-                // 有效的 7 个字符输入时自动触发兑换按钮点击
                 codeBtn.click();
             } else {
                 feedbackDiv.textContent = '兑换码包含不支持的字符';
                 feedbackDiv.style.color = 'red';
                 codeInput.style.borderColor = 'red';
-                codeBtn.disabled = true; // 如果格式无效则禁用
+                codeBtn.disabled = true;
             }
         } else if (code.length < 7) {
             feedbackDiv.textContent = `还可输入 ${7 - code.length} 位`;
             feedbackDiv.style.color = 'orange';
             codeInput.style.borderColor = 'orange';
-        } else { // code.length > 7 或为空
+        } else {
             codeBtn.disabled = true;
         }
     });
-
-    // 兑换按钮点击后清除输入并重置反馈
     codeBtn.addEventListener('click', function() {
        codeInput.value = '';
        feedbackDiv.textContent = '';
        codeInput.style.borderColor = '';
     });
-    codeBtn.disabled = true; // 初始禁用按钮
+    codeBtn.disabled = true;
+    codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
 
-    // 允许回车键触发代码兑换
-    codeInput.addEventListener('keyup', function(event) {
-      if (event.keyCode === 13 || event.key === 'Enter') {
-        event.preventDefault(); // 阻止默认回车行为
-        if (!codeBtn.disabled) { // 仅在按钮启用时点击
-            codeBtn.click();
-        }
-      }
-      });
+    window.addEventListener('resize', debounce(handleResize, 200));
+    handleResize(); 
 
-    // Add window resize and orientationchange event listener for new feature
-    let initialWidth = window.innerWidth;
-    let initialHeight = window.innerHeight;
+    skipOutroBtn.addEventListener('click', () => handleCloseGame('level'));
 
-    window.addEventListener('resize', () => {
-        const currentWidth = window.innerWidth;
-        const currentHeight = window.innerHeight;
-        const currentOrientation = currentWidth > currentHeight ? 'landscape' : 'portrait';
-
-        // Check if orientation has changed significantly
-        if (currentOrientation !== lastOrientation) {
-            showCustomMessage('恭喜你发现了新功能');
-            lastOrientation = currentOrientation; // Update last orientation
-        }
-
-        // Recalculate card dimensions on resize
-        if (game.level) { // Only if a level has been started
-            // Re-run genLevel to update cardDimensions based on new area size
-            genLevel(game.level); 
-            renderAll(); // Re-render everything with new dimensions
-        }
-        positionCatWalker();
-        updateWigglingCatVisibility();
-    });
-
-    // For devices that support orientationchange event explicitly
-    if (window.matchMedia("(orientation: portrait)").matches || window.matchMedia("(orientation: landscape)").matches) {
-        window.addEventListener('orientationchange', () => {
-            // This event fires after resize, so the resize listener will handle the message.
-            // This ensures the message only appears once per actual orientation change.
-            console.log("Orientation changed via orientationchange event.");
-        });
-    }
-
-    // Skip outro button event listener
-    skipOutroBtn.addEventListener('click', () => {
-        showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
-    });
-
-    // Walking cat animation iteration listener
     if (walkingCat) {
         walkingCat.addEventListener('animationiteration', () => {
             isCatMirrored = !isCatMirrored;
-
-            // Fade out
-            walkingCat.style.opacity = '0';
-
-            // After a very brief moment (allowing fade-out to start), change transform and fade back in
-            setTimeout(() => {
-                // MODIFIED: Reverse the scaleX logic to make the cat face the opposite direction of movement
-                walkingCat.style.transform = isCatMirrored ? 'scaleX(1)' : 'scaleX(-1)'; 
-                walkingCat.style.opacity = '1';
-            }, 1); // Minimal delay (1ms) to ensure the opacity change is registered.
-                   // The actual "fade" is handled by the CSS transition duration.
+            walkingCat.style.transform = isCatMirrored ? 'scaleX(-1)' : 'scaleX(1)';
         });
     }
 });
 
-// Tool button click handlers
 undoBtn.onclick = function(){
   if(game.toolUses.undo > 0 && game.stepStack.length > 0){
     undoStep();
@@ -3013,333 +2833,311 @@ shuffleBtn.onclick = function(){
     updateToolButtons();
   }
 };
-
-// Restart current level button handler
-restartCurrentLevelBtn.onclick = function() {
-    showConfirm('确定要重新开始当前关卡吗？所有道具使用次数将重置。', () => {
-        stopRandomEvents(); // NEW: Stop events on restart
-        startGame(game.level);
-        setTimeout(() => {
-            showMessage('关卡已重新开始！', '#3e5a2b');
-        }, 50);
-    });
-};
-
-// Redemption code button handler
+restartCurrentLevelBtn.onclick = () => showConfirm('确定要重新开始当前关卡吗？', () => {
+    stopRandomEvents();
+    stopCurtainRandomToggle(); // NEW: Stop curtain toggle on restart
+    startGame(game.level);
+    showMessage('关卡已重新开始！', '#3e5a2b');
+});
 codeBtn.onclick = function(){
   let val = codeInput.value.trim().toLowerCase();
-
   if (REDEMPTION_CODES[val]) {
     const rewards = REDEMPTION_CODES[val];
-
     if (rewards.type === "skip_level") {
-      // Simulate winning current level by matching all cards and setting score
       game.board.forEach(card => card.matched = true);
-      game.score = game.targetScore; // Ensure score meets target
+      game.score = game.targetScore;
       renderBoard();
       renderProgressAndScore();
       checkWin();
       showMessage(`兑换成功！当前关卡已跳过！`, "#3e5a2b");
-    } else {
-      // Existing tool redemption logic
+    } else if (rewards.type === "curtain_off") { // NEW: Handle "xianshi" code
+        game.isCurtainEnabled = false;
+        toggleCurtain(true); // Immediately open the curtain
+        stopCurtainRandomToggle(); // Stop random toggling for this level
+        showMessage(`兑换成功！幕布已在本关卡关闭！`, "#3e5a2b");
+    }
+    else {
       game.toolUses.undo += rewards.undo;
       game.toolUses.hint += rewards.hint;
       game.toolUses.shuffle += rewards.shuffle;
-
-      // Optional: Add check to prevent reusing codes (e.g., delete REDEMPTION_CODES[val];)
-
       showMessage(`兑换成功！获得撤销x${rewards.undo}, 提示x${rewards.hint}, 洗牌x${rewards.shuffle}`, "#3e5a2b");
     }
     updateToolButtons();
   } else {
     showMessage('兑换码错误', "#c0392b");
   }
-  codeInput.value = ''; // Clear input field
+  codeInput.value = '';
 };
-
-// Music toggle button handler
 musicToggleBtn.onclick = function(){
   game.bgmOn = !game.bgmOn;
   this.innerHTML = game.bgmOn ? '🎼' : '🔇';
-  playBgm(game.bgmOn);
+  // Play/pause BGM using Web Audio API
+  if (game.bgmOn && bgmAudioBuffer) {
+      playBgm(true);
+  } else {
+      playBgm(false);
+  }
 };
-
-// Start game button handler
 startBtn.onclick = function(){
   document.getElementById('start-screen').style.display = 'none';
+  initAudio(); // Initialize Web Audio API and load sounds on first user interaction
   startGame(1);
-  // playBgm(game.bgmOn) is now handled in startGame
 };
-
-// Level finish screen buttons
 nextBtn.onclick = function(){
   document.getElementById('level-finish').style.display = 'none';
   startGame(2);
 };
 retryBtnLevelFinish.onclick = function(){
   document.getElementById('level-finish').style.display = 'none';
-  startGame(game.level); // Replay current level
+  startGame(game.level);
 };
 retryBtnGameOver.onclick = function(){
   document.getElementById('game-over').style.display = 'none';
-  startGame(game.level); // Replay current level from game over screen
+  startGame(game.level);
 };
-
-// External links/actions
-gobangBtn.onclick = function() {
-  window.open('https://kaiyuanzhuadmin.github.io/kaiyuan/', '_blank');
-};
-restartGameBtn.onclick = function() {
-    window.location.href = 'https://kaiyuanzhuadmin.github.io/cat/'; // Redirect to restart game
-};
-
-// Close game buttons
+gobangBtn.onclick = () => window.open('https://www.kaiyuanzhu.qzz.io/kaiyuan/', '_blank');
+restartGameBtn.onclick = () => window.location.href = 'https://www.kaiyuanzhu.qzz.io/cat/';
 closeGameBtnLevel.onclick = () => handleCloseGame('level');
 closeGameBtnGameOver.onclick = () => handleCloseGame('gameover');
 
-/**
- * Initializes the loading screen and handles its progress.
- */
-function initializeLoadingScreen() {
+// MODIFIED: Replaced the old loading screen function with a robust, sequential asset loader.
+// This function now only loads essential assets for the initial game experience.
+// Other assets like BGM are loaded via Web Audio API on first user interaction.
+function initializeRealisticLoadingScreen() {
     const loadingScreen = document.getElementById('loading-screen');
     const progressBar = document.getElementById('progress-bar');
     const loadingText = document.getElementById('loading-text');
+    const LOAD_TIMEOUT = 5000; // 5 seconds timeout for each asset
 
-    let progress = 0;
-    const assets = ["加载字体...", "加载音效...", "加载图片...", "初始化关卡...", "准备喵咪...", "完成!"];
-    let assetIndex = 0;
-    loadingText.textContent = assets[0];
+    // Only include critical assets for the initial loading screen
+    const assetsToLoad = [
+        { type: 'image', src: 'me.png', name: '图标' },
+        { type: 'image', src: 'mao3.webp', name: '加载背景' },
+        { type: 'image', src: 'mao1.webp', name: '通关背景' },
+        { type: 'image', src: 'mao.webp', name: '开始背景' },
+        { type: 'image', src: 'cat1.webp', name: '游戏背景' },
+        { type: 'video', src: 'mao.mp4', name: '开始动画' },
+        { type: 'video', src: 'mao2.mp4', name: '彩蛋视频' }, //mao2.mp4 is critical for level 2 outro
+        { type: 'image', src: 'mao2.webp', name: '彩蛋图片' }, //mao2.webp is critical fallback
+        { type: 'audio', src: 'kaa.mp3', name: '点击音效' } //kaa.mp3 is critical for immediate feedback
+    ];
 
-    const interval = setInterval(() => {
-        progress += Math.random() * 15 + 5; // Simulate loading progress
+    let assetsLoaded = 0;
+    const totalAssets = assetsToLoad.length;
 
-        if (progress >= 100) {
-            progress = 100;
-            clearInterval(interval);
+    const updateProgress = () => {
+        assetsLoaded++;
+        const progress = (assetsLoaded / totalAssets) * 100;
+        progressBar.style.width = progress + '%';
 
-            progressBar.style.width = progress + '%';
-            loadingText.textContent = assets[assets.length - 1];
-
+        if (assetsLoaded === totalAssets) {
+            loadingText.textContent = '完成!';
             setTimeout(() => {
                 loadingScreen.style.opacity = '0';
                 loadingScreen.addEventListener('transitionend', () => {
                     loadingScreen.style.display = 'none';
-                    document.title = "喵了个咪"; // Set final page title
-                    initializeGame(); // Initialize game
+                    document.title = "喵了个喵";
+                    initializeGame();
                 }, { once: true });
-            }, 400); // Fade out duration
+            }, 400);
         } else {
-            progressBar.style.width = progress + '%';
-            const nextAssetThreshold = (assetIndex + 1) * 20;
-            if (progress > nextAssetThreshold && assetIndex < assets.length - 1) {
-                assetIndex++;
-                loadingText.textContent = assets[assetIndex]; // Update loading text
-            }
+            // Start loading the next asset
+            loadNextAsset();
         }
-    }, 250); // Update interval
+    };
+
+    const loadAsset = (asset) => {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error(`Timeout loading ${asset.src}`));
+            }, LOAD_TIMEOUT);
+
+            const successHandler = () => {
+                clearTimeout(timeoutId);
+                resolve();
+            };
+
+            const errorHandler = () => {
+                clearTimeout(timeoutId);
+                reject(new Error(`Failed to load ${asset.src}`));
+            };
+            
+            switch (asset.type) {
+                case 'image':
+                    const img = new Image();
+                    img.onload = successHandler;
+                    img.onerror = errorHandler;
+                    img.src = asset.src;
+                    break;
+                case 'audio':
+                    // For audio, we just need to ensure it's fetched. Actual decoding happens in initAudio.
+                    fetch(asset.src)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            return response.blob(); // Fetch as blob to confirm download
+                        })
+                        .then(() => successHandler())
+                        .catch(errorHandler);
+                    break;
+                case 'video':
+                    const video = document.createElement('video');
+                    video.addEventListener('canplaythrough', successHandler, { once: true });
+                    video.onerror = errorHandler;
+                    video.src = asset.src;
+                    video.load(); // Start loading the video
+                    break;
+            }
+        });
+    };
+
+    const loadNextAsset = async () => {
+        if (assetsLoaded >= totalAssets) return;
+
+        const asset = assetsToLoad[assetsLoaded];
+        loadingText.textContent = `正在加载 ${asset.name}... (${assetsLoaded + 1}/${totalAssets})`;
+        
+        try {
+            await loadAsset(asset);
+        } catch (error) {
+            console.error(error.message);
+            // Even if an asset fails, we continue to the next one
+        } finally {
+            updateProgress();
+        }
+    };
+
+    // Start the sequential loading process
+    loadNextAsset();
+
+    // Deferred loading for BGM:
+    // The BGM (Get.mp3) is not part of the initial progress bar.
+    // It will be loaded and decoded via Web Audio API's initAudio()
+    // which is called on the first user interaction (start button click).
 }
+
+
 function attemptVideoAutoplay() {
     const video = document.getElementById('start-screen-video');
     if (!video) return;
-
-    // 1. Try direct play (works for some Android WeChat and desktop browsers)
     const playPromise = video.play();
-
     if (playPromise !== undefined) {
         playPromise.catch(error => {
-            console.log("Video direct play failed, waiting for user interaction or WeixinJSBridgeReady event.", error);
-            // Playback failed, add touch listener as fallback
+            console.log("Video direct play failed, waiting for user interaction.", error);
             document.body.addEventListener('touchstart', function onFirstTouch() {
                 video.play().catch(e => console.error("Video playback failed after touch:", e));
-                // Remove listener after first touch to avoid repeated triggers
                 document.body.removeEventListener('touchstart', onFirstTouch);
-            }, { once: true }); // Using {once: true} also ensures it.
+            }, { once: true });
         });
     }
-
-    // 2. Add WeixinJSBridgeReady listener specifically for WeChat environment
     if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
-        WeixinJSBridge.invoke('getNetworkType', {}, function(e) {
-            video.play().catch(err => console.error("Video playback failed after WeixinJSBridge ready:", err));
-        });
+        WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed in WeixinJSBridge:", err)));
     } else {
-        document.addEventListener("WeixinJSBridgeReady", function() {
-            WeixinJSBridge.invoke('getNetworkType', {}, function(e) {
-                video.play().catch(err => console.error("Video playback failed after WeixinJSBridgeReady event triggered:", err));
-            });
-        }, false);
+        document.addEventListener("WeixinJSBridgeReady", () => WeixinJSBridge.invoke('getNetworkType', {}, e => WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed on WeixinJSBridgeReady:", err)))), false);
     }
 }
 
-/**
- * Position the walking cat animation element.
- * This function should be called after main game elements are rendered and on window resize to ensure correct positioning.
- */
 function positionCatWalker() {
     const displayArea = document.getElementById('display-area');
     const catPath = document.getElementById('cat-path');
     const mainArea = document.getElementById('main-area');
-
-    if (!displayArea || !catPath || !mainArea) {
-        console.warn("Missing elements for walking cat positioning.");
-        return;
-    }
-
-    // Calculate the position of displayArea's bottom relative to mainArea's top
+    if (!displayArea || !catPath || !mainArea) return;
     const displayAreaBottomRelativeToMainArea = displayArea.offsetTop + displayArea.offsetHeight;
-
-    // Set catPath's top just below the displayArea
     catPath.style.top = `${displayAreaBottomRelativeToMainArea}px`;
-    // Ensure catPath spans the full width of mainArea for animation
     catPath.style.width = `${mainArea.offsetWidth}px`;
 }
 
-/**
- * MODIFICATION: Positions a single wiggling cat instance over a specific temp slot.
- * @param {HTMLElement} wigglingCatEl - The wiggling cat DOM element.
- * @param {number} slotIndex - The 0-based index of the target temp slot.
- */
 function positionWigglingCat(wigglingCatEl, slotIndex) {
     const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
     const cardStackArea = document.getElementById('card-stack-area');
     const mainArea = document.getElementById('main-area');
-
     if (!wigglingCatEl || tempSlots.length === 0 || !cardStackArea || !mainArea || slotIndex < 0 || slotIndex >= tempSlots.length) {
-        console.warn(`Missing elements or invalid slot index for wiggling cat positioning (slotIndex: ${slotIndex}).`);
-        wigglingCatEl.style.display = 'none'; // Ensure it's hidden if positioning fails
+        if(wigglingCatEl) wigglingCatEl.style.display = 'none';
         return;
     }
-
     const targetTempSlot = tempSlots[slotIndex];
-
     const cardStackRect = cardStackArea.getBoundingClientRect();
     const targetTempSlotRect = targetTempSlot.getBoundingClientRect();
     const mainAreaRect = mainArea.getBoundingClientRect();
-
-    // Calculate the vertical midpoint of the gap between cardStackArea bottom and targetTempSlot top
     const gapMidpointAbsolute = cardStackRect.bottom + (targetTempSlotRect.top - cardStackRect.bottom) / 2;
-
-    // Convert this absolute position to a position relative to mainArea's top
     const topRelativeToMainArea = gapMidpointAbsolute - mainAreaRect.top;
-
-    // Calculate the horizontal center of the target slot relative to mainArea
     const leftRelativeToMainArea = (targetTempSlotRect.left + targetTempSlot.offsetWidth / 2) - mainAreaRect.left;
-
-    // Set wigglingCatEl's top and left, adjusting by half its height/width to center it
     wigglingCatEl.style.top = `${topRelativeToMainArea - (wigglingCatEl.offsetHeight / 2)}px`;
-    wigglingCatEl.style.left = `${leftRelativeToMainArea}px`; // Already centered with transformX(-50%)
-    wigglingCatEl.style.display = 'block'; // Make it visible
+    wigglingCatEl.style.left = `${leftRelativeToMainArea}px`;
+    wigglingCatEl.style.display = 'block';
 }
 
-/**
- * MODIFICATION: Hides all wiggling cat instances.
- */
 function hideWigglingCats() {
     wigglingCat1.style.display = 'none';
     wigglingCat4.style.display = 'none';
     wigglingCat7.style.display = 'none';
 }
 
-/**
- * MODIFICATION: Updates the visibility and position of wiggling cats based on remaining cards.
- */
 function updateWigglingCatVisibility() {
-    // Change condition to show wiggling cats when score meets target
     if (game.score >= game.targetScore) {
-        // Show and position cats
-        positionWigglingCat(wigglingCat1, 0); // Above first slot (index 0)
-        positionWigglingCat(wigglingCat4, 3); // Above fourth slot (index 3)
-        positionWigglingCat(wigglingCat7, 6); // Above seventh slot (index 6)
+        positionWigglingCat(wigglingCat1, 0);
+        positionWigglingCat(wigglingCat4, 3);
+        positionWigglingCat(wigglingCat7, 6);
     } else {
-        // Hide cats
         hideWigglingCats();
     }
 }
 
-/**
- * MODIFICATION: Handles the Level 2 outro video/image playback.
- */
 function playLevel2Outro() {
-    game.lock = true; // Lock game interaction during outro
-    playBgm(false); // Pause BGM
-
+    game.lock = true;
+    playBgm(false);
     level2OutroScreen.style.display = 'flex';
-    outroLoadingText.style.display = 'block'; // Show loading text
-    skipOutroBtn.style.display = 'block'; // Show skip button
-
+    outroLoadingText.style.display = 'block';
+    skipOutroBtn.style.display = 'block';
     outroVideo.style.display = 'none';
     outroImage.style.display = 'none';
 
-    // Set a timeout for video playback fallback
+    const finalCloseAction = () => handleCloseGame('level');
+
     outroVideoTimeout = setTimeout(() => {
-        console.warn("Outro video timed out or failed to play, falling back to image/finish screen.");
         outroVideo.style.display = 'none';
         outroImage.style.display = 'block';
         outroLoadingText.textContent = '视频无法播放，显示图片...';
-        // After showing image for a bit, transition to finish screen
-        setTimeout(() => {
-            showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
-        }, 3000); // Display image for 3 seconds
-    }, 7000); // 7 seconds timeout for video to start playing or end
+        setTimeout(finalCloseAction, 3000);
+    }, 7000); // Timeout for video playback
 
-    // Attempt to play video
-    outroVideo.load(); // Load the video
+    outroVideo.load();
     const playPromise = outroVideo.play();
-
     if (playPromise !== undefined) {
         playPromise.then(() => {
-            // Video started playing successfully
-            console.log("Outro video started playing.");
             outroVideo.style.display = 'block';
-            outroLoadingText.style.display = 'none'; // Hide loading text once video plays
-            // Clear the timeout as video is playing
-            if (outroVideoTimeout) {
-                clearTimeout(outroVideoTimeout);
-                outroVideoTimeout = null;
-            }
+            outroLoadingText.style.display = 'none';
+            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
         }).catch(error => {
-            // Video autoplay failed, immediately trigger fallback
-            console.error("Outro video autoplay failed:", error);
+            // If video autoplay fails, show image immediately
             outroVideo.style.display = 'none';
             outroImage.style.display = 'block';
             outroLoadingText.textContent = '视频无法播放，显示图片...';
-            // Clear the timeout and proceed to finish screen after a short image display
-            if (outroVideoTimeout) {
-                clearTimeout(outroVideoTimeout);
-                outroVideoTimeout = null;
-            }
-            setTimeout(() => {
-                showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
-            }, 3000); // Display image for 3 seconds
+            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+            setTimeout(finalCloseAction, 3000);
         });
     }
-
-    // Event listener for video ending
     outroVideo.onended = () => {
-        console.log("Outro video ended.");
-        // Clear the timeout if video ended naturally
-        if (outroVideoTimeout) {
-            clearTimeout(outroVideoTimeout);
-            outroVideoTimeout = null;
-        }
-        showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
+        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        finalCloseAction();
     };
-
-    // Event listener for video errors (e.g., failed to load, unsupported format)
     outroVideo.onerror = (e) => {
-        console.error("Outro video error:", e);
-        // Immediately trigger fallback to image/finish screen
-        if (outroVideoTimeout) {
-            clearTimeout(outroVideoTimeout);
-            outroVideoTimeout = null;
-        }
+        // If video loading or playback encounters an error, show image
+        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
         outroVideo.style.display = 'none';
         outroImage.style.display = 'block';
         outroLoadingText.textContent = '视频加载失败，显示图片...';
-        setTimeout(() => {
-            showLevelFinish('<p> <br> </p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
-        }, 3000); // Display image for 3 seconds
+        setTimeout(finalCloseAction, 3000);
     };
+}
+
+function debounce(func, delay) {
+  let timeout;
+  return function() {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
 }
 </script>
 </body>
