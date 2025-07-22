@@ -205,6 +205,18 @@
       }
     }
 
+    /* NEW: Lid open animation */
+    @keyframes open-lid {
+      0% {
+        transform: perspective(1000px) rotateX(0deg);
+        opacity: 1;
+      }
+      100% {
+        transform: perspective(1000px) rotateX(-120deg);
+        opacity: 0;
+      }
+    }
+
 
     /* Global body styles */
     body {
@@ -521,6 +533,7 @@
       align-items: center;
       justify-content: center;
       border: 2px dashed #b8860b;
+      perspective: 1000px; /* NEW: Needed for 3D transform of the lid */
     }
     /* Responsive adjustments for card stack area */
     @media (max-width: 650px) {
@@ -539,6 +552,44 @@
         max-height: 60vh; /* Cap height relative to viewport */
       }
     }
+    
+    /* NEW: Lid styles */
+    #card-stack-lid {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #e9d9c6;
+        z-index: 1100; /* High z-index to cover cards */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 15px;
+        color: #6e352f;
+        font-size: 1.8rem;
+        font-weight: bold;
+        text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
+        transform-origin: top center;
+        cursor: default;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    #card-stack-lid.opening {
+        animation: open-lid 2s ease-in-out forwards;
+    }
+    #card-stack-lid small {
+        position: absolute;
+        bottom: 20px;
+        font-size: 0.8rem;
+        opacity: 0.7;
+    }
+    
+    /* NEW: Class to hide cards before lid opens */
+    #card-stack-area.cards-hidden .card {
+        visibility: hidden;
+    }
+
 
     /* Individual Card Styles */
     .card {
@@ -560,6 +611,7 @@
       -webkit-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
+      visibility: visible; /* Default state */
     }
     .card-entering {
       animation: card-entry 0.5s ease-out forwards;
@@ -1378,7 +1430,13 @@
         <span class="path-decoration" style="left: 80%;">🌿</span>
         <!-- --- PATH DECORATION END --- -->
     </div>
-    <div id="card-stack-area"></div>
+    <div id="card-stack-area">
+      <!-- NEW: Lid element for the animation -->
+      <div id="card-stack-lid" style="display: none;">
+        <p>卡片随机生成</p>
+        <small>Coded & Designed by 开元</small>
+      </div>
+    </div>
     <div id="wiggling-cat-1" class="wiggling-cat-instance">🥳</div>
     <div id="wiggling-cat-4" class="wiggling-cat-instance">🎉</div>
     <div id="wiggling-cat-7" class="wiggling-cat-instance">🍻</div>
@@ -1561,6 +1619,7 @@ const targetScoreElement = document.getElementById('target-score');
 const levelInfoElement = document.getElementById('level-info');
 const displayArea = document.getElementById('display-area');
 const cardStackArea = document.getElementById('card-stack-area');
+const cardStackLid = document.getElementById('card-stack-lid'); // NEW: Lid element
 const catPath = document.getElementById('cat-path');
 const walkingCat = document.getElementById('walking-cat');
 const curtainElement = document.getElementById('curtain');
@@ -2252,11 +2311,19 @@ function gameOver(msg){
   }, 100);
 }
 
-// MODIFIED: startGame to include timer start
+// MODIFIED: startGame to include timer start and lid animation
 function startGame(level){
   footer.style.display = 'block';
   game.level = level;
   game.levelStartTime = Date.now(); // Start timer for the level
+  
+  // --- LID ANIMATION START ---
+  // 1. Reset and show the lid, hide the cards underneath
+  cardStackLid.style.display = 'flex';
+  cardStackLid.classList.remove('opening');
+  cardStackArea.classList.add('cards-hidden');
+  // --- LID ANIMATION END ---
+
   let lvData = genLevel(level);
   game.cards = lvData.cards;
   game.board = lvData.board;
@@ -2267,7 +2334,8 @@ function startGame(level){
   game.stepStack = [];
   game.lock = false;
   game.isNewLevel = true;
-  renderAll();
+  
+  renderAll(); // Renders everything, but cards are hidden by 'cards-hidden' class
   updateToolButtons();
   
   if (game.bgmOn) playBgm(true);
@@ -2284,11 +2352,26 @@ function startGame(level){
       toggleCurtain(true); // Open the curtain after 2 seconds
       startCurtainRandomToggle(); // Start random toggling after initial open
   }, 2000);
+
+  // --- LID ANIMATION START ---
+  // 2. Trigger the lid opening animation
+  setTimeout(() => {
+    cardStackLid.classList.add('opening');
+    
+    // 3. When the animation is done, hide the lid and show the cards
+    cardStackLid.addEventListener('animationend', () => {
+        cardStackLid.style.display = 'none';
+        cardStackArea.classList.remove('cards-hidden');
+    }, { once: true });
+  }, 100); // Small delay to ensure styles are applied
+  // --- LID ANIMATION END ---
 }
 
 function renderBoard(){
   const area = document.getElementById('card-stack-area');
-  area.innerHTML = '';
+  // Clear only cards, not the lid
+  area.querySelectorAll('.card').forEach(c => c.remove());
+
   let cardsToRender = game.board.filter(c => !c.matched);
   cardsToRender.sort((a, b) => a.z - b.z);
   const isInitialRenderForLevel = game.isNewLevel;
@@ -2310,6 +2393,8 @@ function renderBoard(){
     el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
     if(clickable) el.onclick = () => clickCard(card.id);
     if (isInitialRenderForLevel) {
+        // The card-entering animation will now start after the lid animation finishes
+        // and the 'cards-hidden' class is removed.
         el.classList.add('card-entering');
         el.style.animationDelay = `${index * 0.03}s`;
         el.addEventListener('animationend', function handler() {
