@@ -26,16 +26,10 @@
 
   <style>
     /* Keyframe animations */
-    /* NEW: Card float-up animation */
-    @keyframes float-up {
-      from {
-        opacity: 0;
-        transform: translateY(25px) scale(0.98);
-      }
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+    @keyframes card-entry {
+      0% { opacity: 0; transform: scale(0.5) translateY(-50px); }
+      70% { opacity: 1; transform: scale(1.05) translateY(10px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
     }
 
     /* Animation for matched cards disappearing from temp area */
@@ -208,18 +202,6 @@
       }
       to {
         transform: translateX(100vw);
-      }
-    }
-
-    /* NEW: Lid open animation */
-    @keyframes open-lid {
-      0% {
-        transform: perspective(1000px) rotateX(0deg);
-        opacity: 1;
-      }
-      100% {
-        transform: perspective(1000px) rotateX(-120deg);
-        opacity: 0;
       }
     }
 
@@ -434,7 +416,7 @@
         width: 100%;
         height: 100%;
         /* You can add a curtain texture here if you have one, e.g., url('path/to/curtain_texture.png') */
-        background: linear-gradient(to bottom, #e9d9c6, #e0d8cf); /* Simple gradient */
+        background: linear-gradient(to bottom, #f7f0e8, #e0d8cf); /* Simple gradient */
         opacity: 0.9;
     }
 
@@ -492,8 +474,8 @@
     .path-decoration {
         position: absolute;
         bottom: -5px; /* MODIFIED: Adjusted position */
-        font-size: 25px;
-        transition: transform 0.4s ease-in-out;
+        font-size: 18px;
+        transition: transform 0.2s ease-in-out;
         z-index: 9; /* MODIFIED: Ensure decorations are below the cat */
     }
     .path-decoration.shaking {
@@ -508,9 +490,9 @@
     /* New: Cat Wiggler Instances (Right Cat) */
     .wiggling-cat-instance {
         position: absolute;
-        width: 28px;
-        height: 28px;
-        font-size: 28px;
+        width: 35px;
+        height: 35px;
+        font-size: 35px;
         line-height: 1;
         display: flex;
         align-items: center;
@@ -539,7 +521,6 @@
       align-items: center;
       justify-content: center;
       border: 2px dashed #b8860b;
-      perspective: 1000px; /* NEW: Needed for 3D transform of the lid */
     }
     /* Responsive adjustments for card stack area */
     @media (max-width: 650px) {
@@ -558,53 +539,6 @@
         max-height: 60vh; /* Cap height relative to viewport */
       }
     }
-    
-    /* NEW: Lid styles */
-    #card-stack-lid {
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: #e9d9c6;
-        z-index: 1100; /* High z-index to cover cards */
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: flex-start; /* 从顶部开始排列内容 */
-        padding-top: 20%; /* 上方留出20%的空间 */
-        height: 100%; /* lid的高度 */
-        border-radius: 10px;
-        color: #6e352f;
-        font-size: 2.8rem;
-        font-weight: bold;
-        text-shadow: 1px 1px 2px rgba(255,255,255,0.5);
-        transform-origin: top center;
-        cursor: default;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-    }
-    #card-stack-lid.opening {
-        /* MODIFIED: Animation duration changed to 5s */
-        animation: open-lid 5s ease-in-out forwards;
-    }
-    #card-stack-lid big {
-        position: absolute;
-        bottom: 70px;
-        font-size: 10rem;
-        opacity: 0.8;
-    }
-    #card-stack-lid small {
-        position: absolute;
-        bottom: 20px;
-        font-size: 0.8rem;
-        opacity: 0.7;
-    }
-    
-    /* NEW: Class to hide cards before lid opens */
-    #card-stack-area.cards-hidden .card {
-        visibility: hidden;
-    }
-
 
     /* Individual Card Styles */
     .card {
@@ -626,11 +560,9 @@
       -webkit-user-select: none;
       -moz-user-select: none;
       -ms-user-select: none;
-      visibility: visible; /* Default state */
     }
-    /* NEW: Class for the new float-up animation */
-    .card-floating-up {
-      animation: float-up 1.2s ease-out forwards;
+    .card-entering {
+      animation: card-entry 0.5s ease-out forwards;
     }
     .hint-animation {
       animation: show-card-property 2s forwards;
@@ -763,7 +695,7 @@
       justify-content: center;
       user-select: none;
       z-index: 10000;
-      transition: top 0.4s ease-in-out, left 0.4s ease-in-out, transform 0.4s ease-in-out;
+      transition: top 0.3s ease-in-out, left 0.3s ease-in-out, transform 0.3s ease-in-out;
       overflow: hidden;
       color: #5d4037;
     }
@@ -1440,20 +1372,13 @@
     <div id="cat-path">
         <div id="walking-cat">🐈</div>
         <!-- --- PATH DECORATION START --- -->
-        <span class="path-decoration" style="left: 20%;">🌹</span>
-        <span class="path-decoration" style="left: 40%;">🏡</span>
-        <span class="path-decoration" style="left: 60%;">🌼</span>
+        <span class="path-decoration" style="left: 20%;">🌸</span>
+        <span class="path-decoration" style="left: 40%;">🌿</span>
+        <span class="path-decoration" style="left: 60%;">🌸</span>
         <span class="path-decoration" style="left: 80%;">🌿</span>
         <!-- --- PATH DECORATION END --- -->
     </div>
-    <div id="card-stack-area">
-      <!-- NEW: Lid element for the animation -->
-      <div id="card-stack-lid" style="display: none;">
-        <p>卡片随机生成</p>
-        <big>💌</big>
-        <small>Coded & Designed by 开元</small>
-      </div>
-    </div>
+    <div id="card-stack-area"></div>
     <div id="wiggling-cat-1" class="wiggling-cat-instance">🥳</div>
     <div id="wiggling-cat-4" class="wiggling-cat-instance">🎉</div>
     <div id="wiggling-cat-7" class="wiggling-cat-instance">🍻</div>
@@ -1636,7 +1561,6 @@ const targetScoreElement = document.getElementById('target-score');
 const levelInfoElement = document.getElementById('level-info');
 const displayArea = document.getElementById('display-area');
 const cardStackArea = document.getElementById('card-stack-area');
-const cardStackLid = document.getElementById('card-stack-lid'); // NEW: Lid element
 const catPath = document.getElementById('cat-path');
 const walkingCat = document.getElementById('walking-cat');
 const curtainElement = document.getElementById('curtain');
@@ -2033,9 +1957,6 @@ function isCardClickable(card, board){
   return true;
 }
 
-// =================================================================
-// ===== THIS FUNCTION HAS BEEN REPLACED WITH THE OPTIMIZED VERSION =====
-// =================================================================
 function clickCard(id) {
   if (game.lock) return;
   let cardData = game.board.find(c => c.id === id);
@@ -2043,7 +1964,6 @@ function clickCard(id) {
 
   playClickSound();
 
-  // 预检查暂存区是否会满
   let tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
   let iconCntCheck = {};
   tempCheck.forEach(c => iconCntCheck[c.icon] = (iconCntCheck[c.icon] || 0) + 1);
@@ -2062,7 +1982,6 @@ function clickCard(id) {
     return;
   }
 
-  // --- 卡片飞入动画 ---
   const startRect = clickedCardEl.getBoundingClientRect();
   const flyingCard = document.createElement('div');
   flyingCard.className = 'flying-card';
@@ -2088,7 +2007,7 @@ function clickCard(id) {
     const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
     const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
     if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
-        console.error(" flying card 的目标槽位索引无效，终止动画。");
+        console.error("Invalid end slot index for flying card. Aborting animation.");
         if(flyingCard.parentNode) document.body.removeChild(flyingCard);
         game.lock = false;
         return;
@@ -2107,8 +2026,7 @@ function clickCard(id) {
   setTimeout(() => {
     if (flyingCard.parentNode) document.body.removeChild(flyingCard);
   }, animationDuration);
-  
-  // --- 核心逻辑 ---
+
   setTimeout(() => {
     cardData.matched = true;
     game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
@@ -2126,65 +2044,29 @@ function clickCard(id) {
       triggerMatchFeedback();
       
       const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-      const matchedElementsToAnimate = [];
+      const matchedElements = [];
 
-      // 标记匹配的卡片并找到它们的DOM元素
       game.temp.forEach((c, index) => {
           if (c.icon === matchedIcon) {
               c.matched = true;
               const slot = tempSlots[index];
               if (slot) {
                   const cardEl = slot.querySelector('.temp-card');
-                  if (cardEl) {
-                      matchedElementsToAnimate.push(cardEl);
-                  }
-                  slot.classList.add('clearing');
-                  slot.addEventListener('animationend', () => {
-                      slot.classList.remove('clearing');
-                  }, { once: true });
+                  matchedElements.push({ slot, cardEl });
               }
           }
       });
 
-      // 定义清理逻辑
-      const cleanupLogic = () => {
-          game.temp = game.temp.filter(c => !c.matched);
-          renderTemp();
-          renderBoard();
-          checkWin();
-          game.lock = false; // 在所有逻辑完成后解锁
-      };
+      matchedElements.forEach(({ slot, cardEl }) => {
+          if (cardEl) {
+              cardEl.classList.add('disappearing');
+          }
+          slot.classList.add('clearing');
+          slot.addEventListener('animationend', () => {
+              slot.classList.remove('clearing');
+          }, { once: true });
+      });
 
-      // 如果有需要动画的元素
-      if (matchedElementsToAnimate.length > 0) {
-          // 为所有匹配的元素添加动画类
-          matchedElementsToAnimate.forEach(el => el.classList.add('disappearing'));
-          
-          // 获取最后一个动画元素，以它为准
-          const lastAnimatedElement = matchedElementsToAnimate[matchedElementsToAnimate.length - 1];
-
-          // 安全回退定时器
-          const fallbackTimeout = setTimeout(() => {
-              console.warn("animationend 事件回退机制触发。");
-              lastAnimatedElement.removeEventListener('animationend', onAnimationEnd);
-              cleanupLogic();
-          }, 500); // 动画时长为0.3s，这里设置500ms作为保险
-
-          // 动画结束事件处理器
-          const onAnimationEnd = () => {
-              clearTimeout(fallbackTimeout); // 清除回退定时器
-              cleanupLogic();
-          };
-          
-          // 为最后一个元素绑定一次性的 animationend 事件
-          lastAnimatedElement.addEventListener('animationend', onAnimationEnd, { once: true });
-
-      } else {
-          // 如果没有找到元素，直接执行清理并解锁
-          cleanupLogic();
-      }
-
-      // 处理上方展示区卡片的匹配和得分
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
               displaySet.matched = true;
@@ -2214,15 +2096,19 @@ function clickCard(id) {
               }, 400);
           }
       });
-
+      setTimeout(() => {
+        game.temp = game.temp.filter(c => !c.matched);
+        renderTemp();
+        renderBoard();
+        checkWin();
+        game.lock = false;
+      }, 450);
     } else {
-      // 如果没有匹配，检查是否游戏结束（暂存区满），然后解锁
       checkWin();
       game.lock = false;
     }
   }, tempAppearanceDelay);
 }
-
 
 // MODIFIED: checkWin function to show time taken
 function checkWin() {
@@ -2366,19 +2252,11 @@ function gameOver(msg){
   }, 100);
 }
 
-// MODIFIED: startGame to include timer start and new lid/card animation logic
+// MODIFIED: startGame to include timer start
 function startGame(level){
   footer.style.display = 'block';
   game.level = level;
   game.levelStartTime = Date.now(); // Start timer for the level
-  
-  // --- LID ANIMATION START ---
-  // 1. Reset and show the lid, hide the cards underneath
-  cardStackLid.style.display = 'flex';
-  cardStackLid.classList.remove('opening');
-  cardStackArea.classList.add('cards-hidden');
-  // --- LID ANIMATION END ---
-
   let lvData = genLevel(level);
   game.cards = lvData.cards;
   game.board = lvData.board;
@@ -2389,8 +2267,7 @@ function startGame(level){
   game.stepStack = [];
   game.lock = false;
   game.isNewLevel = true;
-  
-  renderAll(); // Renders everything, but cards are hidden by 'cards-hidden' class
+  renderAll();
   updateToolButtons();
   
   if (game.bgmOn) playBgm(true);
@@ -2407,41 +2284,14 @@ function startGame(level){
       toggleCurtain(true); // Open the curtain after 2 seconds
       startCurtainRandomToggle(); // Start random toggling after initial open
   }, 2000);
-
-  // --- LID ANIMATION START ---
-  // 2. Trigger the lid opening animation
-  setTimeout(() => {
-    cardStackLid.classList.add('opening');
-    
-    // 3. When the lid animation is done, hide the lid and reveal the cards with the new animation
-    cardStackLid.addEventListener('animationend', () => {
-        cardStackLid.style.display = 'none';
-        cardStackArea.classList.remove('cards-hidden');
-        
-        // Trigger the new float-up animation for each card
-        const cardsToAnimate = document.querySelectorAll('#card-stack-area .card');
-        cardsToAnimate.forEach((card, index) => {
-            card.classList.add('card-floating-up');
-            // Add a staggered delay for a more dynamic effect
-            card.style.animationDelay = `${index * 0.02}s`; 
-            card.addEventListener('animationend', () => {
-                card.classList.remove('card-floating-up');
-                card.style.animationDelay = '';
-            }, { once: true });
-        });
-    }, { once: true });
-  }, 100); // Small delay to ensure styles are applied
-  // --- LID ANIMATION END ---
 }
 
-// MODIFIED: renderBoard to remove the old card entry animation logic
 function renderBoard(){
   const area = document.getElementById('card-stack-area');
-  // Clear only cards, not the lid
-  area.querySelectorAll('.card').forEach(c => c.remove());
-
+  area.innerHTML = '';
   let cardsToRender = game.board.filter(c => !c.matched);
   cardsToRender.sort((a, b) => a.z - b.z);
+  const isInitialRenderForLevel = game.isNewLevel;
 
   cardsToRender.forEach((card, index) => {
     let el = document.createElement('div');
@@ -2459,6 +2309,15 @@ function renderBoard(){
     el.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
     el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
     if(clickable) el.onclick = () => clickCard(card.id);
+    if (isInitialRenderForLevel) {
+        el.classList.add('card-entering');
+        el.style.animationDelay = `${index * 0.03}s`;
+        el.addEventListener('animationend', function handler() {
+            el.classList.remove('card-entering');
+            el.style.animationDelay = '';
+            el.removeEventListener('animationend', handler);
+        }, { once: true });
+    }
     area.appendChild(el);
   });
   game.isNewLevel = false;
@@ -2505,7 +2364,7 @@ function renderTemp(){
       const mainAreaRect = mainArea.getBoundingClientRect();
       const heartVerticalMidpointAbsolute = cardStackRect.bottom + (seventhSlotRect.top - cardStackRect.bottom) / 2;
       const heartTopRelativeToMainArea = heartVerticalMidpointAbsolute - mainAreaRect.top;
-      const heartLeftRelativeToMainArea = (targetTempSlot.left + targetTempSlot.offsetWidth / 2) - mainAreaRect.left;
+      const heartLeftRelativeToMainArea = (seventhTempSlot.left + seventhTempSlot.offsetWidth / 2) - mainAreaRect.left;
       if (!persistentHeart) {
         persistentHeart = document.createElement('div');
         persistentHeart.id = 'persistent-heart';
