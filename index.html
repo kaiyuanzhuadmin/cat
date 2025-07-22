@@ -2033,6 +2033,9 @@ function isCardClickable(card, board){
   return true;
 }
 
+// =================================================================
+// ===== THIS FUNCTION HAS BEEN REPLACED WITH THE OPTIMIZED VERSION =====
+// =================================================================
 function clickCard(id) {
   if (game.lock) return;
   let cardData = game.board.find(c => c.id === id);
@@ -2040,6 +2043,7 @@ function clickCard(id) {
 
   playClickSound();
 
+  // 预检查暂存区是否会满
   let tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
   let iconCntCheck = {};
   tempCheck.forEach(c => iconCntCheck[c.icon] = (iconCntCheck[c.icon] || 0) + 1);
@@ -2058,6 +2062,7 @@ function clickCard(id) {
     return;
   }
 
+  // --- 卡片飞入动画 ---
   const startRect = clickedCardEl.getBoundingClientRect();
   const flyingCard = document.createElement('div');
   flyingCard.className = 'flying-card';
@@ -2083,7 +2088,7 @@ function clickCard(id) {
     const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
     const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
     if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
-        console.error("Invalid end slot index for flying card. Aborting animation.");
+        console.error(" flying card 的目标槽位索引无效，终止动画。");
         if(flyingCard.parentNode) document.body.removeChild(flyingCard);
         game.lock = false;
         return;
@@ -2102,7 +2107,8 @@ function clickCard(id) {
   setTimeout(() => {
     if (flyingCard.parentNode) document.body.removeChild(flyingCard);
   }, animationDuration);
-
+  
+  // --- 核心逻辑 ---
   setTimeout(() => {
     cardData.matched = true;
     game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
@@ -2120,29 +2126,65 @@ function clickCard(id) {
       triggerMatchFeedback();
       
       const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-      const matchedElements = [];
+      const matchedElementsToAnimate = [];
 
+      // 标记匹配的卡片并找到它们的DOM元素
       game.temp.forEach((c, index) => {
           if (c.icon === matchedIcon) {
               c.matched = true;
               const slot = tempSlots[index];
               if (slot) {
                   const cardEl = slot.querySelector('.temp-card');
-                  matchedElements.push({ slot, cardEl });
+                  if (cardEl) {
+                      matchedElementsToAnimate.push(cardEl);
+                  }
+                  slot.classList.add('clearing');
+                  slot.addEventListener('animationend', () => {
+                      slot.classList.remove('clearing');
+                  }, { once: true });
               }
           }
       });
 
-      matchedElements.forEach(({ slot, cardEl }) => {
-          if (cardEl) {
-              cardEl.classList.add('disappearing');
-          }
-          slot.classList.add('clearing');
-          slot.addEventListener('animationend', () => {
-              slot.classList.remove('clearing');
-          }, { once: true });
-      });
+      // 定义清理逻辑
+      const cleanupLogic = () => {
+          game.temp = game.temp.filter(c => !c.matched);
+          renderTemp();
+          renderBoard();
+          checkWin();
+          game.lock = false; // 在所有逻辑完成后解锁
+      };
 
+      // 如果有需要动画的元素
+      if (matchedElementsToAnimate.length > 0) {
+          // 为所有匹配的元素添加动画类
+          matchedElementsToAnimate.forEach(el => el.classList.add('disappearing'));
+          
+          // 获取最后一个动画元素，以它为准
+          const lastAnimatedElement = matchedElementsToAnimate[matchedElementsToAnimate.length - 1];
+
+          // 安全回退定时器
+          const fallbackTimeout = setTimeout(() => {
+              console.warn("animationend 事件回退机制触发。");
+              lastAnimatedElement.removeEventListener('animationend', onAnimationEnd);
+              cleanupLogic();
+          }, 500); // 动画时长为0.3s，这里设置500ms作为保险
+
+          // 动画结束事件处理器
+          const onAnimationEnd = () => {
+              clearTimeout(fallbackTimeout); // 清除回退定时器
+              cleanupLogic();
+          };
+          
+          // 为最后一个元素绑定一次性的 animationend 事件
+          lastAnimatedElement.addEventListener('animationend', onAnimationEnd, { once: true });
+
+      } else {
+          // 如果没有找到元素，直接执行清理并解锁
+          cleanupLogic();
+      }
+
+      // 处理上方展示区卡片的匹配和得分
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
               displaySet.matched = true;
@@ -2172,19 +2214,15 @@ function clickCard(id) {
               }, 400);
           }
       });
-      setTimeout(() => {
-        game.temp = game.temp.filter(c => !c.matched);
-        renderTemp();
-        renderBoard();
-        checkWin();
-        game.lock = false;
-      }, 450);
+
     } else {
+      // 如果没有匹配，检查是否游戏结束（暂存区满），然后解锁
       checkWin();
       game.lock = false;
     }
   }, tempAppearanceDelay);
 }
+
 
 // MODIFIED: checkWin function to show time taken
 function checkWin() {
