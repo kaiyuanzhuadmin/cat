@@ -1,0 +1,3346 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>小心肝加载中...</title>
+  <link rel="icon" type="image/png" sizes="96x96" href="me.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+  <!-- Preload of critical assets for immediate use -->
+  <link rel="preload" href="mao3.webp" as="image">
+  <link rel="preload" href="mao1.webp" as="image">
+  <link rel="preload" href="font/iconfont.css" as="style">
+  <link rel="preload" href="css/style.css" as="style">
+  <link rel="preload" href="mao.webp" as="image">
+  <link rel="preload" href="mao.mp4" as="video">
+  <link rel="preload" href="cat1.webp" as="image">
+  <link rel="preload" href="js/index.js" as="script">
+  
+  <!-- Critical audio/video assets for specific game moments, prioritized for loading screen -->
+  <link rel="preload" href="kaa.mp3" as="audio"> <!-- Critical for click sound -->
+  <link rel="preload" href="Get.mp3" as="audio"> <!-- Critical for BGM -->
+  <link rel="preload" href="mao2.mp4" as="video"> <!-- Critical for Level 2 outro -->
+  <link rel="preload" href="mao2.webp" as="image"> <!-- Fallback image for Level 2 outro -->
+
+  <style>
+    /* Keyframe animations */
+    /* REMOVED: Old card-entry animation is no longer needed. */
+
+    /* NEW: Animation for cards floating out from under the lid */
+    @keyframes card-float-out {
+      0% {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .card-floating-in {
+        animation: card-float-out 0.8s ease-out forwards;
+    }
+
+
+    /* NEW: 3D Lid Opening Animation */
+    @keyframes lid-open {
+        0% {
+            transform: rotateX(0deg);
+            opacity: 1;
+        }
+        70% {
+            transform: rotateX(-120deg);
+            opacity: 1;
+        }
+        100% {
+            transform: rotateX(-120deg);
+            opacity: 0;
+            visibility: hidden; /* Hide completely after animation */
+        }
+    }
+
+    /* Animation for matched cards disappearing from temp area */
+    @keyframes card-disappear {
+        from {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.4) rotate(20deg);
+        }
+    }
+    .temp-card.disappearing {
+        animation: card-disappear 0.3s ease-out forwards;
+    }
+
+    /* NEW: Animation for temp slots when cards are cleared */
+    @keyframes slot-flash {
+        0% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
+        50% { background-color: #fff8dc; box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.5); }
+        100% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
+    }
+    .temp-slot.clearing {
+        animation: slot-flash 0.4s ease-out;
+    }
+
+
+    @keyframes pulse-scale {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+    @keyframes text-progress {
+      0% { content: "."; }
+      33% { content: ".."; }
+      66% { content: "..."; }
+      100% { content: "."; }
+    }
+    @keyframes wave {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-10px) rotate(2deg); }
+      75% { transform: translateY(5px) rotate(-1deg); }
+    }
+    @keyframes show-card-property {
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fade-in-out-scale {
+      0% { opacity: 0; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.9); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-1deg); }
+      20%, 40%, 60%, 80% { transform: translateX(3px) rotate(1deg); }
+    }
+
+    /* New: Score Pop Animation */
+    @keyframes score-pop {
+      0% { opacity: 0; transform: translateY(0) scale(0.8); }
+      20% { opacity: 1; transform: translateY(-15px) scale(1.1); }
+      80% { opacity: 1; transform: translateY(-30px) scale(1); }
+      100% { opacity: 0; transform: translateY(-40px) scale(0.7); }
+    }
+    .score-animation {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #4CAF50; /* Green for positive score */
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      pointer-events: none; /* Make it non-interactive */
+      animation: score-pop 1s ease-out forwards;
+      z-index: 2000; /* Ensure it's above other elements */
+    }
+
+    /* New: Card Shuffle Out Animation */
+    @keyframes card-shuffle-out {
+      0% { opacity: 1; transform: scale(1) rotate(0deg); }
+      50% { opacity: 0; transform: scale(0.5) rotate(15deg); }
+      100% { opacity: 0; transform: scale(0.5) rotate(15deg); } /* Stay hidden */
+    }
+    .card-shuffling-out {
+      animation: card-shuffle-out 0.3s ease-in forwards;
+    }
+
+    /* New: Heart Animation */
+    @keyframes fade-in-out-heart {
+      0% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0; transform: scale(0.8); }
+    }
+    .heart-animation {
+      position: absolute;
+      font-size: 30px; /* User requested 30px */
+      color: #ff69b4; /* Pink color for heart */
+      pointer-events: none;
+      animation: fade-in-out-heart 2.5s ease-out infinite alternate; /* Changed to infinite alternate */
+      z-index: 1000; /* Ensure it's above cards but below cat wiggler if needed */
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    }
+    
+    /* NEW: Confetti Animation */
+    .confetti-container {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 9999;
+    }
+    .confetti-piece {
+        position: absolute;
+        width: 8px;
+        height: 16px;
+        background: #f00; /* Will be randomized by JS */
+        top: -20px;
+        opacity: 0;
+        animation: fall linear forwards;
+    }
+    @keyframes fall {
+        0% {
+            transform: translateY(0) rotateZ(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(110vh) rotateZ(720deg);
+            opacity: 0;
+        }
+    }
+
+    /* NEW: Dynamic Scaling Animation for Buttons */
+    @keyframes button-scale-pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.08);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+    }
+
+    /* NEW: Scaling and Fading Animation for Buttons */
+    @keyframes button-scale-fade-pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+    }
+    .animated-scale-fade {
+        animation: button-scale-fade-pulse 1.8s infinite ease-in-out;
+    }
+
+
+    /* NEW: Cloud passing animation */
+    @keyframes cloud-pass {
+      from {
+        transform: translateX(-250px);
+      }
+      to {
+        transform: translateX(100vw);
+      }
+    }
+
+
+    /* Global body styles */
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      /* NEW: Applied new font */
+      font-family: 'ZCOOL KuaiLe', 'HanyiSentyLotus', 'FangSong', cursive, sans-serif;
+      color: #3e2723;
+      position: relative; /* Key: provides positioning reference for pseudo-elements */
+    }
+    /* Body background image */
+    body::before {
+      content: "";
+      position: fixed; /* Use fixed to cover the whole viewport */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #f7f0e8 url('cat1.webp') no-repeat center center;
+      background-size: cover;
+      z-index: -2; /* Placed below content */
+    }
+    /* Body overlay for transparency */
+    body::after {
+      content: "";
+      position: fixed; /* Use fixed to cover the whole viewport */
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: white;
+      opacity: 0.3; /* 30% transparent white mask */
+      z-index: -1; /* Placed above background image, below content */
+    }
+    /* Disable scrolling for loading screen */
+    body.no-scroll {
+      overflow: hidden;
+    }
+
+    /* Game Container */
+    #game-container {
+      max-width: 650px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 25px;
+      box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
+      padding: 0 0 20px 0;
+      position: relative; /* Crucial for absolute positioning of loading screen */
+      min-height: 880px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 3px solid #8B4513;
+    }
+    /* Responsive adjustments for game container */
+    @media (max-width: 700px) {
+      #game-container {
+        max-width: 100vw;
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+        min-height: 100vh;
+        border: none;
+        /* For iPhone X/XR/XS Max/11/12/13/14/15 series with notches and rounded corners */
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+    }
+    /* Desktop adjustments */
+    @media (min-width: 701px) {
+      #game-container {
+        max-width: 900px; /* Increased max-width for larger screens */
+        min-height: 90vh; /* Use viewport height for better desktop fit */
+        margin: 5vh auto; /* Center vertically with some margin */
+      }
+    }
+
+
+    /* Header Bar */
+    #header-bar {
+      width: 100%;
+      padding: 15px 25px 0 25px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0));
+      border-top-left-radius: 22px;
+      border-top-right-radius: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #progress-info {
+      font-size: 1.55rem;
+      font-weight: bold;
+      color: #5d4037;
+      text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
+      display: flex; /* Make it a flex container */
+      gap: 15px; /* Space between level/cards and score/target */
+      align-items: center;
+    }
+    #music-toggle {
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: #6d4c41;
+      transition: transform 0.2s ease-in-out;
+    }
+    #music-toggle:hover {
+      transform: scale(1.1);
+    }
+    .score-display, .target-display {
+        font-size: 1.2rem; /* Slightly smaller than main progress */
+        color: #8B4513; /* A distinct color for score/target */
+        font-weight: bold;
+        text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
+    }
+
+    /* Main Game Area */
+    #main-area {
+      flex:1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative; /* Crucial for absolute positioning of cat-path and curtain */
+      padding-top: 10px; /* Add some top padding */
+    }
+
+    /* Display Area */
+    #display-area {
+        margin-top: 20px;
+        width: 90%; /* Use percentage for responsiveness */
+        max-width: 580px; /* Keep a max-width for larger screens */
+        min-height: 100px; /* Adjust height as needed */
+        background: rgba(240, 230, 210, 0.6);
+        border-radius: 15px;
+        box-shadow: inset 0 2px 10px rgba(100, 60, 40, 0.15), 0 5px 15px rgba(100, 60, 40, 0.2);
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        border: 2px dashed #b8860b;
+        padding: 10px;
+        box-sizing: border-box;
+        gap: 10px; /* Space between display groups */
+    }
+    @media (max-width: 650px) {
+      #display-area {
+        width: 96vw;
+        min-width: unset; /* Remove min-width to allow smaller sizes */
+        min-height: 80px;
+      }
+    }
+
+    .display-group {
+        display: flex;
+        gap: 5px; /* Space between cards in a display group */
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 8px;
+        padding: 5px 10px;
+        border: 1px solid #d4a762;
+    }
+
+    .display-card {
+        /* Dimensions set by JS dynamically for responsiveness */
+        background: #fffdf7;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 2px solid #a0522d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        opacity: 1;
+        transition: opacity 0.3s ease-out;
+    }
+    .display-card.matched-display {
+        opacity: 0; /* Fade out when matched */
+    }
+
+    /* NEW: Curtain effect for display-area */
+    #curtain {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.95); /* Semi-transparent white */
+        z-index: 1050; /* Above display-area, below event-overlay */
+        display: none; /* Hidden by default, controlled by JS */
+        border-radius: 15px; /* Match display-area border-radius */
+        transition: opacity 0.5s ease-in-out; /* Smooth fade */
+        overflow: hidden; /* For curtain animation */
+        /* Initial state for curtain is closed (fully opaque) */
+        opacity: 1;
+    }
+
+    /* Curtain texture/animation (optional, using solid color for now) */
+    #curtain::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        /* You can add a curtain texture here if you have one, e.g., url('path/to/curtain_texture.png') */
+        background: linear-gradient(to bottom, #f7f0e8, #e0d8cf); /* Simple gradient */
+        opacity: 0.9;
+    }
+
+    /* Animation for opening the curtain (fading out) */
+    #curtain.open {
+        opacity: 0;
+        pointer-events: none; /* Allow clicks through when open */
+    }
+
+    /* Animation for closing the curtain (fading in) */
+    #curtain.closed {
+        opacity: 1;
+        pointer-events: all; /* Block clicks when closed */
+    }
+
+    /* Cat Animation Path (Left Cat) */
+    #cat-path {
+        position: absolute;
+        width: 100%; /* Spans the width of its parent (#main-area) */
+        height: 20px; /* Height of the gap */
+        left: 0; /* Align with parent's left edge */
+        /* top will be set by JS */
+        z-index: 1060; /* MODIFIED: Ensure it's visible above the curtain */
+        pointer-events: none; /* Crucial: allows clicks to pass through to cards */
+        overflow: visible; /* Allow cat to overflow if it's larger than path height */
+    }
+
+    /* --- CAT ANIMATION FIX START --- */
+    /* 从左到右是镜像，从右到左是正常 */
+    @keyframes cat-walk {
+        0% { left: 0; transform: scaleX(-1); }
+        49% { transform: scaleX(-1); }
+        50% { left: calc(100% - 55px); transform: scaleX(1); }
+        99% { transform: scaleX(1); }
+        100% { left: 0; transform: scaleX(-1); }
+    }
+    /* --- CAT ANIMATION FIX END --- */
+
+    #walking-cat {
+        position: absolute;
+        width: 30px;
+        height: 30px;
+        font-size: 30px;
+        line-height: 1;
+        display: flex;
+        z-index: 10; /* MODIFIED: Ensure cat is above decorations */
+        align-items: center;
+        justify-content: center;
+        color: #5d4037;
+        top: -20px;
+        animation: cat-walk 15s linear infinite;
+    }
+
+    /* --- PATH DECORATION START --- */
+    .path-decoration {
+        position: absolute;
+        bottom: -5px; /* MODIFIED: Adjusted position */
+        font-size: 23px;
+        transition: transform 0.2s ease-in-out;
+        z-index: 9; /* MODIFIED: Ensure decorations are below the cat */
+    }
+    .path-decoration.shaking {
+        animation: gentle-shake 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes gentle-shake {
+        0% { transform: rotate(-2deg) scale(1.05); }
+        100% { transform: rotate(2deg) scale(1); }
+    }
+    /* --- PATH DECORATION END --- */
+
+    /* New: Cat Wiggler Instances (Right Cat) */
+    .wiggling-cat-instance {
+        position: absolute;
+        width: 29px;
+        height: 29px;
+        font-size: 29px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #5d4037;
+        transform: translateX(-50%); /* Center horizontally within its position */
+        animation: shake 1.8s ease-in-out infinite alternate; /* Use existing shake animation */
+        z-index: 10; /* Higher z-index to be on top of cards/temp-area */
+        pointer-events: none;
+        display: none; /* Hidden by default, controlled by JS */
+    }
+
+
+    /* Card Stack Area */
+    #card-stack-area {
+      margin-top: 20px; /* This margin creates the gap where the cat animates */
+      width: 90%; /* Use percentage for responsiveness */
+      max-width: 580px; /* Keep a max-width for larger screens */
+      height: 500px; /* This will be overridden by JS for responsive height */
+      position: relative;
+      background: rgba(240, 230, 210, 0.6);
+      border-radius: 15px;
+      box-shadow: inset 0 2px 10px rgba(100, 60, 40, 0.15), 0 5px 15px rgba(100, 60, 40, 0.2);
+      overflow: visible;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #b8860b;
+      perspective: 1500px; /* Add perspective for 3D animations */
+    }
+    /* Responsive adjustments for card stack area */
+    @media (max-width: 650px) {
+      #card-stack-area {
+        width: 96vw;
+        min-width: unset;
+        height: 60vh; /* NEW: Use viewport height for responsiveness */
+        max-height: 420px; /* NEW: Cap max height */
+        margin-top: 15px; /* Adjust margin for better fit */
+        margin-bottom: 15px;
+      }
+    }
+    @media (min-width: 701px) {
+      #card-stack-area {
+        height: 600px; /* Larger fixed height for desktop */
+        max-height: 60vh; /* Cap height relative to viewport */
+      }
+    }
+    
+    /* NEW: Lid styles */
+    #card-stack-lid {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #f7e9d7;
+        border: 2px dashed #b8860b;
+        border-radius: 15px; /* Match parent */
+        z-index: 10000; /* High z-index to be on top of cards */
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-around;
+        padding: 20px;
+        box-sizing: border-box;
+        color: #6e352f;
+        transform-origin: top center;
+        font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #card-stack-lid .lid-text-top {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    #card-stack-lid .lid-emoji {
+        font-size: 10rem;
+        line-height: 1;
+    }
+    #card-stack-lid .lid-footer {
+        font-size: 0.9rem;
+    }
+
+    /* NEW: Class to trigger lid animation and hide cards */
+    #card-stack-area.level-starting #card-stack-lid {
+        display: flex;
+        animation: lid-open 3s ease-in-out forwards;
+    }
+    #card-stack-area.level-starting .card {
+        visibility: hidden; /* Hide cards when the lid is on */
+    }
+
+
+    /* Individual Card Styles */
+    .card {
+      /* Width, height, font-size will be set dynamically by JS */
+      background: #fffdf7;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
+      border: 3px solid #d4a762;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.3s, border-color 0.15s;
+      z-index: 1;
+      overflow: hidden;
+      color: #5d4037;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    .hint-animation {
+      animation: show-card-property 2s forwards;
+    }
+    .card.selected {
+      border: 3.5px solid #a0522d;
+      box-shadow: 0 4px 20px rgba(160, 82, 45, 0.4), 0 0 25px rgba(255,255,0,0.5);
+      z-index: 100 !important;
+      transform: scale(1.01) rotate(-2deg);
+    }
+    .card.disabled {
+      pointer-events: none;
+      position: absolute;
+      opacity: 1;
+    }
+    .card.disabled::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(128, 128, 128, 0.4);
+      border-radius: 8px;
+      z-index: 2;
+      transition: background 0.5s ease;
+    }
+    .card.disabled > *:not(.disabled::before) {
+        opacity: 0.5;
+    }
+    .card:not(.disabled):not(.matched):hover {
+      transform: translateY(-5px) scale(1.05) rotate(2deg);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.5);
+      transition: transform 0.1s ease-out, box-shadow 0.05s ease-out;
+      z-index: 2;
+    }
+    .card.matched {
+      opacity: 0.05;
+      transition: opacity 0.2s;
+      pointer-events: none;
+    }
+    .card .mini {
+      font-size: 1.2rem;
+      position: absolute;
+      bottom: 7px;
+      right: 9px;
+      opacity: 0.5;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    
+    .card.napping {
+        pointer-events: none !important;
+    }
+    .card.napping::after {
+        content: '💤';
+        position: absolute;
+        top: -10px;
+        right: -5px;
+        font-size: 1.5rem;
+        animation: wave 1.5s infinite ease-in-out;
+        z-index: 5;
+    }
+    .card.napping::before {
+        background: rgba(100, 100, 150, 0.3) !important;
+    }
+
+
+    /* Temporary Area (Temp Slot) */
+    #temp-area {
+      margin: 20px auto 0 auto;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      min-height: 80px;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 12px;
+      background: #fffcf0;
+      border: 2px dashed #b8860b;
+      padding: 8px 0;
+      box-sizing: border-box;
+      box-shadow: inset 0 1px 5px rgba(0,0,0,0.08);
+    }
+    .temp-slot {
+      margin: 0;
+      background: #fdf5e6;
+      border-radius: 9px;
+      border: 2px dashed #d4a762;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #92776c;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .temp-card {
+      width: 100%;
+      height: 100%;
+      background: #fffdf7;
+      border-radius: 9px;
+      border: 2.5px solid #a0522d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(160, 82, 45, 0.3);
+      cursor: default;
+      position: absolute;
+      transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+      color: #5d4037;
+    }
+    .temp-card.matched {
+      opacity: 0.05;
+    }
+
+    /* Flying Card Animation */
+    .flying-card {
+      background: #fffdf7;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
+      border: 3px solid #d4a762;
+      position: fixed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      z-index: 10000;
+      transition: top 0.6s ease-in-out, left 0.6s ease-in-out, transform 0.6s ease-in-out;
+      overflow: hidden;
+      color: #5d4037;
+    }
+
+    /* Tools Bar */
+    #tools-bar {
+      margin: 20px auto 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      width: 90%;
+      max-width: 500px;
+      flex-wrap: wrap;
+    }
+    #tools-bar button {
+      padding: 9px 18px;
+      background: #f7e9d7;
+      border: 2px solid #b8860b;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      color: #6e352f;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      outline: none;
+      position: relative;
+      min-width: 75px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive; /* Apply font */
+    }
+    #tools-bar button:hover {
+      background: #e9d9c6;
+      transform: translateY(-1px);
+    }
+    #tools-bar button:disabled {
+      background: #f0f0f0;
+      color: #b0b0b0;
+      border-color: #d0d0d0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    #restart-btn {
+      background: #ffe0b3;
+      border-color: #ffcc80;
+      color: #96602c;
+    }
+    #restart-btn:hover {
+      background: #ffd599;
+    }
+
+    /* Code Redemption Bar */
+    #code-bar {
+      margin: 15px auto 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 90%;
+      max-width: 450px;
+    }
+    #code-bar input {
+      flex-grow: 1;
+      max-width: 180px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 2px solid #b8860b;
+      outline: none;
+      font-size: 1.05rem;
+      color: #5d4037;
+      background: #fffdf7;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #code-bar input::placeholder {
+      color: #a0a0a0;
+    }
+    #code-bar button {
+      padding: 7px 12px;
+      font-size: 1.05rem;
+      background: #e6f6d3;
+      border: 2px solid #a0c388;
+      border-radius: 9px;
+      cursor: pointer;
+      color: #3e5a2b;
+      font-weight: bold;
+      transition: background 0.15s;
+      min-width: 65px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #code-bar button:hover {
+      background: #d2e5bb;
+    }
+
+    /* Message Bar */
+    #message-bar {
+      margin: 15px auto 0 auto;
+      text-align: center;
+      font-size: 1.1rem;
+      color: #c0392b;
+      min-height: 28px;
+      font-weight: bold;
+      letter-spacing: 1.2px;
+    }
+
+    /* NEW: Random Event Message Overlay */
+    #event-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: none; /* Hidden by default */
+        align-items: center;
+        justify-content: center;
+        z-index: 2200;
+        pointer-events: none; /* Allow clicks to pass through */
+    }
+    #event-message-box {
+        background: rgba(255, 253, 247, 0.9);
+        padding: 20px 30px;
+        border-radius: 15px;
+        border: 3px solid #b8860b;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        text-align: center;
+        animation: fade-in-out-scale 3.5s forwards;
+    }
+    #event-message-box p {
+        font-size: 1.3rem;
+        color: #6e352f;
+        margin: 0;
+        font-weight: bold;
+        text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+    }
+    #event-message-box .event-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+
+    /* Overlay Screens (Start, Level Finish, Game Over) */
+    #start-screen, #level-finish, #game-over {
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      z-index: 1100;
+      background: rgba(255,255,255,0.98);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      font-size: 1.1rem;
+      border-radius: 25px;
+      text-align: center;
+    }
+    /* Start Screen Specific Styles */
+    #start-screen {
+      padding-top: 10vh;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    
+    #start-screen-video {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        z-index: -1;
+        opacity: 0.99;
+        object-fit: cover; 
+    }
+
+    #start-screen::before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      background-image: url('mao.webp');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.5;
+      z-index: -2;
+    }
+    #start-screen h1 {
+      /* NEW: Responsive font size */
+      font-size: clamp(3rem, 12vw, 5rem);
+      margin: 0 0 25px 0;
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
+      display: inline-block;
+    }
+    #start-screen h1 span {
+      display: inline-block;
+      animation: wave 2s infinite ease-in-out;
+    }
+    #start-screen h1 span:nth-child(1) { animation-delay: -0.4s; }
+    #start-screen h1 span:nth-child(2) { animation-delay: -0.2s; }
+    #start-screen h1 span:nth-child(3) { animation-delay: 0s; }
+    #start-screen h1 span:nth-child(4) { animation-delay: 0.2s; }
+    #start-screen h1 span:nth-child(5) { animation-delay: 0.4s; }
+    #start-screen .start-btn {
+      margin-top: 30px;
+      padding: 15px 50px;
+      font-size: 1.4rem;
+      background: linear-gradient(90deg, #a0c388, #88b368);
+      border: none;
+      border-radius: 15px;
+      color: #3e5a2b;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(160, 195, 136, 0.5);
+      animation: pulse-scale 1.5s infinite ease-in-out;
+      transition: background 0.2s, transform 0.1s;
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #start-screen .start-btn:hover {
+      background: linear-gradient(90deg, #88b368, #a0c388);
+      transform: translateY(-2px);
+    }
+    #start-screen p {
+        color: #5d4037;
+        line-height: 1.6;
+        margin: 0 40px 15px;
+        margin-top: 15vh;
+    }
+    #start-screen span {
+        color: #c0392b;
+        font-weight: bold;
+    }
+
+    /* Footer for loading and start screens */
+    .loading-footer {
+        color: #795548;
+        font-size: 0.85rem;
+        position: absolute;
+        bottom: 30px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        letter-spacing: 1.5px;
+        text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
+    }
+
+    /* Level Finish and Game Over Screens */
+    #level-finish, #game-over {
+      font-size: 1.8rem;
+      color: #5d4037;
+      background: rgba(255,243,245,0.99);
+      border-radius: 25px;
+      position: absolute;
+      overflow: hidden;
+      border: 3px solid #8B4513;
+      box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
+    }
+    
+    /* MODIFIED: Game Over Screen for Cloud Animation */
+    #game-over {
+      overflow: hidden; /* Hide clouds when they are outside the container */
+    }
+    /* MODIFIED: Apply wave animation to inner content, not the whole screen */
+    #game-over-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      animation: wave 2s infinite;
+    }
+    /* NEW: Cloud styling for Game Over screen */
+    .cloud-layer {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .cloud-layer::before,
+    .cloud-layer::after {
+      content: '🌧️';
+      position: absolute;
+      opacity: 0.88;
+      color: #888;
+      animation-name: cloud-pass;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+    .cloud-layer::before {
+      font-size: 120px;
+      top: 10%;
+      animation-duration: 20s;
+      animation-delay: -5s;
+    }
+    .cloud-layer::after {
+      font-size: 80px;
+      top: 25%;
+      animation-duration: 15s;
+    }
+    /* Make sure game over content is above clouds */
+    #game-over > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    #level-finish::before, #game-over::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      background-image: url('mao1.webp');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.4;
+      z-index: -1;
+    }
+    #level-finish button, #game-over button {
+      margin-top: 20px;
+      padding: 12px 35px;
+      font-size: 1.25rem;
+      background: #e6f6d3;
+      border: 2px solid #a0c388;
+      border-radius: 12px;
+      color: #3e5a2b;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #level-finish button:hover, #game-over button:hover {
+      background: #d2e5bb;
+      transform: translateY(-1px);
+    }
+    #retry-btn {
+      margin-top: 18px;
+      padding: 10px 30px;
+      font-size: 1.15rem;
+      background: #f7e9d7;
+      border: 2px solid #d4a762;
+      border-radius: 10px;
+      color: #6e352f;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      display: inline-block;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    #retry-btn:hover {
+      background: #f0e1d0;
+      transform: translateY(-1px);
+    }
+
+    /* MODIFIED: Apply scaling animation to specific buttons */
+    #retry-btn2,
+    #next-btn {
+       animation: button-scale-pulse 1.5s infinite ease-in-out;
+    }
+
+    /* Main Game Footer */
+    #footer {
+      margin: 20px auto 0 auto;
+      width: 100%;
+      text-align: center;
+      font-size: 1rem;
+      color: #8B4513;
+      letter-spacing: 1.5px;
+      text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
+    }
+
+    /* Hint Animation */
+    .hinted-shake {
+      animation: shake 0.5s ease-in-out 4;
+    }
+
+    /* Custom Confirm Modal Styles */
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6);
+        z-index: 2500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content {
+        background: #fffdf7;
+        padding: 30px 40px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        border: 3px solid #d4a762;
+    }
+    .modal-content p {
+        font-size: 1.2rem;
+        color: #5d4037;
+        margin: 0 0 25px 0;
+        font-weight: bold;
+    }
+    .modal-content button {
+        padding: 9px 25px;
+        background: #f7e9d7;
+        border: 2px solid #b8860b;
+        border-radius: 10px;
+        font-size: 1.05rem;
+        color: #6e352f;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 0 10px;
+        transition: background 0.15s, transform 0.1s;
+        font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #confirm-yes {
+        background: #e6f6d3;
+        border-color: #a0c388;
+        color: #3e5a2b;
+    }
+    #confirm-yes:hover {
+        background: #d2e5bb;
+    }
+    #confirm-no:hover {
+        background: #e9d9c6;
+    }
+
+    /* Level Finish Text */
+    #level-finish-text {
+      color: #3e2723;
+      font-size: 1.2em;
+      text-align: center;
+      margin-top: 20px; /* 这里改为 margin-top */
+      margin-bottom: 20px;
+    }
+
+    /* Loading Screen Styles */
+    #loading-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 1199;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f7f0e8;
+      background-size: cover;
+      transition: opacity 0.5s ease-out;
+      border-radius: 25px;
+      overflow: hidden;
+    }
+    #loading-screen::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url('mao3.webp');
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: cover;
+      opacity: 0.6;
+    }
+    .loading-content {
+      position: relative;
+      z-index: 1001;
+      text-align: center;
+      width: 80%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 6vh;
+      box-sizing: border-box;
+    }
+    .loading-title {
+      font-size: 2.8rem;
+      margin: 0 0 40px 0;
+      color: #3e2723;
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
+      animation: pulse-scale 1.5s infinite ease-in-out;
+    }
+    .loading-title::after {
+      content: ".";
+      animation: text-progress 2s infinite;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 30px;
+      background: rgba(184, 134, 11, 0.2);
+      border-radius: 10px;
+      border: 2px solid #b8860b;
+      overflow: hidden;
+      margin-bottom: 15px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      margin-top: 40vh;
+      z-index: 1004;
+    }
+    #progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #a0c388, #88b368);
+      border-radius: 8px;
+      transition: width 0.3s ease-out;
+    }
+    #loading-text {
+      font-size: 1.1rem;
+      color: #5d4037;
+      margin-bottom: 40px;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    /* Responsive Video Container for Bilibili Player */
+    .responsive-video-container {
+        position: relative;
+        width: 100%;
+        max-width: 660px; /* Or a suitable max-width for the video */
+        padding-bottom: 68.1818%; /* 16:9 Aspect Ratio (9 / 16 * 100%) */
+        height: 0;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .responsive-video-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: 10px;
+    }
+
+    /* MODIFICATION: New Level 2 Outro Screen Styles */
+    #level2-outro-screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 2000;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 25px;
+        overflow: hidden;
+    }
+
+    #level2-outro-screen video {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        /* 移除 min-width 和 min-height，因为 height: 100% 和 object-fit: cover 会处理填充 */
+        height: 100%;   /* 确保视频高度填充其父容器 */
+        width: auto;    /* 允许宽度根据视频原始比例自动调整 */
+        object-fit: cover; /* 关键：使视频覆盖整个区域，当高度填充时，宽度超出部分会被裁剪 */
+        border-radius: 0;
+        box-shadow: none;
+    }
+    #level2-outro-screen img {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: cover;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    #level2-outro-screen .loading-text {
+        color: white;
+        font-size: 1.5rem;
+        margin-top: 20px;
+    }
+
+    /* Style for the Skip Outro Button */
+    #skip-outro-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 8px 15px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: #333;
+        cursor: pointer;
+        z-index: 2001;
+        transition: background 0.2s, transform 0.2s;
+    }
+    #skip-outro-btn:hover {
+        background: rgba(255, 255, 255, 0.9);
+        transform: scale(1.05);
+    }
+
+
+    /* Media Queries for smaller screens */
+    @media (max-width: 500px) {
+      #card-stack-area, #temp-area, #tools-bar, #code-bar { width: 98vw; }
+      #tools-bar button {
+          min-width: unset;
+          width: 30%;
+          margin-bottom: 8px;
+          padding: 8px 10px;
+          font-size: 0.95rem;
+      }
+      #tools-bar {
+          gap: 6px;
+      }
+      #temp-area {
+        width: 98vw;
+        margin: 15px auto 0 auto;
+      }
+      #code-bar input {
+        width: 50%;
+      }
+      #display-area {
+        width: 96vw;
+        padding: 5px;
+      }
+      #level-finish, #game-over {
+        font-size: 1.2rem;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      #level-finish button, #game-over button, #retry-btn {
+          font-size: 1rem;
+          padding: 10px 20px;
+      }
+
+      #level-finish-text {
+          font-size: 1em;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="font/iconfont.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="game-container">
+  <div id="loading-screen">
+    <div class="loading-content">
+      <h1 class="loading-title">Loading.</h1>
+      <div class="progress-bar-container">
+        <div id="progress-bar"></div>
+      </div>
+      <p id="loading-text">正在初次加载资源，请等待...</p>
+      <small class="loading-footer">喵了个喵 &copy; 2025 | Designed by 开元</small>
+    </div>
+  </div>
+
+  <div id="header-bar">
+    <div id="progress-info">
+        <span id="level-info">关卡: 1 / 2</span>
+        <span class="score-display">分数: <span id="current-score">0</span></span>
+        <span class="target-display">目标: <span id="target-score">0</span></span>
+    </div>
+    <button id="music-toggle" title="音乐开关">🎼</button>
+  </div>
+  <div id="main-area">
+    <div id="display-area">
+        </div>
+    <div id="curtain"></div> <!-- NEW CURTAIN ELEMENT ADDED HERE -->
+    <div id="cat-path">
+        <div id="walking-cat">🐈</div>
+        <!-- --- PATH DECORATION START --- -->
+        <span class="path-decoration" style="left: 20%;">💌</span>
+        <span class="path-decoration" style="left: 40%;">🌿</span>
+        <span class="path-decoration" style="left: 60%;">☘️</span>
+        <span class="path-decoration" style="left: 80%;">🌼</span>
+        <!-- --- PATH DECORATION END --- -->
+    </div>
+    <div id="card-stack-area"></div>
+    <div id="wiggling-cat-1" class="wiggling-cat-instance">🥳</div>
+    <div id="wiggling-cat-4" class="wiggling-cat-instance">🎉</div>
+    <div id="wiggling-cat-7" class="wiggling-cat-instance">🎀</div>
+
+    <div id="temp-area">
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+    </div>
+    <div id="tools-bar">
+      <button id="undo-btn" disabled title="撤销(需兑换码)">↩️ 撤销 (<span id="undo-count">0</span>)</button>
+      <button id="hint-btn" disabled title="提示(需兑换码)">💡 提示 (<span id="hint-count">0</span>)</button>
+      <button id="shuffle-btn" disabled title="洗牌(需兑换码)">🔀 洗牌 (<span id="shuffle-count">0</span>)</button>
+      <button id="restart-btn" title="重新开始当前关卡">🔄 重新开始</button>
+    </div>
+    <div id="code-bar">
+      <input type="text" id="code-input" placeholder="兑换码" maxlength="12">
+      <button id="code-btn">兑换</button>
+    </div>
+    <div id="message-bar"></div>
+  </div>
+  <div id="footer">
+    喵了个喵 &copy; 2025 | Designed by 开元
+  </div>
+
+  <div id="event-overlay">
+      <div id="event-message-box">
+          <div class="event-icon"></div>
+          <p class="event-text"></p>
+      </div>
+  </div>
+
+  <div id="start-screen">
+    <video id="start-screen-video" autoplay loop muted playsinline>
+  <source src="mao.webm" type="video/webm">
+  <source src="mao.mp4" type="video/mp4">
+  <img src="mao.webp" alt="背景图">
+</video>
+    <h1><span>喵</span><span>了</span><span>个</span><span>喵</span><span> 🐾</span></h1>
+    <p> </p> <p>
+      <button class="start-btn" id="start-btn">开始游戏</button>
+    </p>
+    <p>收集卡牌获得分数、全部清空过关<br>
+    <span style="color:#c0392b;">第二关难度略有升级<br></span>可使用兑换码解锁道具</p>
+    <small class="loading-footer">喵了个喵 &copy; 2025 | Designed by 开元</small>
+  </div>
+
+  <div id="level2-outro-screen" style="display:none;">
+    <video id="outro-video" playsinline muted>
+        <source src="mao2.mp4" type="video/mp4">
+        您的浏览器不支持视频播放。
+    </video>
+    <img id="outro-image" src="mao2.webp" alt="Level 2 Outro Image" style="display:none;">
+    <div class="loading-text" style="display:none;">正在加载...</div>
+    <button id="skip-outro-btn" style="display:none;">跳过动画</button>
+  </div>
+
+  <div id="level-finish" style="display:none;">
+    <div id="netease-player" class="responsive-video-container" style="display:none;">
+      <iframe allow="encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="https://player.bilibili.com/player.html?isOutside=true&aid=114878413148199&bvid=BV1X9uQz6E6v&cid=31143166462&p=1"></iframe>
+    </div>
+    <div id="player" style="display:none;">
+        <div id="player-content1">
+            <div class="music-name"></div>
+            <div class="artist-name"></div>
+            <div class="time">
+                <div class="current-time"></div>
+                <div class="total-time"></div>
+            </div>
+            <div id="s-area">
+                <div id="ins-time"></div>
+                <div id="s-hover"></div>
+                <div id="seek-bar"></div>
+            </div>
+        </div>
+        <div id="player-content2">
+            <div class="music-imgs">
+                <div class="img"></div>
+                <div id="buffer-box">缓冲,稍等...</div>
+            </div>
+            <div class="player-controls">
+                <div class="btn prev iconfont"></div>
+                <div class="btn play-pause icon-jiediankaishi iconfont"></div>
+                <div class="btn next iconfont"></div>
+            </div>
+        </div>
+    </div>
+    <div id="level-finish-text"></div>
+    <button id="next-btn">下一关</button>
+    <button id="retry-btn" style="margin-left:10px;">重玩</button>
+    <button id="gobang-btn" style="margin-left:10px; display:none;">五子棋对弈</button>
+    <button id="restart-game-btn" style="margin-left:10px; display:none;">重开游戏</button>
+    <button id="close-game-btn-level" style="margin-left:10px;">关闭游戏</button>
+  </div>
+
+  <div id="game-over" style="display:none;">
+    <div class="cloud-layer"></div>
+    <div id="game-over-content">
+        <div id="game-over-text"></div>
+        <button id="retry-btn2">重试</button>
+        <button id="close-game-btn-gameover" style="margin-left:10px;">关闭游戏</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay">
+  <div class="modal-content">
+    <p id="confirm-msg">你确定吗？</p>
+    <div class="modal-buttons">
+        <button id="confirm-yes">确定</button>
+        <button id="confirm-no">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- BGM audio element, will be loaded dynamically -->
+<audio id="bgm" loop preload="auto">
+  <!-- Source will be set by JavaScript for deferred loading -->
+  您的浏览器不支持音频元素。
+</audio>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/index.js"></script>
+
+<script>
+// Game configuration constants
+const CARD_ICONS = [
+  "🐈", "💐", "🪼", "👒", "🏵️", "🧸", "🍬", "🔮", "🎡", "🐈‍⬛", "🍫", "🪭",
+  "🐖", "🧶", "🌻", "🦋", "💎", "🌈", "🍂"
+];
+const LEVELS = [
+  {num: 1, visible: 20, total: 27, stack: 2, rows: 3, cols: 5, overlap: 24, targetScore: 30, totalDisplaySets: 9},
+  {num: 2, visible: 18, total: 168, stack: 3, rows: 7, cols: 8, overlap: 24, targetScore: 150, totalDisplaySets: 25}
+];
+const TEMP_LIMIT = 7;
+const DISPLAY_CARD_MATCH_SCORE = 5;
+const INITIAL_DISPLAY_SETS_VISIBLE = 2;
+
+const REDEMPTION_CODES = {
+  "kaiyuan": { undo: 20, hint: 20, shuffle: 20 },
+  "兑换码": { undo: 5, hint: 5, shuffle: 5 },
+  "喵了个喵": { undo: 50, hint: 50, shuffle: 50 },
+  "不知道": { undo: 3, hint: 1, shuffle: 1 },
+  "开元": { undo: 10, hint: 10, shuffle: 10 },
+  "通关": { type: "skip_level" },
+  "xianshi": { type: "curtain_off" } // NEW: Redemption code for disabling curtain
+};
+
+// DOM Elements
+const bgm = document.getElementById('bgm');
+const confirmModal = document.getElementById('confirm-modal');
+const confirmMsg = document.getElementById('confirm-msg');
+const confirmYes = document.getElementById('confirm-yes');
+const confirmNo = document.getElementById('confirm-no');
+const footer = document.getElementById('footer');
+const musicToggleBtn = document.getElementById('music-toggle');
+const startBtn = document.getElementById('start-btn');
+const nextBtn = document.getElementById('next-btn');
+const retryBtnLevelFinish = document.getElementById('retry-btn');
+const retryBtnGameOver = document.getElementById('retry-btn2');
+const gobangBtn = document.getElementById('gobang-btn');
+const restartGameBtn = document.getElementById('restart-game-btn');
+const closeGameBtnLevel = document.getElementById('close-game-btn-level');
+const closeGameBtnGameOver = document.getElementById('close-game-btn-gameover');
+const undoBtn = document.getElementById('undo-btn');
+const hintBtn = document.getElementById('hint-btn');
+const shuffleBtn = document.getElementById('shuffle-btn');
+const restartCurrentLevelBtn = document.getElementById('restart-btn');
+const codeInput = document.getElementById('code-input');
+const codeBtn = document.getElementById('code-btn');
+const levelFinishTextElement = document.getElementById('level-finish-text');
+const neteasePlayerDiv = document.getElementById('netease-player');
+const playerDiv = document.getElementById('player');
+const currentScoreElement = document.getElementById('current-score');
+const targetScoreElement = document.getElementById('target-score');
+const levelInfoElement = document.getElementById('level-info');
+const displayArea = document.getElementById('display-area');
+const cardStackArea = document.getElementById('card-stack-area');
+const catPath = document.getElementById('cat-path');
+const walkingCat = document.getElementById('walking-cat');
+const curtainElement = document.getElementById('curtain');
+
+const wigglingCat1 = document.getElementById('wiggling-cat-1');
+const wigglingCat4 = document.getElementById('wiggling-cat-4');
+const wigglingCat7 = document.getElementById('wiggling-cat-7');
+
+const level2OutroScreen = document.getElementById('level2-outro-screen');
+const outroVideo = document.getElementById('outro-video');
+const outroImage = document.getElementById('outro-image');
+const outroLoadingText = level2OutroScreen.querySelector('.loading-text');
+const skipOutroBtn = document.getElementById('skip-outro-btn');
+
+const eventOverlay = document.getElementById('event-overlay');
+const eventMessageBox = document.getElementById('event-message-box');
+const eventIconEl = eventMessageBox.querySelector('.event-icon');
+const eventTextEl = eventMessageBox.querySelector('.event-text');
+
+
+let confirmCallback = null;
+let outroVideoTimeout = null;
+let decorationInterval = null; // --- DECORATION: Interval timer
+let randomEventTimer = null;
+let curtainTimer = null;
+let isLandscape = false; 
+let hasShownLandscapeMessage = false;
+let lastShakeTime = 0;
+
+// --- AUDIO REFACTOR START ---
+// Web Audio API variables and fallback flags
+let audioContext;
+let clickSoundBuffer;
+let clickAudioFailed = false; // Flag for click sound fallback
+// --- AUDIO REFACTOR END ---
+
+// Game State Object
+let game = {
+  level: 1,
+  levelStartTime: 0,
+  cards: [],
+  board: [],
+  temp: [],
+  matched: [],
+  usedIcons: [],
+  toolUses: {undo: 0, hint: 0, shuffle: 0},
+  score: 0,
+  targetScore: 0,
+  displayCards: [],
+  totalDisplaySetsGenerated: 0,
+  progress: 0,
+  stepStack: [],
+  bgmOn: true,
+  isNewLevel: false,
+  lock: false,
+  cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
+  layout: { areaWidth: 0, areaHeight: 0 },
+  isCurtainEnabled: true
+};
+
+// Utility Functions
+function randArr(arr) {
+  return arr.slice().sort(() => Math.random() - 0.5);
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+}
+
+function deepClone(obj) {
+  return JSON.parse(JSON.stringify(obj));
+}
+
+function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+// --- AUDIO REFACTOR START ---
+
+/**
+ * Initializes the Web Audio API for short sound effects.
+ * If this process fails, it sets a fallback flag.
+ * BGM is handled separately by the HTML5 <audio> tag.
+ */
+async function initAudio() {
+    try {
+        // Attempt to create and resume the AudioContext.
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+
+        // Try to load click sound (kaa.mp3) via Web Audio API
+        if (!clickSoundBuffer) {
+            const response = await fetch('kaa.mp3');
+            const arrayBuffer = await response.arrayBuffer();
+            clickSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        }
+    } catch (e) {
+        console.error("Web Audio API failed for click sound (kaa.mp3). Falling back to HTML5 Audio.", e);
+        clickAudioFailed = true; // Set fallback flag for click sound
+    }
+}
+
+/**
+ * Plays or pauses the background music using the HTML5 <audio> element.
+ * This method is better for long audio files as it supports streaming.
+ * @param {boolean} on - True to play, false to pause.
+ */
+function playBgm(on) {
+    const bgmElement = document.getElementById('bgm');
+    if (on) {
+        // Set src only if not already set, to prevent re-loading
+        if (bgmElement.src.indexOf('Get.mp3') === -1) {
+           bgmElement.src = 'Get.mp3';
+        }
+        // The play() method returns a Promise, which should be handled.
+        const playPromise = bgmElement.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.error("BGM playback failed:", error);
+                // Autoplay might be blocked, user interaction is needed.
+                // The music toggle button will still work.
+            });
+        }
+    } else {
+        bgmElement.pause();
+    }
+}
+
+/**
+ * Plays the click sound effect.
+ * Uses Web Audio API by default for low latency, but creates a new Audio() object
+ * on-the-fly as a fallback if the API failed to initialize.
+ */
+function playClickSound() {
+    if (!game.bgmOn) return; // Respect the user's global sound setting
+
+    if (clickAudioFailed) {
+        // Fallback: Use HTML5 Audio by creating a temporary element
+        const clickAudio = new Audio('kaa.mp3');
+        clickAudio.play().catch(e => console.error("HTML5 Audio fallback for click sound failed:", e));
+    } else {
+        // Primary method: Use Web Audio API
+        if (!clickSoundBuffer || !audioContext) return;
+        try {
+            const source = audioContext.createBufferSource();
+            source.buffer = clickSoundBuffer;
+            source.connect(audioContext.destination);
+            source.start(0);
+        } catch (e) {
+            console.error("Failed to play click sound via Web Audio API:", e);
+        }
+    }
+}
+// --- AUDIO REFACTOR END ---
+
+
+// NEW: Function to trigger vibration or sound on match
+function triggerMatchFeedback() {
+    if (navigator.vibrate) {
+        navigator.vibrate(100); // Vibrate for 100ms
+    }
+    playClickSound(); // Always play sound, even with vibration
+}
+
+
+function showConfirm(msg, callback) {
+  confirmMsg.innerHTML = msg; // Use innerHTML to allow basic HTML like <br>
+  confirmCallback = callback;
+  confirmModal.style.display = 'flex';
+}
+
+function hideConfirm() {
+  confirmModal.style.display = 'none';
+  confirmCallback = null;
+}
+
+confirmYes.onclick = () => {
+  const callback = confirmCallback;
+  hideConfirm();
+  if (callback) {
+    setTimeout(callback, 20);
+  }
+};
+confirmNo.onclick = hideConfirm;
+
+function generateDisplayCardSet(excludeIcons = []) {
+    let chosenIcon = null;
+    const visibleLayeredCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.stack >= 0 && c.stack <= 3);
+    const visibleLayeredIconCounts = {};
+    visibleLayeredCards.forEach(c => visibleLayeredIconCounts[c.icon] = (visibleLayeredIconCounts[c.icon] || 0) + 1);
+
+    let potentialVisibleLayeredIcons = Object.keys(visibleLayeredIconCounts).filter(icon => !excludeIcons.includes(icon) && visibleLayeredIconCounts[icon] >= 3);
+
+    if (potentialVisibleLayeredIcons.length > 0) {
+        chosenIcon = potentialVisibleLayeredIcons[Math.floor(Math.random() * potentialVisibleLayeredIcons.length)];
+    } else {
+        const allClickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+        const combinedClickableIcons = [...allClickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
+        const combinedClickableIconCounts = {};
+        combinedClickableIcons.forEach(icon => combinedClickableIconCounts[icon] = (combinedClickableIconCounts[icon] || 0) + 1);
+
+        let potentialCombinedIcons = Object.keys(combinedClickableIconCounts).filter(icon => !excludeIcons.includes(icon) && combinedClickableIconCounts[icon] >= 3);
+
+        if (potentialCombinedIcons.length > 0) {
+            chosenIcon = potentialCombinedIcons[Math.floor(Math.random() * potentialCombinedIcons.length)];
+        } else {
+            const allIconsInGame = game.cards.map(c => c.icon);
+            const allIconCounts = {};
+            allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
+            const anyTripletIcons = Object.keys(allIconCounts).filter(icon => !excludeIcons.includes(icon) && allIconCounts[icon] >= 3);
+
+            if (anyTripletIcons.length > 0) {
+                chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
+            } else {
+                const availableIconsWithoutExclusion = allIconsInGame.filter(icon => !excludeIcons.includes(icon));
+                if (availableIconsWithoutExclusion.length > 0) {
+                    chosenIcon = availableIconsWithoutExclusion[Math.floor(Math.random() * availableIconsWithoutExclusion.length)];
+                } else if (allIconsInGame.length > 0) {
+                    chosenIcon = allIconsInGame[Math.floor(Math.random() * allIconsInGame.length)];
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
+    if (chosenIcon) {
+        return [
+            { icon: chosenIcon, id: Date.now() + 1 },
+            { icon: chosenIcon, id: Date.now() + 2 },
+            { icon: chosenIcon, id: Date.now() + 3 }
+        ];
+    } else {
+        return null;
+    }
+}
+
+function calculateResponsiveSizes() {
+    const areaW = cardStackArea.offsetWidth;
+    const lv = LEVELS[game.level - 1];
+    const baseCardWidth = areaW / (lv.cols + 2);
+    const clampedCardWidth = Math.max(40, Math.min(baseCardWidth, 80));
+    const cardAspectRatio = 65 / 85;
+    const finalCardW = clampedCardWidth;
+    const finalCardH = finalCardW / cardAspectRatio;
+
+    game.cardDimensions = {
+        width: finalCardW,
+        height: finalCardH,
+        fontSize: finalCardW * 0.45,
+        borderRadius: finalCardW * 0.15,
+        borderWidth: Math.max(2, finalCardW * 0.04)
+    };
+}
+
+function repositionCardsAndLayout(currentBoard, levelConfig) {
+    const lv = levelConfig;
+    const newUnmatchedBoard = [];
+    const unmatchedCards = currentBoard.filter(c => !c.matched);
+    const matchedCards = currentBoard.filter(c => c.matched); 
+
+    game.layout.areaWidth = cardStackArea.offsetWidth;
+    game.layout.areaHeight = cardStackArea.offsetHeight;
+    calculateResponsiveSizes();
+
+    let stackDepth = lv.stack;
+    const cardsPerStackLayer = Math.ceil(unmatchedCards.length / stackDepth);
+    const placementOverlapFactor = 0.9;
+    let maxAttempts = 150;
+
+    let cardsToPlace = unmatchedCards.map(c => ({ ...c }));
+    shuffle(cardsToPlace);
+
+    for (let i = 0; i < cardsToPlace.length; i++) {
+        const card = cardsToPlace[i];
+        const s = Math.min(Math.floor(i / cardsPerStackLayer), stackDepth - 1);
+        let x = 0, y = 0;
+        let foundPosition = false;
+
+        for (let attempt = 0; attempt < maxAttempts; attempt++) {
+            let tempX = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
+            let tempY = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
+            tempX += (s * 5 * (Math.random() - 0.5));
+            tempY += (s * 5 * (Math.random() - 0.5));
+            tempX = Math.max(5, Math.min(tempX, game.layout.areaWidth - game.cardDimensions.width - 5));
+            tempY = Math.max(5, Math.min(tempY, game.layout.areaHeight - game.cardDimensions.height - 5));
+
+            let overlap = false;
+            for (const existingCard of newUnmatchedBoard) {
+                if (existingCard.stack <= s) {
+                    const dx = Math.abs(tempX - existingCard.x);
+                    const dy = Math.abs(tempY - existingCard.y);
+                    if (dx < game.cardDimensions.width * placementOverlapFactor && dy < game.cardDimensions.height * placementOverlapFactor) {
+                        overlap = true;
+                        break;
+                    }
+                }
+            }
+            if (!overlap) {
+                x = tempX;
+                y = tempY;
+                foundPosition = true;
+                break;
+            }
+        }
+        if (!foundPosition) {
+            x = randBetween(5, game.layout.areaWidth - game.cardDimensions.width - 5);
+            y = randBetween(5, game.layout.areaHeight - game.cardDimensions.height - 5);
+        }
+        const z = s * 1000 + i;
+        newUnmatchedBoard.push({ ...card, x, y, z, stack: s });
+    }
+
+    const finalBoard = [...newUnmatchedBoard, ...matchedCards];
+    finalBoard.sort((a, b) => (a.z || 0) - (b.z || 0));
+    return finalBoard;
+}
+
+
+function genLevel(levelIdx){
+  const lv = LEVELS[levelIdx - 1];
+  game.score = 0;
+  game.targetScore = lv.targetScore;
+  game.totalDisplaySetsGenerated = 0;
+  game.isCurtainEnabled = true; // Reset curtain for new level
+
+  let allIcons = [];
+  const requiredUniqueIcons = Math.ceil(lv.total / 3);
+  let availableIcons = randArr(CARD_ICONS).slice(0, Math.min(CARD_ICONS.length, requiredUniqueIcons + 2));
+
+  let iconPool = [];
+  for (let i = 0; i < requiredUniqueIcons; i++) {
+    for (let j = 0; j < 3; j++) {
+      iconPool.push(availableIcons[i % availableIcons.length]);
+    }
+  }
+  while (iconPool.length < lv.total) {
+      const remaining = lv.total - iconPool.length;
+      if (remaining < 3) {
+          for (let i = 0; i < remaining; i++) iconPool.push(availableIcons[i % availableIcons.length]);
+      } else {
+          const iconToAdd = availableIcons[Math.floor(Math.random() * availableIcons.length)];
+          iconPool.push(iconToAdd, iconToAdd, iconToAdd);
+      }
+  }
+  shuffle(iconPool);
+  allIcons = iconPool;
+
+  let cards = [];
+  for(let i = 0; i < lv.total; i++){
+    cards.push({ id: i, icon: allIcons[i], matched: false });
+  }
+  game.cards = cards;
+
+  game.board = repositionCardsAndLayout(cards.map(c => ({...c, covered: false, isNapping: false})), lv);
+
+  game.displayCards = [];
+  const usedDisplayIconsForLevel = new Set();
+  for (let i = 0; i < INITIAL_DISPLAY_SETS_VISIBLE; i++) {
+      const newSet = generateDisplayCardSet(Array.from(usedDisplayIconsForLevel));
+      if (newSet) {
+          game.displayCards.push({ id: `display-set-${i}`, cards: newSet, matched: false });
+          usedDisplayIconsForLevel.add(newSet[0].icon);
+          game.totalDisplaySetsGenerated++;
+      }
+  }
+  return {cards: game.cards, board: game.board, usedIcons: availableIcons.slice(0, Math.ceil(lv.total/3))};
+}
+
+function isCardClickable(card, board){
+  if(card.matched || card.isNapping) return false;
+
+  const activeCards = board.filter(c => !c.matched);
+  const cardW = game.cardDimensions.width;
+  const cardH = game.cardDimensions.height;
+  const currentLevelConfig = LEVELS[game.level - 1];
+  const clickableOverlapFactor = 1 - (currentLevelConfig.overlap / 100);
+  const overlapThresholdX = cardW * clickableOverlapFactor;
+  const overlapThresholdY = cardH * clickableOverlapFactor;
+
+  for (const otherCard of activeCards) {
+    if (card.id === otherCard.id) continue;
+    if (otherCard.z > card.z) {
+      const dx = Math.abs(otherCard.x - card.x);
+      const dy = Math.abs(otherCard.y - card.y);
+      if (dx < overlapThresholdX && dy < overlapThresholdY) return false;
+    }
+  }
+  return true;
+}
+
+function clickCard(id) {
+  if (game.lock) return;
+  let cardData = game.board.find(c => c.id === id);
+  if (!cardData || cardData.matched || !isCardClickable(cardData, game.board)) return;
+
+  playClickSound();
+
+  let tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
+  let iconCntCheck = {};
+  tempCheck.forEach(c => iconCntCheck[c.icon] = (iconCntCheck[c.icon] || 0) + 1);
+  let matchedIconCheck = Object.keys(iconCntCheck).find(k => iconCntCheck[k] === 3);
+  if (game.temp.length >= TEMP_LIMIT && !matchedIconCheck) {
+      gameOver('暂存区已超限，游戏失败！');
+      return;
+  }
+
+  saveStep();
+  game.lock = true;
+
+  const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
+  if (!clickedCardEl) {
+    game.lock = false;
+    return;
+  }
+
+  const startRect = clickedCardEl.getBoundingClientRect();
+  const flyingCard = document.createElement('div');
+  flyingCard.className = 'flying-card';
+  flyingCard.innerHTML = cardData.icon;
+  document.body.appendChild(flyingCard);
+  flyingCard.style.left = `${startRect.left}px`;
+  flyingCard.style.top = `${startRect.top}px`;
+  flyingCard.style.width = `${startRect.width}px`;
+  flyingCard.style.height = `${startRect.height}px`;
+  flyingCard.style.fontSize = `${game.cardDimensions.fontSize}px`;
+  flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
+  flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
+
+  clickedCardEl.style.opacity = '0';
+  clickedCardEl.style.pointerEvents = 'none';
+  
+  const animationDuration = 150;
+  const tempAppearanceDelay = 80;
+
+  requestAnimationFrame(() => {
+    const tempForPositionCalculation = [...game.temp, { icon: cardData.icon, id: cardData.id }];
+    tempForPositionCalculation.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
+    const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
+    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+    if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
+        console.error("Invalid end slot index for flying card. Aborting animation.");
+        if(flyingCard.parentNode) document.body.removeChild(flyingCard);
+        game.lock = false;
+        return;
+    }
+    const endRect = tempSlots[endSlotIndex].getBoundingClientRect();
+    const tempSlotStyle = window.getComputedStyle(tempSlots[endSlotIndex]);
+    const flyingCardFinalWidth = parseFloat(tempSlotStyle.width) * 0.9;
+    const flyingCardFinalHeight = parseFloat(tempSlotStyle.height) * 0.9;
+    const destLeft = endRect.left + (endRect.width - flyingCardFinalWidth) / 2;
+    const destTop = endRect.top + (endRect.height - flyingCardFinalHeight) / 2;
+    flyingCard.style.left = `${destLeft}px`;
+    flyingCard.style.top = `${destTop}px`;
+    flyingCard.style.transform = `scale(${flyingCardFinalWidth / parseFloat(startRect.width)})`;
+  });
+
+  setTimeout(() => {
+    if (flyingCard.parentNode) document.body.removeChild(flyingCard);
+  }, animationDuration);
+
+  setTimeout(() => {
+    cardData.matched = true;
+    game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
+    game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
+    renderTemp();
+    renderBoard();
+    renderProgressAndScore();
+    updateWigglingCatVisibility();
+
+    let iconCnt = {};
+    game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
+    let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
+
+    if (matchedIcon) {
+      triggerMatchFeedback();
+      
+      const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+      const matchedElements = [];
+      let cleanupDone = false; // Flag to ensure cleanup runs only once
+
+      // Function to perform cleanup after animation or timeout
+      const performCleanup = () => {
+          if (!cleanupDone) {
+              cleanupDone = true;
+              game.temp = game.temp.filter(c => !c.matched);
+              renderTemp();
+              renderBoard();
+              checkWin();
+              game.lock = false;
+          }
+      };
+
+      game.temp.forEach((c, index) => {
+          if (c.icon === matchedIcon) {
+              c.matched = true;
+              const slot = tempSlots[index];
+              if (slot) {
+                  const cardEl = slot.querySelector('.temp-card');
+                  if (cardEl) {
+                      cardEl.classList.add('disappearing');
+                      matchedElements.push(cardEl); // Collect matched card DOM elements
+                  }
+              }
+          }
+      });
+
+      // Add 'clearing' animation to slots
+      matchedElements.forEach(cardEl => {
+          const slot = cardEl.closest('.temp-slot');
+          if (slot) {
+              slot.classList.add('clearing');
+              slot.addEventListener('animationend', () => {
+                  slot.classList.remove('clearing');
+              }, { once: true });
+          }
+      });
+
+      // Attach animationend listener to the last matched element for cleanup
+      // This ensures cleanup happens precisely when the animation finishes.
+      if (matchedElements.length > 0) {
+          const lastMatchedEl = matchedElements[matchedElements.length - 1];
+          lastMatchedEl.addEventListener('animationend', performCleanup, { once: true });
+      } else {
+          // Fallback if for some reason no matched elements were found (shouldn't happen with matchedIcon)
+          performCleanup();
+      }
+
+      // Set a fallback timeout, slightly longer than the animation duration (0.3s CSS animation)
+      // This ensures cleanup happens even if animationend event fails to fire.
+      setTimeout(performCleanup, 500); // 500ms as a safe fallback
+
+      game.displayCards.forEach(displaySet => {
+          if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
+              displaySet.matched = true;
+              game.score += DISPLAY_CARD_MATCH_SCORE;
+              renderProgressAndScore();
+              const matchedDisplayGroupEl = document.querySelector(`#display-area .display-group[data-id='${displaySet.id}']`);
+              if (matchedDisplayGroupEl) {
+                  const groupRect = matchedDisplayGroupEl.getBoundingClientRect();
+                  const scoreAnimDiv = document.createElement('div');
+                  scoreAnimDiv.className = 'score-animation';
+                  scoreAnimDiv.textContent = `+${DISPLAY_CARD_MATCH_SCORE}`;
+                  document.body.appendChild(scoreAnimDiv);
+                  scoreAnimDiv.style.left = `${groupRect.left + groupRect.width / 2}px`;
+                  scoreAnimDiv.style.top = `${groupRect.top + groupRect.height / 2}px`;
+                  scoreAnimDiv.style.transform = 'translate(-50%, -50%)';
+                  scoreAnimDiv.addEventListener('animationend', () => scoreAnimDiv.remove(), { once: true });
+              }
+              setTimeout(() => {
+                  const newSet = generateDisplayCardSet(game.displayCards.map(ds => ds.cards[0].icon));
+                  if (newSet) {
+                      displaySet.cards = newSet;
+                      displaySet.matched = false;
+                  } else {
+                      game.displayCards = game.displayCards.filter(ds => ds.id !== displaySet.id);
+                  }
+                  renderDisplay();
+              }, 400);
+          }
+      });
+    } else {
+      checkWin();
+      game.lock = false;
+    }
+  }, tempAppearanceDelay);
+}
+
+// MODIFIED: checkWin function to show time taken
+function checkWin() {
+    const allCardsMatched = game.board.every(c => c.matched);
+    const scoreMet = game.score >= game.targetScore;
+
+    if (allCardsMatched && scoreMet) {
+        stopRandomEvents();
+        stopCurtainRandomToggle();
+        stopDecorationUpdates(); // --- DECORATION: Stop interval
+        game.lock = true; // Lock game while showing message
+
+        const elapsedSeconds = ((Date.now() - game.levelStartTime) / 1000).toFixed(1);
+        const message = `本关过关用时 ${elapsedSeconds} 秒`;
+
+        // Temporarily change the confirm modal to an alert modal
+        const originalYesText = confirmYes.textContent;
+        const originalNoDisplay = confirmNo.style.display;
+        confirmYes.textContent = '好的';
+        confirmNo.style.display = 'none';
+
+        showConfirm(message, () => {
+            // Callback for when user clicks "好的"
+            if (game.level === 1) {
+                showLevelFinish('恭喜恭喜！第一关通关！');
+            } else {
+                showLevelFinish('<p> <p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
+            }
+            // Restore the modal for other uses
+            confirmYes.textContent = originalYesText;
+            confirmNo.style.display = originalNoDisplay;
+        });
+
+    } else if (allCardsMatched && !scoreMet) {
+        gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
+    }
+}
+
+function saveStep(){
+  game.stepStack.push({
+    board: deepClone(game.board),
+    temp: deepClone(game.temp),
+    score: game.score,
+    displayCards: deepClone(game.displayCards),
+    totalDisplaySetsGenerated: game.totalDisplaySetsGenerated
+  });
+  if(game.stepStack.length > 20) game.stepStack.shift();
+}
+
+function undoStep(){
+  if(game.stepStack.length > 0){
+    let prev = game.stepStack.pop();
+    game.board = deepClone(prev.board);
+    game.temp = deepClone(prev.temp);
+    game.score = prev.score;
+    game.displayCards = deepClone(prev.displayCards);
+    game.totalDisplaySetsGenerated = prev.totalDisplaySetsGenerated;
+    renderAll();
+    showMessage('已撤销');
+    updateWigglingCatVisibility();
+  } else {
+    showMessage('无法撤销更多', '#888');
+  }
+}
+
+function shuffleStep(){
+  saveStep();
+  game.lock = true;
+  let unmatchedCardsElements = document.querySelectorAll('#card-stack-area .card:not(.matched)');
+  unmatchedCardsElements.forEach(el => el.classList.add('card-shuffling-out'));
+
+  setTimeout(() => {
+      game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+      renderAll();
+      showMessage('已洗牌');
+      game.lock = false;
+      updateWigglingCatVisibility();
+  }, 300);
+}
+
+function hintStep(){
+  let tempIcons = game.temp.map(c => c.icon);
+  let clickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+  let clickableBoardIcons = clickableBoardCards.map(c => c.icon);
+  let allAvailableIcons = [...tempIcons, ...clickableBoardIcons];
+  let iconCounts = {};
+  allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
+  let targetIcon = Object.keys(iconCounts).find(icon => iconCounts[icon] >= 3);
+
+  document.querySelectorAll('.hinted-shake').forEach(el => el.classList.remove('hinted-shake'));
+
+  if (targetIcon) {
+    let hintDone = 0;
+    const hintedElements = [];
+    for (let i = 0; i < game.temp.length && hintDone < 3; i++) {
+      if (game.temp[i].icon === targetIcon && !game.temp[i].matched) {
+        const tempCardElement = document.querySelectorAll('#temp-area .temp-slot .temp-card')[i];
+        if (tempCardElement) {
+          tempCardElement.classList.add('hinted-shake');
+          hintedElements.push(tempCardElement);
+          hintDone++;
+        }
+      }
+    }
+    for (let i = 0; i < clickableBoardCards.length && hintDone < 3; i++) {
+      let boardCard = clickableBoardCards[i];
+      if (boardCard.icon === targetIcon) {
+        let doms = document.querySelector(`#card-stack-area .card[data-id='${boardCard.id}']`);
+        if (doms) {
+          doms.classList.add('hinted-shake');
+          hintedElements.push(doms);
+          hintDone++;
+        }
+      }
+    }
+    showMessage('已提示可消除三张');
+    setTimeout(() => hintedElements.forEach(el => el.classList.remove('hinted-shake')), 2000);
+  } else {
+    showMessage('当前无可三消', "#888");
+  }
+}
+
+function gameOver(msg){
+  stopRandomEvents();
+  stopCurtainRandomToggle();
+  stopDecorationUpdates(); // --- DECORATION: Stop interval
+  game.lock = true;
+  document.getElementById('card-stack-area').innerHTML = '';
+  document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
+  displayArea.innerHTML = '';
+  document.getElementById('level-info').textContent = '';
+  currentScoreElement.textContent = '0';
+  targetScoreElement.textContent = '0';
+  document.getElementById('message-bar').textContent = '';
+  hideWigglingCats();
+  setTimeout(() => {
+    const gameOverScreen = document.getElementById('game-over');
+    gameOverScreen.style.display = 'flex';
+    // MODIFIED: Find the inner text element
+    gameOverScreen.querySelector('#game-over-text').innerHTML = msg;
+  }, 100);
+}
+
+// MODIFIED: startGame to include timer start and new lid animation
+function startGame(level){
+  // 1. Reset game state, lock controls
+  game.lock = true;
+  footer.style.display = 'block';
+  game.level = level;
+  game.levelStartTime = Date.now(); // Start timer for the level
+
+  // 2. Generate level data
+  let lvData = genLevel(level);
+  game.cards = lvData.cards;
+  game.board = lvData.board;
+  game.usedIcons = lvData.usedIcons;
+  game.temp = [];
+  game.matched = [];
+  game.toolUses = {undo: 0, hint: 0, shuffle: 0};
+  game.stepStack = [];
+  game.isNewLevel = true;
+
+  // 3. Render the game state (cards will be created but hidden by CSS later)
+  renderAll();
+
+  // 4. Lid Animation Setup
+  const cardStackArea = document.getElementById('card-stack-area');
+  // Remove old lid if it exists from a previous, interrupted animation
+  const oldLid = document.getElementById('card-stack-lid');
+  if (oldLid) oldLid.remove();
+
+  // Create and add the new lid
+  const lid = document.createElement('div');
+  lid.id = 'card-stack-lid';
+  lid.innerHTML = `
+      <div class="lid-text-top">卡片随机生成</div>
+      <div class="lid-emoji">✉️</div>
+      <div class="lid-footer"><small>Coded & Designed by 开元</small></div>
+  `;
+  cardStackArea.appendChild(lid);
+
+  // Add class to start animation and hide cards
+  cardStackArea.classList.add('level-starting');
+
+  // 5. Timed events for animations and cleanup
+  // After 1 second (giving lid time to open partway), start floating cards in
+  setTimeout(() => {
+    const cards = cardStackArea.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+      card.style.visibility = 'visible'; // Make them visible
+      card.classList.add('card-floating-in');
+      card.style.animationDelay = `${index * 0.05}s`; // Stagger the animation
+    });
+  }, 1000); // 1s delay
+
+  // After 3 seconds (total animation time), clean up the lid and classes
+  setTimeout(() => {
+    cardStackArea.classList.remove('level-starting');
+    if (lid.parentNode) {
+        lid.remove();
+    }
+    // Clean up animation classes from cards so they don't re-animate on style changes
+    const cards = cardStackArea.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.classList.remove('card-floating-in');
+        card.style.animationDelay = '';
+    });
+    game.lock = false; // Unlock game controls
+  }, 3000);
+
+  // 6. Final setup (BGM, cat walker, etc.)
+  if (game.bgmOn) playBgm(true);
+  positionCatWalker();
+  updateWigglingCatVisibility();
+  startRandomEvents();
+  startDecorationUpdates();
+  positionCurtain();
+  toggleCurtain(false);
+  // Delay curtain opening until after the lid animation is fully complete
+  setTimeout(() => {
+    toggleCurtain(true);
+    startCurtainRandomToggle();
+  }, 3200);
+}
+
+function renderBoard(){
+  const area = document.getElementById('card-stack-area');
+  // Clear only cards, not the lid if it's animating
+  area.querySelectorAll('.card').forEach(c => c.remove());
+
+  let cardsToRender = game.board.filter(c => !c.matched);
+  cardsToRender.sort((a, b) => a.z - b.z);
+
+  cardsToRender.forEach((card) => {
+    let el = document.createElement('div');
+    const clickable = isCardClickable(card, game.board);
+    el.className = "card" + (clickable ? "" : " disabled");
+    if (card.isNapping) el.classList.add('napping');
+    el.style.left = card.x + 'px';
+    el.style.top = card.y + 'px';
+    el.style.zIndex = card.z;
+    el.innerHTML = card.icon;
+    el.dataset.id = card.id;
+    el.style.width = `${game.cardDimensions.width}px`;
+    el.style.height = `${game.cardDimensions.height}px`;
+    el.style.fontSize = `${game.cardDimensions.fontSize}px`;
+    el.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
+    el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
+    if(clickable) el.onclick = () => clickCard(card.id);
+    
+    // REMOVED: The old card-entering animation logic is now handled in startGame
+    
+    area.appendChild(el);
+  });
+  game.isNewLevel = false;
+}
+
+function renderTemp(){
+  const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+  const tempArea = document.getElementById('temp-area');
+  const tempCardScaleFactor = 0.8;
+  const tempCardWidth = game.cardDimensions.width * tempCardScaleFactor;
+  const tempCardHeight = game.cardDimensions.height * tempCardScaleFactor;
+  const tempCardFontSize = game.cardDimensions.fontSize * tempCardScaleFactor;
+  const tempCardBorderRadius = game.cardDimensions.borderRadius * tempCardScaleFactor;
+  const tempCardBorderWidth = game.cardDimensions.borderWidth * tempCardScaleFactor;
+  tempArea.style.minHeight = `${tempCardHeight + (tempCardBorderWidth * 2) + 16}px`;
+
+  tempSlots.forEach((slot, i) => {
+    slot.innerHTML = '';
+    slot.style.width = `${tempCardWidth}px`;
+    slot.style.height = `${tempCardHeight}px`;
+    slot.style.borderRadius = `${tempCardBorderRadius}px`;
+    slot.style.borderWidth = `${tempCardBorderWidth}px`;
+    slot.style.margin = '0';
+    if (i < game.temp.length) {
+      const c = game.temp[i];
+      let el = document.createElement('div');
+      el.className = "temp-card" + (c.matched ? " matched" : "");
+      el.innerHTML = c.icon;
+      el.style.fontSize = `${tempCardFontSize}px`;
+      el.style.borderRadius = `${tempCardBorderRadius}px`;
+      el.style.borderWidth = `${tempCardBorderWidth}px`;
+      slot.appendChild(el);
+    }
+  });
+
+  let persistentHeart = document.getElementById('persistent-heart');
+  if (game.temp.length === 7) {
+    const seventhTempSlot = tempSlots[6];
+    if (seventhTempSlot) {
+      const mainArea = document.getElementById('main-area');
+      const cardStackArea = document.getElementById('card-stack-area');
+      const seventhSlotRect = seventhTempSlot.getBoundingClientRect();
+      const cardStackRect = cardStackArea.getBoundingClientRect();
+      const mainAreaRect = mainArea.getBoundingClientRect();
+      const heartVerticalMidpointAbsolute = cardStackRect.bottom + (seventhSlotRect.top - cardStackRect.bottom) / 2;
+      const heartTopRelativeToMainArea = heartVerticalMidpointAbsolute - mainAreaRect.top;
+      const heartLeftRelativeToMainArea = (seventhTempSlot.left + seventhTempSlot.offsetWidth / 2) - mainAreaRect.left;
+      if (!persistentHeart) {
+        persistentHeart = document.createElement('div');
+        persistentHeart.id = 'persistent-heart';
+        persistentHeart.className = 'heart-animation';
+        persistentHeart.innerHTML = '💝';
+        mainArea.appendChild(persistentHeart);
+      }
+      persistentHeart.style.left = `${heartLeftRelativeToMainArea}px`;
+      persistentHeart.style.top = `${heartTopRelativeToMainArea}px`;
+      persistentHeart.style.transform = 'translate(-50%, -50%)';
+      persistentHeart.style.display = 'block';
+    }
+  } else {
+    if (persistentHeart) persistentHeart.style.display = 'none';
+  }
+}
+
+function renderDisplay() {
+    displayArea.innerHTML = '';
+    const displayCardWidth = game.cardDimensions.width * 0.7;
+    const displayCardHeight = game.cardDimensions.height * 0.7;
+    const displayCardFontSize = game.cardDimensions.fontSize * 0.7;
+    const displayCardBorderRadius = game.cardDimensions.borderRadius * 0.7;
+    const displayCardBorderWidth = game.cardDimensions.borderWidth * 0.7;
+    const displayGroupGap = displayCardWidth * 0.1;
+    displayArea.style.width = `${cardStackArea.offsetWidth * 0.95}px`;
+    displayArea.style.minHeight = `${displayCardHeight + displayCardBorderWidth * 2 + 20}px`;
+
+    game.displayCards.forEach(displaySet => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'display-group';
+        groupDiv.dataset.id = displaySet.id;
+        groupDiv.style.gap = `${displayGroupGap}px`;
+        displaySet.cards.forEach(card => {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'display-card' + (displaySet.matched ? ' matched-display' : '');
+            cardDiv.innerHTML = card.icon;
+            cardDiv.style.width = `${displayCardWidth}px`;
+            cardDiv.style.height = `${displayCardHeight}px`;
+            cardDiv.style.fontSize = `${displayCardFontSize}px`;
+            cardDiv.style.borderRadius = `${displayCardBorderRadius}px`;
+            cardDiv.style.borderWidth = `${displayCardBorderWidth}px`;
+            groupDiv.appendChild(cardDiv);
+        });
+        displayArea.appendChild(groupDiv);
+    });
+}
+
+function renderProgressAndScore(){
+  levelInfoElement.textContent = `关卡: ${game.level} / 2`;
+  currentScoreElement.textContent = game.score;
+  targetScoreElement.textContent = game.targetScore;
+  updateWigglingCatVisibility();
+}
+
+function showMessage(msg, color){
+  let bar = document.getElementById('message-bar');
+  bar.style.color = color || '#c0392b';
+  bar.textContent = msg || '';
+  if(msg) setTimeout(()=>{bar.textContent='';}, 2300);
+}
+
+// MODIFIED: Function to update tool buttons, now includes orientation check
+function updateToolButtons() {
+  document.getElementById('undo-count').textContent = game.toolUses.undo;
+  document.getElementById('hint-count').textContent = game.toolUses.hint;
+  document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
+  
+  const undoDisabledByCount = game.toolUses.undo <= 0;
+  // Check for landscape orientation
+  if (isLandscape) {
+    undoBtn.disabled = true;
+    undoBtn.title = "横屏模式下不可用";
+  } else {
+    undoBtn.disabled = undoDisabledByCount;
+    undoBtn.title = "撤销(需兑换码)";
+  }
+
+  hintBtn.disabled = game.toolUses.hint <= 0;
+  shuffleBtn.disabled = game.toolUses.shuffle <= 0;
+}
+
+function renderAll(){
+  renderBoard();
+  renderTemp();
+  renderDisplay();
+  renderProgressAndScore();
+  updateToolButtons();
+  positionCatWalker();
+  updateWigglingCatVisibility();
+  positionCurtain(); // Ensure curtain is positioned correctly on all renders
+}
+
+function showLevelFinish(msg){
+  stopRandomEvents();
+  stopCurtainRandomToggle();
+  stopDecorationUpdates(); // --- DECORATION: Stop interval
+  playBgm(false);
+  if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+  if (outroVideo) {
+      outroVideo.pause();
+      outroVideo.currentTime = 0;
+  }
+  level2OutroScreen.style.display = 'none';
+  skipOutroBtn.style.display = 'none';
+  game.lock = false;
+  
+  const levelFinishScreen = document.getElementById('level-finish');
+  levelFinishScreen.style.display='flex';
+  levelFinishTextElement.innerHTML = msg;
+  
+  const existingConfetti = levelFinishScreen.querySelector('.confetti-container');
+  if (existingConfetti) existingConfetti.remove();
+  const confettiContainer = document.createElement('div');
+  confettiContainer.className = 'confetti-container';
+  levelFinishScreen.appendChild(confettiContainer);
+  const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+  for (let i = 0; i < 150; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      const duration = Math.random() * 3 + 4;
+      piece.style.animationDuration = `${duration}s`;
+      piece.style.animationDelay = `${Math.random() * 5}s`;
+      piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confettiContainer.appendChild(piece);
+  }
+
+  nextBtn.style.display = (game.level === 1) ? 'inline-block' : 'none';
+  
+  // MODIFIED: Reset button animations before applying new ones
+  gobangBtn.classList.remove('animated-scale-fade');
+  closeGameBtnLevel.classList.remove('animated-scale-fade');
+  
+  if (game.level === 1) {
+    levelFinishTextElement.style.animation = 'shake 6s infinite, show-card-property 15s forwards';
+    levelFinishTextElement.innerHTML += '<br>下一关后有彩蛋🪅！';
+    playerDiv.style.display = 'block';
+    neteasePlayerDiv.style.display = 'none';
+    gobangBtn.style.display = 'none';
+    restartGameBtn.style.display = 'none';
+    retryBtnLevelFinish.style.display = 'inline-block';
+    closeGameBtnLevel.onclick = () => handleCloseGame('level');
+  } else if (game.level === 2) {
+    levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
+    playerDiv.style.display = 'none';
+    neteasePlayerDiv.style.display = 'block';
+    gobangBtn.style.display = 'inline-block';
+    restartGameBtn.style.display = 'inline-block';
+    retryBtnLevelFinish.style.display = 'none';
+    
+    // MODIFIED: Add animation class to buttons for level 2
+    gobangBtn.classList.add('animated-scale-fade');
+    closeGameBtnLevel.classList.add('animated-scale-fade');
+    
+    closeGameBtnLevel.onclick = () => {
+        document.getElementById('level-finish').style.display = 'none';
+        playLevel2Outro();
+    };
+  }
+}
+
+function initializeGame(){
+  musicToggleBtn.innerHTML = game.bgmOn ? '🎼' : '🔇';
+  updateToolButtons();
+}
+
+function handleCloseGame(type) {
+    showConfirm('确定要关闭游戏吗？', () => {
+        window.close();
+        setTimeout(() => {
+            document.getElementById('game-container').style.display = 'none';
+            let messageHtml = type === 'level' ? `<p>当前客户端暂不支持自动关闭，</p><p>请点击页面关闭标签关闭。</p><br> 如若重新开始游戏，请点击<br><br><button onclick="window.location.href='https://www.kaiyuanzhu.qzz.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>` : `<p>当前客户端暂不支持自动关闭</p><p>小提示：可输入"kaiyuan"兑换提示次数。</p><br> 如果想重新开始游戏，请点击<br><br><button onclick="window.location.href='https://www.kaiyuanzhu.qzz.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>`;
+            document.body.innerHTML = `<div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center;opacity: 1;">${messageHtml}<br><small class="loading-footer mt-8">喵了个喵 &copy; 2025 | Designed by 开元</small></div>`;
+        }, 100);
+    });
+}
+
+// Random Event Logic
+function showEventMessage(icon, text) {
+    eventIconEl.textContent = icon;
+    eventTextEl.innerHTML = text;
+    eventOverlay.style.display = 'flex';
+    setTimeout(() => eventOverlay.style.display = 'none', 3500);
+}
+function eventCatNap() {
+    const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
+    if (clickableCards.length < 3) return;
+    showEventMessage('💤', '猫咪在打盹...<br>有些卡牌暂时拿不到了！');
+    game.lock = true;
+    const nappingCards = [];
+    const centerCard = clickableCards[Math.floor(Math.random() * clickableCards.length)];
+    nappingCards.push(centerCard);
+    const otherCards = game.board.filter(c => !c.matched && c.id !== centerCard.id);
+    otherCards.sort((a, b) => Math.hypot(a.x - centerCard.x, a.y - centerCard.y) - Math.hypot(b.x - centerCard.x, b.y - centerCard.y));
+    nappingCards.push(...otherCards.slice(0, Math.floor(Math.random() * 2) + 2));
+    nappingCards.forEach(card => card.isNapping = true);
+    renderBoard();
+    game.lock = false;
+    setTimeout(() => {
+        nappingCards.forEach(card => {
+            const boardCard = game.board.find(c => c.id === card.id);
+            if (boardCard) boardCard.isNapping = false;
+        });
+        renderBoard();
+    }, 10000);
+}
+function eventCuriousPaw() {
+    const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
+    const unclickableCards = game.board.filter(c => !c.matched && !isCardClickable(c, game.board));
+    if (clickableCards.length === 0 || unclickableCards.length === 0) return;
+    showEventMessage('🐾', '好奇的爪子...<br>一张可见卡牌和一张不可见卡牌的图标被交换了！');
+    game.lock = true;
+    const card1 = clickableCards[Math.floor(Math.random() * clickableCards.length)];
+    const card2 = unclickableCards[Math.floor(Math.random() * unclickableCards.length)];
+    [card1.icon, card2.icon] = [card2.icon, card1.icon];
+    const card1El = document.querySelector(`.card[data-id='${card1.id}']`);
+    const card2El = document.querySelector(`.card[data-id='${card2.id}']`);
+    if (card1El) card1El.classList.add('hinted-shake');
+    if (card2El) card2El.classList.add('hinted-shake');
+    setTimeout(() => {
+        renderBoard();
+        game.lock = false;
+    }, 800);
+}
+function eventGiftOffering() {
+    const tools = ['undo', 'hint', 'shuffle'];
+    const toolNames = { undo: '撤销', hint: '提示', shuffle: '洗牌' };
+    const randomTool = tools[Math.floor(Math.random() * tools.length)];
+    game.toolUses[randomTool]++;
+    updateToolButtons();
+    showEventMessage('🎁', `猫咪送来了礼物！<br>获得1次免费<b>${toolNames[randomTool]}</b>！`);
+}
+const randomEvents = [
+    { name: 'catNap', func: eventCatNap, weight: 3 },
+    { name: 'curiousPaw', func: eventCuriousPaw, weight: 3 },
+    { name: 'giftOffering', func: eventGiftOffering, weight: 2 }
+];
+function startRandomEvents() {
+    stopRandomEvents();
+    randomEventTimer = setInterval(() => {
+        if (game.lock || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') return;
+        const weightedList = [];
+        randomEvents.forEach(event => { for (let i = 0; i < event.weight; i++) weightedList.push(event.func); });
+        const randomEventFunc = weightedList[Math.floor(Math.random() * weightedList.length)];
+        randomEventFunc();
+    }, randBetween(20000, 30000));
+}
+function stopRandomEvents() {
+    if (randomEventTimer) clearInterval(randomEventTimer);
+    randomEventTimer = null;
+}
+
+// --- DECORATION START ---
+/**
+ * Starts an interval to check cat's proximity to decorations and trigger animations.
+ */
+function startDecorationUpdates() {
+    stopDecorationUpdates(); // Ensure no multiple intervals are running
+    const decorations = document.querySelectorAll('.path-decoration');
+    if (decorations.length === 0) return;
+
+    decorationInterval = setInterval(() => {
+        if (!walkingCat) return;
+        const catRect = walkingCat.getBoundingClientRect();
+        const catCenterX = catRect.left + catRect.width / 2;
+        
+        decorations.forEach(deco => {
+            const decoRect = deco.getBoundingClientRect();
+            const decoCenterX = decoRect.left + decoRect.width / 2;
+            const distance = Math.abs(catCenterX - decoCenterX);
+
+            if (distance < 50) { // Proximity threshold in pixels
+                deco.classList.add('shaking');
+            } else {
+                deco.classList.remove('shaking');
+            }
+        });
+    }, 100); // Check every 100ms
+}
+
+/**
+ * Stops the decoration update interval.
+ */
+function stopDecorationUpdates() {
+    if (decorationInterval) {
+        clearInterval(decorationInterval);
+        decorationInterval = null;
+    }
+}
+// --- DECORATION END ---
+
+// NEW: Curtain control functions
+function positionCurtain() {
+    if (!curtainElement || !displayArea) return;
+    const displayRect = displayArea.getBoundingClientRect();
+    const mainAreaRect = document.getElementById('main-area').getBoundingClientRect();
+
+    // Position the curtain relative to its parent (#main-area)
+    curtainElement.style.left = `${displayRect.left - mainAreaRect.left}px`;
+    curtainElement.style.top = `${displayRect.top - mainAreaRect.top}px`;
+    curtainElement.style.width = `${displayRect.width}px`;
+    curtainElement.style.height = `${displayRect.height}px`;
+    curtainElement.style.borderRadius = window.getComputedStyle(displayArea).borderRadius;
+    curtainElement.style.display = 'block'; // Ensure it's visible for positioning
+}
+
+function toggleCurtain(open) {
+    if (!curtainElement) return;
+
+    if (!game.isCurtainEnabled) {
+        // If curtain is disabled by redemption code, always keep it open
+        curtainElement.classList.remove('closed');
+        curtainElement.classList.add('open');
+        return;
+    }
+
+    if (open) {
+        curtainElement.classList.remove('closed');
+        curtainElement.classList.add('open');
+    } else {
+        curtainElement.classList.remove('open');
+        curtainElement.classList.add('closed');
+    }
+}
+
+function startCurtainRandomToggle() {
+    stopCurtainRandomToggle(); // Clear any existing timer
+    curtainTimer = setInterval(() => {
+        if (game.lock || !game.isCurtainEnabled || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+            // If game is locked, curtain is disabled, or game is over/finished, do not toggle
+            toggleCurtain(true); // Ensure it stays open
+            return;
+        }
+
+        const shouldClose = Math.random() < 0.5; // 50% chance to close
+
+        if (shouldClose) {
+            toggleCurtain(false); // Close the curtain
+            setTimeout(() => {
+                toggleCurtain(true); // Open it again after 2 seconds
+            }, 2000); // Invisible for 2 seconds
+        } else {
+            toggleCurtain(true); // Ensure it's open
+        }
+    }, randBetween(20000, 30000)); // Toggle every 20-30 seconds
+}
+
+function stopCurtainRandomToggle() {
+    if (curtainTimer) {
+        clearInterval(curtainTimer);
+        curtainTimer = null;
+    }
+}
+
+
+function handleResize() {
+    if (!game.board || game.board.length === 0 || document.getElementById('start-screen').style.display === 'flex' || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+        positionCatWalker();
+        positionCurtain(); // NEW: Reposition curtain on resize even if game not active
+        return;
+    }
+
+    const currentAreaWidth = cardStackArea.offsetWidth;
+    const currentAreaHeight = cardStackArea.offsetHeight;
+
+    if (game.layout.areaWidth === currentAreaWidth && game.layout.areaHeight === currentAreaHeight) {
+        return;
+    }
+
+    game.layout.areaWidth = currentAreaWidth;
+    game.layout.areaHeight = currentAreaHeight;
+
+    calculateResponsiveSizes();
+
+    game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+    
+    renderAll();
+}
+
+// NEW: Shake to shuffle handler
+function handleDeviceMotion(event) {
+    if (game.lock || game.toolUses.shuffle <= 0) {
+        return;
+    }
+
+    const currentTime = new Date().getTime();
+    if ((currentTime - lastShakeTime) > 1500) { // 1.5 second cooldown to prevent multiple triggers
+        const acceleration = event.accelerationIncludingGravity;
+        const shakeThreshold = 18; // m/s^2, adjusted for sensitivity
+
+        if (
+            Math.abs(acceleration.x) > shakeThreshold ||
+            Math.abs(acceleration.y) > shakeThreshold
+        ) {
+            lastShakeTime = currentTime;
+            
+            shuffleStep();
+            game.toolUses.shuffle--;
+            updateToolButtons();
+            showMessage('你摇动了手机，自动使用了一次洗牌！', '#3e5a2b');
+        }
+    }
+}
+
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // MODIFIED: Call the new realistic loading screen function
+    initializeRealisticLoadingScreen();
+    attemptVideoAutoplay();
+    
+    // MODIFIED: Handle screen orientation changes
+    const orientationQuery = window.matchMedia("(orientation: landscape)");
+    isLandscape = orientationQuery.matches;
+    // Initial check for landscape message - only if game is not on loading or start screen
+    if (isLandscape && !hasShownLandscapeMessage && 
+        document.getElementById('loading-screen').style.display === 'none' &&
+        document.getElementById('start-screen').style.display === 'none') {
+        showEventMessage('✨', '发现了新功能！<br>横屏模式下，撤销按钮会暂时禁用哦！');
+        hasShownLandscapeMessage = true;
+    }
+
+    function handleOrientationChange(event) {
+        isLandscape = event.matches;
+        updateToolButtons();
+        // Show message only when entering landscape, if not shown before in this landscape session,
+        // and if the loading and start screens are not active.
+        if (isLandscape && !hasShownLandscapeMessage && 
+            document.getElementById('loading-screen').style.display === 'none' &&
+            document.getElementById('start-screen').style.display === 'none') {
+            showEventMessage('✨', '发现了新功能！<br>横屏模式下，撤销按钮会暂时禁用哦！');
+            hasShownLandscapeMessage = true;
+        } else if (!isLandscape) {
+            // Reset flag when returning to portrait
+            hasShownLandscapeMessage = false;
+        }
+    }
+    
+    orientationQuery.addEventListener('change', handleOrientationChange);
+
+    // NEW: Add shake event listener
+    if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', handleDeviceMotion);
+    } else {
+        console.log("此设备不支持摇一摇功能。");
+    }
+
+    // MODIFIED: visibilitychange listener to handle audio context
+    document.addEventListener('visibilitychange', () => {
+        if (document.hidden) {
+            // When tab is hidden, pause audio regardless of method
+            playBgm(false);
+        } else {
+            // When tab becomes visible again...
+            if (audioContext && audioContext.state === 'suspended') {
+                audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
+            }
+            
+            const levelFinishScreen = document.getElementById('level-finish');
+            const gameOverScreen = document.getElementById('game-over');
+            const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
+
+            // Resume BGM if it was on and not on an end screen
+            if (game.bgmOn && !isGameEndScreenVisible) {
+                playBgm(true);
+            }
+        }
+    });
+
+
+    const feedbackDiv = document.createElement('div');
+    feedbackDiv.style.cssText = 'color: red; font-size: 12px; margin-top: 5px;';
+    codeInput.parentNode.insertBefore(feedbackDiv, codeInput.nextSibling);
+    codeInput.addEventListener('input', function() {
+        const code = codeInput.value.trim();
+        feedbackDiv.textContent = '';
+        codeInput.style.borderColor = '';
+        const codeRegex = /^[\u4e00-\u9fa5a-zA-Z0-9]*$/;
+        if (code.length === 7) {
+            if (codeRegex.test(code)) {
+                feedbackDiv.textContent = '字符数正确';
+                feedbackDiv.style.color = 'green';
+                codeInput.style.borderColor = 'green';
+                codeBtn.disabled = false;
+                codeBtn.click();
+            } else {
+                feedbackDiv.textContent = '兑换码包含不支持的字符';
+                feedbackDiv.style.color = 'red';
+                codeInput.style.borderColor = 'red';
+                codeBtn.disabled = true;
+            }
+        } else if (code.length < 7) {
+            feedbackDiv.textContent = `还可输入 ${7 - code.length} 位`;
+            feedbackDiv.style.color = 'orange';
+            codeInput.style.borderColor = 'orange';
+        } else {
+            codeBtn.disabled = true;
+        }
+    });
+    codeBtn.addEventListener('click', function() {
+       codeInput.value = '';
+       feedbackDiv.textContent = '';
+       codeInput.style.borderColor = '';
+    });
+    codeBtn.disabled = true;
+    codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
+
+    window.addEventListener('resize', debounce(handleResize, 200));
+    handleResize(); 
+
+    skipOutroBtn.addEventListener('click', () => handleCloseGame('level'));
+});
+
+undoBtn.onclick = function(){
+  if(game.toolUses.undo > 0 && game.stepStack.length > 0){
+    undoStep();
+    game.toolUses.undo--;
+    updateToolButtons();
+  } else if (game.toolUses.undo > 0 && game.stepStack.length === 0) {
+    showMessage('无法撤销更多', '#888');
+  }
+};
+hintBtn.onclick = function(){
+  if(game.toolUses.hint > 0){
+    hintStep();
+    game.toolUses.hint--;
+    updateToolButtons();
+  }
+};
+shuffleBtn.onclick = function(){
+  if(game.toolUses.shuffle > 0){
+    shuffleStep();
+    game.toolUses.shuffle--;
+    updateToolButtons();
+  }
+};
+restartCurrentLevelBtn.onclick = () => showConfirm('确定要重新开始当前关卡吗？', () => {
+    stopRandomEvents();
+    stopCurtainRandomToggle();
+    stopDecorationUpdates(); // --- DECORATION: Stop interval
+    startGame(game.level);
+    showMessage('关卡已重新开始！', '#3e5a2b');
+});
+codeBtn.onclick = function(){
+  let val = codeInput.value.trim().toLowerCase();
+  if (REDEMPTION_CODES[val]) {
+    const rewards = REDEMPTION_CODES[val];
+    if (rewards.type === "skip_level") {
+      game.board.forEach(card => card.matched = true);
+      game.score = game.targetScore;
+      renderBoard();
+      renderProgressAndScore();
+      checkWin();
+      showMessage(`兑换成功！当前关卡已跳过！`, "#3e5a2b");
+    } else if (rewards.type === "curtain_off") { // NEW: Handle "xianshi" code
+        game.isCurtainEnabled = false;
+        toggleCurtain(true); // Immediately open the curtain
+        stopCurtainRandomToggle(); // Stop random toggling for this level
+        showMessage(`兑换成功！幕布已在本关卡关闭！`, "#3e5a2b");
+    }
+    else {
+      game.toolUses.undo += rewards.undo;
+      game.toolUses.hint += rewards.hint;
+      game.toolUses.shuffle += rewards.shuffle;
+      showMessage(`兑换成功！获得撤销x${rewards.undo}, 提示x${rewards.hint}, 洗牌x${rewards.shuffle}`, "#3e5a2b");
+    }
+    updateToolButtons();
+  } else {
+    showMessage('兑换码错误', "#c0392b");
+  }
+  codeInput.value = '';
+};
+musicToggleBtn.onclick = function(){
+  game.bgmOn = !game.bgmOn;
+  this.innerHTML = game.bgmOn ? '🎼' : '🔇';
+  playBgm(game.bgmOn);
+};
+startBtn.onclick = function(){
+  document.getElementById('start-screen').style.display = 'none';
+  // Initialize Web Audio API on first user interaction.
+  // This is crucial for browser compatibility.
+  initAudio(); 
+  startGame(1);
+};
+nextBtn.onclick = function(){
+  document.getElementById('level-finish').style.display = 'none';
+  startGame(2);
+};
+retryBtnLevelFinish.onclick = function(){
+  document.getElementById('level-finish').style.display = 'none';
+  startGame(game.level);
+};
+retryBtnGameOver.onclick = function(){
+  document.getElementById('game-over').style.display = 'none';
+  startGame(game.level);
+};
+gobangBtn.onclick = () => window.open('https://www.kaiyuanzhu.qzz.io/kaiyuan/', '_blank');
+restartGameBtn.onclick = () => window.location.href = 'https://www.kaiyuanzhu.qzz.io/cat/';
+closeGameBtnLevel.onclick = () => handleCloseGame('level');
+closeGameBtnGameOver.onclick = () => handleCloseGame('gameover');
+
+// MODIFIED: Replaced the old loading screen function with a robust, sequential asset loader.
+// This function now only loads essential assets for the initial game experience.
+// Other assets like BGM are loaded via Web Audio API on first user interaction.
+function initializeRealisticLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    const progressBar = document.getElementById('progress-bar');
+    const loadingText = document.getElementById('loading-text');
+    const LOAD_TIMEOUT = 5000; // 5 seconds timeout for each asset
+
+    // OPTIMIZED: Added BGM to the initial asset load list.
+    const assetsToLoad = [
+        { type: 'image', src: 'me.png', name: '图标' },
+        { type: 'image', src: 'mao3.webp', name: '加载背景' },
+        { type: 'image', src: 'mao1.webp', name: '通关背景' },
+        { type: 'image', src: 'mao.webp', name: '开始背景' },
+        { type: 'image', src: 'cat1.webp', name: '游戏背景' },
+        { type: 'video', src: 'mao.mp4', name: '开始动画' },
+        { type: 'video', src: 'mao2.mp4', name: '彩蛋视频' },
+        { type: 'image', src: 'mao2.webp', name: '彩蛋图片' },
+        { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
+        { type: 'audio', src: 'Get.mp3', name: '背景音乐' } // BGM is now pre-fetched here
+    ];
+
+    let assetsLoaded = 0;
+    const totalAssets = assetsToLoad.length;
+
+    const updateProgress = () => {
+        assetsLoaded++;
+        const progress = (assetsLoaded / totalAssets) * 100;
+        progressBar.style.width = progress + '%';
+
+        if (assetsLoaded === totalAssets) {
+            loadingText.textContent = '完成!';
+            setTimeout(() => {
+                loadingScreen.style.opacity = '0';
+                loadingScreen.addEventListener('transitionend', () => {
+                    loadingScreen.style.display = 'none';
+                    document.title = "喵了个喵";
+                    initializeGame();
+                }, { once: true });
+            }, 400);
+        } else {
+            // Start loading the next asset
+            loadNextAsset();
+        }
+    };
+
+    const loadAsset = (asset) => {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error(`Timeout loading ${asset.src}`));
+            }, LOAD_TIMEOUT);
+
+            const successHandler = () => {
+                clearTimeout(timeoutId);
+                resolve();
+            };
+
+            const errorHandler = () => {
+                clearTimeout(timeoutId);
+                reject(new Error(`Failed to load ${asset.src}`));
+            };
+            
+            switch (asset.type) {
+                case 'image':
+                    const img = new Image();
+                    img.onload = successHandler;
+                    img.onerror = errorHandler;
+                    img.src = asset.src;
+                    break;
+                case 'audio':
+                    // For audio, we just need to ensure it's fetched to be cached by the browser.
+                    // The <audio> tag or Web Audio API will handle the actual playback.
+                    fetch(asset.src)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            return response.blob(); // Fetch as blob to confirm download
+                        })
+                        .then(() => successHandler())
+                        .catch(errorHandler);
+                    break;
+                case 'video':
+                    const video = document.createElement('video');
+                    video.addEventListener('canplaythrough', successHandler, { once: true });
+                    video.onerror = errorHandler;
+                    video.src = asset.src;
+                    video.load(); // Start loading the video
+                    break;
+            }
+        });
+    };
+
+    const loadNextAsset = async () => {
+        if (assetsLoaded >= totalAssets) return;
+
+        const asset = assetsToLoad[assetsLoaded];
+        loadingText.textContent = `正在加载 ${asset.name}... (${assetsLoaded + 1}/${totalAssets})`;
+        
+        try {
+            await loadAsset(asset);
+        } catch (error) {
+            console.error(error.message);
+            // Even if an asset fails, we continue to the next one
+        } finally {
+            updateProgress();
+        }
+    };
+
+    // Start the sequential loading process
+    loadNextAsset();
+}
+
+
+function attemptVideoAutoplay() {
+    const video = document.getElementById('start-screen-video');
+    if (!video) return;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log("Video direct play failed, waiting for user interaction.", error);
+            document.body.addEventListener('touchstart', function onFirstTouch() {
+                video.play().catch(e => console.error("Video playback failed after touch:", e));
+                document.body.removeEventListener('touchstart', onFirstTouch);
+            }, { once: true });
+        });
+    }
+    if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
+        WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed in WeixinJSBridge:", err)));
+    } else {
+        document.addEventListener("WeixinJSBridgeReady", () => WeixinJSBridge.invoke('getNetworkType', {}, e => WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed on WeixinJSBridgeReady:", err)))), false);
+    }
+}
+
+function positionCatWalker() {
+    const displayArea = document.getElementById('display-area');
+    const catPath = document.getElementById('cat-path');
+    const mainArea = document.getElementById('main-area');
+    if (!displayArea || !catPath || !mainArea) return;
+    const displayAreaBottomRelativeToMainArea = displayArea.offsetTop + displayArea.offsetHeight;
+    catPath.style.top = `${displayAreaBottomRelativeToMainArea}px`;
+    catPath.style.width = `${mainArea.offsetWidth}px`;
+}
+
+function positionWigglingCat(wigglingCatEl, slotIndex) {
+    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+    const cardStackArea = document.getElementById('card-stack-area');
+    const mainArea = document.getElementById('main-area');
+    if (!wigglingCatEl || tempSlots.length === 0 || !cardStackArea || !mainArea || slotIndex < 0 || slotIndex >= tempSlots.length) {
+        if(wigglingCatEl) wigglingCatEl.style.display = 'none';
+        return;
+    }
+    const targetTempSlot = tempSlots[slotIndex];
+    const cardStackRect = cardStackArea.getBoundingClientRect();
+    const targetTempSlotRect = targetTempSlot.getBoundingClientRect();
+    const mainAreaRect = mainArea.getBoundingClientRect();
+    const gapMidpointAbsolute = cardStackRect.bottom + (targetTempSlotRect.top - cardStackRect.bottom) / 2;
+    const topRelativeToMainArea = gapMidpointAbsolute - mainAreaRect.top;
+    const leftRelativeToMainArea = (targetTempSlotRect.left + targetTempSlot.offsetWidth / 2) - mainAreaRect.left;
+    wigglingCatEl.style.top = `${topRelativeToMainArea - (wigglingCatEl.offsetHeight / 2)}px`;
+    wigglingCatEl.style.left = `${leftRelativeToMainArea}px`;
+    wigglingCatEl.style.display = 'block';
+}
+
+function hideWigglingCats() {
+    wigglingCat1.style.display = 'none';
+    wigglingCat4.style.display = 'none';
+    wigglingCat7.style.display = 'none';
+}
+
+function updateWigglingCatVisibility() {
+    if (game.score >= game.targetScore) {
+        positionWigglingCat(wigglingCat1, 0);
+        positionWigglingCat(wigglingCat4, 3);
+        positionWigglingCat(wigglingCat7, 6);
+    } else {
+        hideWigglingCats();
+    }
+}
+
+function playLevel2Outro() {
+    game.lock = true;
+    playBgm(false);
+    level2OutroScreen.style.display = 'flex';
+    outroLoadingText.style.display = 'block';
+    skipOutroBtn.style.display = 'block';
+    outroVideo.style.display = 'none';
+    outroImage.style.display = 'none';
+
+    const finalCloseAction = () => handleCloseGame('level');
+
+    outroVideoTimeout = setTimeout(() => {
+        outroVideo.style.display = 'none';
+        outroImage.style.display = 'block';
+        outroLoadingText.textContent = '视频无法播放，显示图片...';
+        setTimeout(finalCloseAction, 3000);
+    }, 7000); // Timeout for video playback
+
+    outroVideo.load();
+    const playPromise = outroVideo.play();
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            outroVideo.style.display = 'block';
+            outroLoadingText.style.display = 'none';
+            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        }).catch(error => {
+            // If video autoplay fails, show image immediately
+            outroVideo.style.display = 'none';
+            outroImage.style.display = 'block';
+            outroLoadingText.textContent = '视频无法播放，显示图片...';
+            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+            setTimeout(finalCloseAction, 3000);
+        });
+    }
+    outroVideo.onended = () => {
+        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        finalCloseAction();
+    };
+    outroVideo.onerror = (e) => {
+        // If video loading or playback encounters an error, show image
+        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        outroVideo.style.display = 'none';
+        outroImage.style.display = 'block';
+        outroLoadingText.textContent = '视频加载失败，显示图片...';
+        setTimeout(finalCloseAction, 3000);
+    };
+}
+
+function debounce(func, delay) {
+  let timeout;
+  return function() {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+</script>
+</body>
+</html>
