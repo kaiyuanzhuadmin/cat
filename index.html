@@ -1597,7 +1597,7 @@ let game = {
   stepStack: [],
   bgmOn: true,
   isNewLevel: false,
-  lock: false, // Kept for some complex operations, but removed from clickCard
+  lock: false,
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
   layout: { areaWidth: 0, areaHeight: 0 },
   isCurtainEnabled: true
@@ -1863,7 +1863,6 @@ function genLevel(levelIdx){
   return {cards: game.cards, board: game.board, usedIcons: availableIcons.slice(0, Math.ceil(lv.total/3))};
 }
 
-// MODIFIED: isCardClickable function to check for flying state
 function isCardClickable(card, board){
   if(card.matched || card.isNapping || card.isFlying) return false;
   const activeCards = board.filter(c => !c.matched);
@@ -1884,7 +1883,6 @@ function isCardClickable(card, board){
   return true;
 }
 
-// MODIFIED: clickCard function for constant speed animation and no game lock
 function clickCard(id) {
   let cardData = game.board.find(c => c.id === id);
   if (!cardData || cardData.matched || cardData.isFlying || !isCardClickable(cardData, game.board)) {
@@ -1903,17 +1901,16 @@ function clickCard(id) {
   }
 
   saveStep();
-  cardData.isFlying = true; // Mark card as being animated
+  cardData.isFlying = true;
 
   const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
   if (!clickedCardEl) {
-    cardData.isFlying = false; // Reset state if element not found
+    cardData.isFlying = false;
     return;
   }
 
   const startRect = clickedCardEl.getBoundingClientRect();
   
-  // Create the flying card element
   const flyingCard = document.createElement('div');
   flyingCard.className = 'flying-card';
   flyingCard.innerHTML = cardData.icon;
@@ -1926,11 +1923,9 @@ function clickCard(id) {
   flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
   flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
 
-  // Hide the original card
-  clickedCardEl.style.opacity = '0';
-  clickedCardEl.style.pointerEvents = 'none';
+  // MODIFIED: Hide the original card instantly for a smoother animation start
+  clickedCardEl.style.visibility = 'hidden';
   
-  // Calculate destination and animation duration
   const tempForPositionCalculation = [...game.temp, { icon: cardData.icon, id: cardData.id }];
   tempForPositionCalculation.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
   const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
@@ -1940,6 +1935,7 @@ function clickCard(id) {
       console.error("Invalid end slot index for flying card. Aborting animation.");
       if(flyingCard.parentNode) document.body.removeChild(flyingCard);
       cardData.isFlying = false;
+      clickedCardEl.style.visibility = 'visible'; // Make it visible again
       return;
   }
   
@@ -1950,12 +1946,10 @@ function clickCard(id) {
   const dx = (endRect.left + endRect.width / 2) - (startRect.left + startRect.width / 2);
   const dy = (endRect.top + endRect.height / 2) - (startRect.top + startRect.height / 2);
   const distance = Math.sqrt(dx * dx + dy * dy);
-  const animationDuration = Math.max(200, (distance / FLYING_SPEED_PPS) * 1000); // Duration in ms
+  const animationDuration = Math.max(200, (distance / FLYING_SPEED_PPS) * 1000);
 
-  // Set dynamic transition duration
   flyingCard.style.transitionDuration = `${animationDuration}ms`;
 
-  // Trigger the animation
   requestAnimationFrame(() => {
     const destLeft = endRect.left + (endRect.width - flyingCardFinalWidth) / 2;
     const destTop = endRect.top + (endRect.height - flyingCardFinalWidth / (startRect.width / startRect.height)) / 2;
@@ -1964,13 +1958,11 @@ function clickCard(id) {
     flyingCard.style.transform = `scale(${flyingCardFinalWidth / startRect.width})`;
   });
 
-  // Post-animation logic
   setTimeout(() => {
     if (flyingCard.parentNode) document.body.removeChild(flyingCard);
 
-    // Update game state
     cardData.matched = true;
-    delete cardData.isFlying; // Clean up the state property
+    delete cardData.isFlying;
     game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
     game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
     
@@ -1979,7 +1971,6 @@ function clickCard(id) {
     renderProgressAndScore();
     updateWigglingCatVisibility();
 
-    // Check for match
     let iconCnt = {};
     game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
     let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
@@ -2255,9 +2246,12 @@ function startGame(level){
 
 function renderBoard(){
   const area = document.getElementById('card-stack-area');
+  // MODIFIED: Clear only cards, not other elements like the lid
   area.querySelectorAll('.card').forEach(c => c.remove());
+
   let cardsToRender = game.board.filter(c => !c.matched);
   cardsToRender.sort((a, b) => a.z - b.z);
+
   cardsToRender.forEach((card) => {
     let el = document.createElement('div');
     const clickable = isCardClickable(card, game.board);
@@ -2273,7 +2267,10 @@ function renderBoard(){
     el.style.fontSize = `${game.cardDimensions.fontSize}px`;
     el.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
     el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
-    if(clickable) el.onclick = () => clickCard(card.id);
+    
+    // REMOVED: Individual onclick handlers are removed for event delegation.
+    // if(clickable) el.onclick = () => clickCard(card.id);
+    
     area.appendChild(el);
   });
   game.isNewLevel = false;
@@ -2682,7 +2679,7 @@ function handleDeviceMotion(event) {
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
-    // NEW: Prevent copy, paste, and cut
+    // Prevent copy, paste, and cut
     ['copy', 'paste', 'cut'].forEach(event => {
         document.addEventListener(event, e => e.preventDefault());
     });
@@ -2775,6 +2772,29 @@ document.addEventListener('DOMContentLoaded', function() {
 
     window.addEventListener('resize', debounce(handleResize, 200));
     handleResize(); 
+
+    // MODIFIED: Added event delegation for both touch and mouse events
+    cardStackArea.addEventListener('click', function(e) {
+        const cardEl = e.target.closest('.card:not(.disabled)');
+        if (cardEl && cardEl.dataset.id) {
+            const cardId = parseInt(cardEl.dataset.id, 10);
+            clickCard(cardId);
+        }
+    });
+
+    cardStackArea.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        Array.from(e.changedTouches).forEach(touch => {
+            const touchedEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (touchedEl) {
+                const cardEl = touchedEl.closest('.card:not(.disabled)');
+                if (cardEl && cardEl.dataset.id) {
+                    const cardId = parseInt(cardEl.dataset.id, 10);
+                    clickCard(cardId);
+                }
+            }
+        });
+    }, { passive: false });
 
     skipOutroBtn.addEventListener('click', () => handleCloseGame('level'));
 });
