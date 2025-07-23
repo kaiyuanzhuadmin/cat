@@ -2541,7 +2541,7 @@ const randomEvents = [
     { name: 'giftOffering', func: eventGiftOffering, weight: 2 }
 ];
 function startRandomEvents() {
-    stopRandomEvents();
+    stopRandomEvents(); // Ensure no multiple timers are running
     randomEventTimer = setInterval(() => {
         if (game.lock || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') return;
         const weightedList = [];
@@ -2729,6 +2729,11 @@ document.addEventListener('DOMContentLoaded', function() {
             const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
             if (game.bgmOn && !isGameEndScreenVisible) {
                 playBgm(true);
+            }
+            // MODIFIED: Re-render the entire game state when tab becomes visible
+            // to ensure UI is in sync with the game logic.
+            if (!isGameEndScreenVisible && document.getElementById('start-screen').style.display === 'none') {
+                renderAll();
             }
         }
     });
