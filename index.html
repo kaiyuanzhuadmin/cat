@@ -968,8 +968,9 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      align-items: center;
-      justify-content: center;
+      align-items: center; /* 水平居中保持不变 */
+      /* 移除 justify-content: center，改用距离顶部40% */
+      margin-top: 1%; /* 距离顶部1%（相对于父元素高度） */
       animation: wave 2s infinite;
     }
     .cloud-layer {
