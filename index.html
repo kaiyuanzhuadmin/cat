@@ -1598,6 +1598,7 @@ let game = {
   bgmOn: true,
   isNewLevel: false,
   lock: false,
+  flyingCardCount: 0, // NEW: Counter for cards in animation
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
   layout: { areaWidth: 0, areaHeight: 0 },
   isCurtainEnabled: true
@@ -1883,29 +1884,37 @@ function isCardClickable(card, board){
   return true;
 }
 
+// MODIFIED: clickCard function with robust state checking
 function clickCard(id) {
   let cardData = game.board.find(c => c.id === id);
   if (!cardData || cardData.matched || cardData.isFlying || !isCardClickable(cardData, game.board)) {
     return;
   }
 
-  playClickSound();
-
-  let tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
-  let iconCntCheck = {};
+  // Create a hypothetical temporary array to check for potential matches
+  const tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
+  const iconCntCheck = {};
   tempCheck.forEach(c => iconCntCheck[c.icon] = (iconCntCheck[c.icon] || 0) + 1);
-  let matchedIconCheck = Object.keys(iconCntCheck).find(k => iconCntCheck[k] === 3);
-  if (game.temp.length >= TEMP_LIMIT && !matchedIconCheck) {
+  const wouldCreateMatch = Object.keys(iconCntCheck).some(k => iconCntCheck[k] === 3);
+
+  // Check for game over condition, considering cards currently in flight
+  const futureOccupiedSlots = game.temp.length + game.flyingCardCount + 1;
+  if (futureOccupiedSlots > TEMP_LIMIT && !wouldCreateMatch) {
       gameOver('暂存区已超限，游戏失败！');
       return;
   }
 
+  // If the move is valid, proceed
+  playClickSound();
   saveStep();
+  
   cardData.isFlying = true;
+  game.flyingCardCount++; // Increment counter for flying card
 
   const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
   if (!clickedCardEl) {
     cardData.isFlying = false;
+    game.flyingCardCount--; // Decrement if element not found
     return;
   }
 
@@ -1923,7 +1932,6 @@ function clickCard(id) {
   flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
   flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
 
-  // MODIFIED: Hide the original card instantly for a smoother animation start
   clickedCardEl.style.visibility = 'hidden';
   
   const tempForPositionCalculation = [...game.temp, { icon: cardData.icon, id: cardData.id }];
@@ -1935,7 +1943,8 @@ function clickCard(id) {
       console.error("Invalid end slot index for flying card. Aborting animation.");
       if(flyingCard.parentNode) document.body.removeChild(flyingCard);
       cardData.isFlying = false;
-      clickedCardEl.style.visibility = 'visible'; // Make it visible again
+      game.flyingCardCount--;
+      clickedCardEl.style.visibility = 'visible';
       return;
   }
   
@@ -1960,7 +1969,8 @@ function clickCard(id) {
 
   setTimeout(() => {
     if (flyingCard.parentNode) document.body.removeChild(flyingCard);
-
+    
+    game.flyingCardCount--; // Decrement counter as animation finishes
     cardData.matched = true;
     delete cardData.isFlying;
     game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
@@ -2189,6 +2199,7 @@ function startGame(level){
   footer.style.display = 'block';
   game.level = level;
   game.levelStartTime = Date.now();
+  game.flyingCardCount = 0; // Reset flying card counter
   let lvData = genLevel(level);
   game.cards = lvData.cards;
   game.board = lvData.board;
@@ -2269,7 +2280,6 @@ function renderBoard(){
     el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
     
     // REMOVED: Individual onclick handlers are removed for event delegation.
-    // if(clickable) el.onclick = () => clickCard(card.id);
     
     area.appendChild(el);
   });
