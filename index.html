@@ -1744,24 +1744,23 @@ async function initAudio() {
  * @param {boolean} on - True to play, false to pause.
  */
 function playBgm(on) {
-    const bgmElement = document.getElementById('bgm');
-    if (on) {
-        // Set src only if not already set, to prevent re-loading
-        if (bgmElement.src.indexOf('Get.mp3') === -1) {
-           bgmElement.src = 'Get.mp3';
-        }
-        // The play() method returns a Promise, which should be handled.
-        const playPromise = bgmElement.play();
-        if (playPromise !== undefined) {
-            playPromise.catch(error => {
-                console.error("BGM playback failed:", error);
-                // Autoplay might be blocked, user interaction is needed.
-                // The music toggle button will still work.
-            });
-        }
-    } else {
-        bgmElement.pause();
+  const bgmElement = document.getElementById('bgm');
+  if (on) {
+    if (bgmElement.src.indexOf('Get.mp3') === -1) {
+      bgmElement.src = 'Get.mp3';
     }
+    // 添加这行代码来设置音量，0.2 代表 30% 的音量
+    bgmElement.volume = 0.2; 
+    
+    const playPromise = bgmElement.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.log("BGM play failed, most likely due to browser autoplay policy.", error);
+      });
+    }
+  } else {
+    bgmElement.pause();
+  }
 }
 
 /**
