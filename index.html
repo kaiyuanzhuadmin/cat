@@ -444,20 +444,20 @@
     @keyframes cat-walk {
         0% { left: 0; transform: scaleX(1); }
         49% { transform: scaleX(1); }
-        50% { left: calc(100% - 95px); transform: scaleX(-1); }
+        50% { left: calc(100% - 135px); transform: scaleX(-1); }
         99% { transform: scaleX(-1); }
         100% { left: 0; transform: scaleX(1); }
     }
 
     #walking-cat {
         position: absolute;
-        width: 95px; /* Adjusted width for GIF */
-        height: 71px; /* Adjusted height for GIF */
+        width: 191px; /* Adjusted width for GIF */
+        height: 143px; /* Adjusted height for GIF */
         display: flex;
         z-index: 10;
         align-items: center;
         justify-content: center;
-        top: -60px; /* Adjusted top for GIF */
+        top: -70px; /* Adjusted top for GIF */
         animation: cat-walk 15s linear infinite;
     }
     #walking-cat img {
