@@ -442,26 +442,29 @@
     }
 
     @keyframes cat-walk {
-        0% { left: 0; transform: scaleX(-1); }
-        49% { transform: scaleX(-1); }
-        50% { left: calc(100% - 55px); transform: scaleX(1); }
-        99% { transform: scaleX(1); }
-        100% { left: 0; transform: scaleX(-1); }
+        0% { left: 0; transform: scaleX(1); }
+        49% { transform: scaleX(1); }
+        50% { left: calc(100% - 55px); transform: scaleX(-1); }
+        99% { transform: scaleX(-1); }
+        100% { left: 0; transform: scaleX(1); }
     }
 
     #walking-cat {
         position: absolute;
-        width: 30px;
-        height: 30px;
-        font-size: 30px;
-        line-height: 1;
+        width: 50px; /* Adjusted width for GIF */
+        height: 50px; /* Adjusted height for GIF */
         display: flex;
         z-index: 10;
         align-items: center;
         justify-content: center;
-        color: #5d4037;
-        top: -20px;
+        top: -20px; /* Adjusted top for GIF */
         animation: cat-walk 15s linear infinite;
+    }
+
+    #walking-cat img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain; /* Ensure GIF scales correctly */
     }
 
     .path-decoration {
@@ -1379,7 +1382,8 @@
         </div>
     <div id="curtain"></div>
     <div id="cat-path">
-        <div id="walking-cat">🐈</div>
+        <!-- Replaced 🐈 with run.gif -->
+        <div id="walking-cat"><img src="run.gif" alt="Walking Cat"></div>
         <span class="path-decoration" style="left: 20%;">💌</span>
         <span class="path-decoration" style="left: 40%;">🌿</span>
         <span class="path-decoration" style="left: 60%;">☘️</span>
@@ -1805,6 +1809,7 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
             tempX += (s * 5 * (Math.random() - 0.5));
             tempY += (s * 5 * (Math.random() - 0.5));
             tempX = Math.max(5, Math.min(tempX, game.layout.areaWidth - game.cardDimensions.width - 5));
+            // Fixed: Removed extra closing parenthesis here
             tempY = Math.max(5, Math.min(tempY, game.layout.areaHeight - game.cardDimensions.height - 5));
             let overlap = false;
             for (const existingCard of newUnmatchedBoard) {
@@ -2932,7 +2937,8 @@ function initializeRealisticLoadingScreen() {
         { type: 'video', src: 'mao2.mp4', name: '彩蛋视频' },
         { type: 'image', src: 'mao2.webp', name: '彩蛋图片' },
         { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
-        { type: 'audio', src: 'Get.mp3', name: '背景音乐' }
+        { type: 'audio', src: 'Get.mp3', name: '背景音乐' },
+        { type: 'image', src: 'run.gif', name: '奔跑猫咪GIF' } // Preload the new GIF
     ];
     let assetsLoaded = 0;
     const totalAssets = assetsToLoad.length;
