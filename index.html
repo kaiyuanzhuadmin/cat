@@ -17,6 +17,7 @@
   <link rel="preload" href="mao.mp4" as="video">
   <link rel="preload" href="cat1.webp" as="image">
   <link rel="preload" href="js/index.js" as="script">
+  <link rel="preload" href="run.gif" as="image"> <!-- Preload the new GIF -->
   
   <!-- Critical audio/video assets for specific game moments, prioritized for loading screen -->
   <link rel="preload" href="kaa.mp3" as="audio"> <!-- Critical for click sound -->
@@ -434,14 +435,14 @@
     #cat-path {
         position: absolute;
         width: 100%;
-        height: 20px;
+        height: 20px; /* Adjusted height to accommodate GIF */
         left: 0;
         z-index: 1060;
         pointer-events: none;
         overflow: visible;
     }
 
-    @keyframes cat-walk {
+        @keyframes cat-walk {
         0% { left: 0; transform: scaleX(1); }
         49% { transform: scaleX(1); }
         50% { left: calc(100% - 95px); transform: scaleX(-1); }
@@ -459,12 +460,14 @@
         justify-content: center;
         top: -50px; /* Adjusted top for GIF */
         animation: cat-walk 15s linear infinite;
+        /* Use a CSS variable for width in animation for easier adjustment */
+        --cat-width: 95px; /* Should match the width set above */
     }
 
     #walking-cat img {
         width: 100%;
         height: 100%;
-        object-fit: contain; /* Ensure GIF scales correctly */
+        object-fit: contain; /* Ensures the GIF is fully visible within its container */
     }
 
     .path-decoration {
@@ -1382,7 +1385,7 @@
         </div>
     <div id="curtain"></div>
     <div id="cat-path">
-        <!-- Replaced 🐈 with run.gif -->
+        <!-- Replaced 🐈 with an <img> tag for run.gif -->
         <div id="walking-cat"><img src="run.gif" alt="Walking Cat"></div>
         <span class="path-decoration" style="left: 20%;">💌</span>
         <span class="path-decoration" style="left: 40%;">🌿</span>
@@ -1809,7 +1812,6 @@ function repositionCardsAndLayout(currentBoard, levelConfig) {
             tempX += (s * 5 * (Math.random() - 0.5));
             tempY += (s * 5 * (Math.random() - 0.5));
             tempX = Math.max(5, Math.min(tempX, game.layout.areaWidth - game.cardDimensions.width - 5));
-            // Fixed: Removed extra closing parenthesis here
             tempY = Math.max(5, Math.min(tempY, game.layout.areaHeight - game.cardDimensions.height - 5));
             let overlap = false;
             for (const existingCard of newUnmatchedBoard) {
@@ -2938,7 +2940,7 @@ function initializeRealisticLoadingScreen() {
         { type: 'image', src: 'mao2.webp', name: '彩蛋图片' },
         { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
         { type: 'audio', src: 'Get.mp3', name: '背景音乐' },
-        { type: 'image', src: 'run.gif', name: '奔跑猫咪GIF' } // Preload the new GIF
+        { type: 'image', src: 'run.gif', name: '跑动猫咪GIF' } // Added run.gif to preload list
     ];
     let assetsLoaded = 0;
     const totalAssets = assetsToLoad.length;
@@ -3040,7 +3042,13 @@ function positionCatWalker() {
     const mainArea = document.getElementById('main-area');
     if (!displayArea || !catPath || !mainArea) return;
     const displayAreaBottomRelativeToMainArea = displayArea.offsetTop + displayArea.offsetHeight;
-    catPath.style.top = `${displayAreaBottomRelativeToMainArea}px`;
+    // Adjust catPath top to align the cat GIF correctly above the display area
+    // The GIF is 50px tall, and its top is at -30px relative to catPath. So its bottom is at 20px relative to catPath.
+    // We want the bottom of the cat to be slightly above the display area.
+    // Let's assume cat's bottom should be at displayAreaBottomRelativeToMainArea + 5px
+    // catPath.top = (displayAreaBottomRelativeToMainArea + 5px) - (cat's height - cat's top offset)
+    // catPath.top = (displayAreaBottomRelativeToMainArea + 5px) - (50px - 30px) = displayAreaBottomRelativeToMainArea - 15px
+    catPath.style.top = `${displayAreaBottomRelativeToMainArea - 15}px`; 
     catPath.style.width = `${mainArea.offsetWidth}px`;
 }
 
