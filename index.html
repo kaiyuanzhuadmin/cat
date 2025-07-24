@@ -445,7 +445,7 @@
     @keyframes cat-walk {
         0% { left: 0; transform: scaleX(-1); }
         49% { transform: scaleX(-1); }
-        50% { left: calc(100% - 55px); transform: scaleX(1); }
+        50% { left: calc(100% - 85px); transform: scaleX(1); }
         99% { transform: scaleX(1); }
         100% { left: 0; transform: scaleX(-1); }
     }
@@ -460,18 +460,18 @@
         justify-content: center;
         color: #5d4037;
         top: -70px;
-        animation: cat-walk 15s linear infinite;
+        animation: cat-walk 18s linear infinite;
     }
 
     .path-decoration {
         position: absolute;
         bottom: -5px;
-        font-size: 23px;
+        font-size: 20px;
         transition: transform 0.2s ease-in-out;
         z-index: 9;
     }
     .path-decoration.shaking {
-        animation: gentle-shake 0.5s ease-in-out infinite alternate;
+        animation: gentle-shake 0.8s ease-in-out infinite alternate;
     }
     @keyframes gentle-shake {
         0% { transform: rotate(-2deg) scale(1.05); }
