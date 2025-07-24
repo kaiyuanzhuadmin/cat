@@ -11,6 +11,7 @@
   <!-- Preload of critical assets for immediate use -->
   <link rel="preload" href="mao3.webp" as="image">
   <link rel="preload" href="mao1.webp" as="image">
+  <link rel="preload" href="run.gif" as="image">
   <link rel="preload" href="font/iconfont.css" as="style">
   <link rel="preload" href="css/style.css" as="style">
   <link rel="preload" href="mao.webp" as="image">
@@ -451,16 +452,14 @@
 
     #walking-cat {
         position: absolute;
-        width: 30px;
-        height: 30px;
-        font-size: 30px;
-        line-height: 1;
+        width: 100px;
+        height: auto;
         display: flex;
         z-index: 10;
         align-items: center;
         justify-content: center;
         color: #5d4037;
-        top: -20px;
+        top: -70px;
         animation: cat-walk 15s linear infinite;
     }
 
@@ -1379,7 +1378,7 @@
         </div>
     <div id="curtain"></div>
     <div id="cat-path">
-        <div id="walking-cat">🐈</div>
+        <img id="walking-cat" src="run.gif"></div>
         <span class="path-decoration" style="left: 20%;">💌</span>
         <span class="path-decoration" style="left: 40%;">🌿</span>
         <span class="path-decoration" style="left: 60%;">☘️</span>
