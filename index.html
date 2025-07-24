@@ -550,7 +550,7 @@
         font-family: 'ZCOOL KuaiLe', cursive;
     }
     #card-stack-lid .lid-text-top {
-        font-size: 1.5rem;
+        font-size: 2rem;
         font-weight: bold;
     }
     #card-stack-lid .lid-emoji {
@@ -563,7 +563,7 @@
 
     #card-stack-area.level-starting #card-stack-lid {
         display: flex;
-        animation: lid-open 3s ease-in-out forwards;
+        animation: lid-open 4s ease-in-out forwards;
     }
     #card-stack-area.level-starting .card {
         visibility: hidden;
@@ -2218,7 +2218,7 @@ function startGame(level){
   lid.id = 'card-stack-lid';
   lid.innerHTML = `
       <div class="lid-text-top">卡片随机生成</div>
-      <div class="lid-emoji">✉️</div>
+      <div class="lid-emoji">🪳</div>
       <div class="lid-footer"><small>Coded & Designed by 开元</small></div>
   `;
   cardStackArea.appendChild(lid);
