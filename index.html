@@ -2229,6 +2229,10 @@ function gameOver(msg){
   targetScoreElement.textContent = '0';
   document.getElementById('message-bar').textContent = '';
   hideWigglingCats();
+
+  // MODIFIED: Remove any lingering flying cards when game over is triggered
+  document.querySelectorAll('.flying-card').forEach(card => card.remove());
+  game.flyingCardCount = 0; // Reset flying card count explicitly
   
   const gameOverScreen = document.getElementById('game-over');
   gameOverScreen.style.display = 'flex';
@@ -2291,6 +2295,9 @@ function startGame(level){
   game.level = level;
   game.levelStartTime = Date.now();
   game.flyingCardCount = 0; // Reset flying card counter
+  // MODIFIED: Ensure any existing flying cards are removed at the start of a new game/level
+  document.querySelectorAll('.flying-card').forEach(card => card.remove());
+
   let lvData = genLevel(level);
   game.cards = lvData.cards;
   game.board = lvData.board;
