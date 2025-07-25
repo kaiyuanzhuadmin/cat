@@ -716,7 +716,7 @@
       align-items: center;
       justify-content: center;
       user-select: none;
-      z-index: 10000;
+      z-index: 10000; /* This z-index is higher than game-over's 1100 */
       /* transition properties are now set by JS for dynamic duration */
       transition-property: top, left, transform;
       transition-timing-function: ease-out;
@@ -857,7 +857,7 @@
     #start-screen, #game-over {
       position: absolute;
       left: 0; right: 0; top: 0; bottom: 0;
-      z-index: 1100;
+      z-index: 1100; /* This z-index is lower than .flying-card (10000) */
       background: rgba(255,255,255,0.98);
       display: flex;
       align-items: center;
@@ -2033,20 +2033,6 @@ function clickCard(id) {
           }
       };
 
-      game.temp.forEach((c, index) => {
-          if (c.icon === matchedIcon) {
-              c.matched = true;
-              const slot = tempSlots[index];
-              if (slot) {
-                  const cardEl = slot.querySelector('.temp-card');
-                  if (cardEl) {
-                      cardEl.classList.add('disappearing');
-                      matchedElements.push(cardEl);
-                  }
-              }
-          }
-      });
-
       matchedElements.forEach(cardEl => {
           const slot = cardEl.closest('.temp-slot');
           if (slot) {
@@ -2099,38 +2085,47 @@ function clickCard(id) {
 }
 
 function checkWin() {
+    // 检查所有卡牌是否都已匹配（消除）
     const allCardsMatched = game.board.every(c => c.matched);
+    // 检查当前分数是否达到目标分数
     const scoreMet = game.score >= game.targetScore;
     
-    // Check for game over condition (temp area full and no match)
-    // This check is now correctly placed after a card has been added to temp
-    // and after any potential matches have been processed.
+    // 游戏失败条件1：暂存区已满且所有卡牌未被消除
+    // 这个检查在卡牌被添加到暂存区并且潜在的匹配处理后进行
     if (game.temp.length === TEMP_LIMIT && !allCardsMatched) { 
-        gameOver('暂存区已超限，游戏失败！');
-        return;
+        gameOver('暂存区已超限，游戏失败！'); // 调用游戏失败函数
+        return; // 结束函数执行
     }
 
+    // 游戏胜利条件：所有卡牌都已消除且分数达标
     if (allCardsMatched && scoreMet) {
-        stopRandomEvents();
-        stopCurtainRandomToggle();
-        stopDecorationUpdates();
-        game.lock = true;
-        const elapsedSeconds = ((Date.now() - game.levelStartTime) / 1000).toFixed(1);
-        const message = `本关过关用时 ${elapsedSeconds} 秒`;
+        stopRandomEvents(); // 停止随机事件
+        stopCurtainRandomToggle(); // 停止幕布随机开关
+        stopDecorationUpdates(); // 停止装饰更新
+        game.lock = true; // 锁定游戏操作
+        const elapsedSeconds = ((Date.now() - game.levelStartTime) / 1000).toFixed(1); // 计算用时
+        const message = `本关过关用时 ${elapsedSeconds} 秒`; // 胜利消息
+        
+        // 临时修改确认弹窗按钮文本和显示
         const originalYesText = confirmYes.textContent;
         const originalNoDisplay = confirmNo.style.display;
         confirmYes.textContent = '好的';
         confirmNo.style.display = 'none';
+        
+        // 显示确认弹窗，并在用户点击“好的”后显示关卡完成界面
         showConfirm(message, () => {
             if (game.level === 1) {
                 showLevelFinish('恭喜恭喜！第一关通关！');
             } else {
                 showLevelFinish('<p> <p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
             }
+            // 恢复确认弹窗按钮文本和显示
             confirmYes.textContent = originalYesText;
             confirmNo.style.display = originalNoDisplay;
         });
-    } else if (allCardsMatched && !scoreMet) {
+    } 
+    // 游戏失败条件2：所有卡牌都已消除，但分数未达标
+    else if (allCardsMatched && !scoreMet) {
         gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
     }
 }
@@ -2229,6 +2224,10 @@ function gameOver(msg){
   targetScoreElement.textContent = '0';
   document.getElementById('message-bar').textContent = '';
   hideWigglingCats();
+  
+  // 移除所有正在飞行的卡片，确保游戏结束界面在最上方
+  document.querySelectorAll('.flying-card').forEach(card => card.remove());
+  game.flyingCardCount = 0; // 重置飞行卡片计数器
   
   const gameOverScreen = document.getElementById('game-over');
   gameOverScreen.style.display = 'flex';
