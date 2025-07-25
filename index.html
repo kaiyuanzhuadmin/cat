@@ -1410,6 +1410,7 @@
       <button id="undo-btn" disabled title="撤销(需兑换码)">↩️ 撤销 (<span id="undo-count">0</span>)</button>
       <button id="hint-btn" disabled title="提示(需兑换码)">💡 提示 (<span id="hint-count">0</span>)</button>
       <button id="shuffle-btn" disabled title="洗牌(需兑换码)">🔀 洗牌 (<span id="shuffle-count">0</span>)</button>
+      <button id="revive-btn" disabled title="复活(需兑换码)">💖 复活 (<span id="revive-count">0</span>)</button> <!-- Added Revive Button -->
       <button id="restart-btn" title="重新开始当前关卡">🔄 重新开始</button>
     </div>
     <div id="code-bar">
@@ -1497,6 +1498,7 @@
     <div id="game-over-content">
         <div id="game-over-text"></div>
         <button id="retry-btn2">重试</button>
+        <button id="revive-btn-gameover" style="margin-left:10px; display:none;">💖 复活</button> <!-- Added Revive Button to Game Over Screen -->
         <button id="close-game-btn-gameover" style="margin-left:10px;">关闭游戏</button>
     </div>
   </div>
@@ -1521,7 +1523,7 @@
 <script>
 // Game configuration constants
 const CARD_ICONS = [
-  "🐈", "💐", "👒", "🏵️", "🧸", "🔮", "🎡", "🪭",
+  "🐈", "💐", "👒", "🏵️", "🧸", "🔮", "🎡", "🐈‍⬛", "🪭",
   "🐖", "🧶", "🌻", "💎", "🌈", "🍂", "🪷"
 ];
 const LEVELS = [
@@ -1540,7 +1542,8 @@ const REDEMPTION_CODES = {
   "不知道": { undo: 3, hint: 1, shuffle: 1 },
   "开元": { undo: 10, hint: 10, shuffle: 10 },
   "通关": { type: "skip_level" },
-  "xianshi": { type: "curtain_off" }
+  "xianshi": { type: "curtain_off" },
+  "shuaige": { revive: 3 } // Added new redemption code for revive
 };
 
 // DOM Elements
@@ -1562,6 +1565,8 @@ const closeGameBtnGameOver = document.getElementById('close-game-btn-gameover');
 const undoBtn = document.getElementById('undo-btn');
 const hintBtn = document.getElementById('hint-btn');
 const shuffleBtn = document.getElementById('shuffle-btn');
+const reviveBtn = document.getElementById('revive-btn'); // Added revive button
+const reviveBtnGameOver = document.getElementById('revive-btn-gameover'); // Added revive button for game over screen
 const restartCurrentLevelBtn = document.getElementById('restart-btn');
 const codeInput = document.getElementById('code-input');
 const codeBtn = document.getElementById('code-btn');
@@ -1611,7 +1616,7 @@ let game = {
   temp: [],
   matched: [],
   usedIcons: [],
-  toolUses: {undo: 0, hint: 0, shuffle: 0},
+  toolUses: {undo: 0, hint: 0, shuffle: 0, revive: 0}, // Added revive to toolUses
   score: 0,
   targetScore: 0,
   displayCards: [],
@@ -2224,12 +2229,61 @@ function gameOver(msg){
   targetScoreElement.textContent = '0';
   document.getElementById('message-bar').textContent = '';
   hideWigglingCats();
-  setTimeout(() => {
-    const gameOverScreen = document.getElementById('game-over');
-    gameOverScreen.style.display = 'flex';
-    gameOverScreen.querySelector('#game-over-text').innerHTML = msg;
-  }, 100);
+  
+  const gameOverScreen = document.getElementById('game-over');
+  gameOverScreen.style.display = 'flex';
+  gameOverScreen.querySelector('#game-over-text').innerHTML = msg;
+  
+  // Show revive button if available
+  if (game.toolUses.revive > 0) {
+      reviveBtnGameOver.style.display = 'inline-block';
+  } else {
+      reviveBtnGameOver.style.display = 'none';
+  }
 }
+
+function reviveGame() {
+    if (game.toolUses.revive <= 0) {
+        showMessage('没有复活卡了！', '#c0392b');
+        return;
+    }
+
+    showConfirm('确定要使用1次复活卡吗？这将撤销最后3步。', () => {
+        game.toolUses.revive--;
+        // Pop the last 3 steps, or fewer if not enough steps are available
+        for (let i = 0; i < 3; i++) {
+            if (game.stepStack.length > 0) {
+                game.stepStack.pop();
+            } else {
+                break; // No more steps to undo
+            }
+        }
+
+        // Revert to the state of the new last step, or initial state if stack is empty
+        if (game.stepStack.length > 0) {
+            let prev = game.stepStack[game.stepStack.length - 1]; // Get the state before the last 3 actions
+            game.board = deepClone(prev.board);
+            game.temp = deepClone(prev.temp);
+            game.score = prev.score;
+            game.displayCards = deepClone(prev.displayCards);
+            game.totalDisplaySetsGenerated = prev.totalDisplaySetsGenerated;
+        } else {
+            // If no steps left, restart the level
+            startGame(game.level); // This will reset everything for the current level
+            showMessage('复活成功！已回到本关初始状态。', '#3e5a2b');
+            return; // Exit as startGame will handle rendering
+        }
+        
+        document.getElementById('game-over').style.display = 'none'; // Hide game over screen
+        game.lock = false; // Unlock game interaction
+        renderAll(); // Re-render the game state
+        showMessage('复活成功！已撤销最后3步。', '#3e5a2b');
+        startRandomEvents(); // Restart random events
+        startCurtainRandomToggle(); // Restart curtain toggle
+        startDecorationUpdates(); // Restart decoration updates
+    });
+}
+
 
 function startGame(level){
   game.lock = true;
@@ -2243,7 +2297,9 @@ function startGame(level){
   game.usedIcons = lvData.usedIcons;
   game.temp = [];
   game.matched = [];
-  game.toolUses = {undo: 0, hint: 0, shuffle: 0};
+  game.toolUses.undo = 0; // Reset undo count for new game/level
+  game.toolUses.hint = 0; // Reset hint count for new game/level
+  game.toolUses.shuffle = 0; // Reset shuffle count for new game/level
   game.stepStack = [];
   game.isNewLevel = true;
   renderAll();
@@ -2448,6 +2504,8 @@ function updateToolButtons() {
   document.getElementById('undo-count').textContent = game.toolUses.undo;
   document.getElementById('hint-count').textContent = game.toolUses.hint;
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
+  document.getElementById('revive-count').textContent = game.toolUses.revive; // Update revive count
+
   const undoDisabledByCount = game.toolUses.undo <= 0;
   if (isLandscape) {
     undoBtn.disabled = true;
@@ -2458,6 +2516,7 @@ function updateToolButtons() {
   }
   hintBtn.disabled = game.toolUses.hint <= 0;
   shuffleBtn.disabled = game.toolUses.shuffle <= 0;
+  reviveBtn.disabled = game.toolUses.revive <= 0; // Disable revive button if count is 0
 }
 
 function renderAll(){
@@ -2596,8 +2655,8 @@ function eventCuriousPaw() {
     }, 800);
 }
 function eventGiftOffering() {
-    const tools = ['undo', 'hint', 'shuffle'];
-    const toolNames = { undo: '撤销', hint: '提示', shuffle: '洗牌' };
+    const tools = ['undo', 'hint', 'shuffle', 'revive']; // Added revive to tools list for random event
+    const toolNames = { undo: '撤销', hint: '提示', shuffle: '洗牌', revive: '复活卡' }; // Added revive tool name
     const randomTool = tools[Math.floor(Math.random() * tools.length)];
     game.toolUses[randomTool]++;
     updateToolButtons();
@@ -2895,6 +2954,9 @@ shuffleBtn.onclick = function(){
     updateToolButtons();
   }
 };
+reviveBtn.onclick = reviveGame; // Added event listener for revive button in tools bar
+reviveBtnGameOver.onclick = reviveGame; // Added event listener for revive button on game over screen
+
 restartCurrentLevelBtn.onclick = () => showConfirm('确定要重新开始当前关卡吗？', () => {
     stopRandomEvents();
     stopCurtainRandomToggle();
@@ -2920,10 +2982,11 @@ codeBtn.onclick = function(){
         showMessage(`兑换成功！幕布已在本关卡关闭！`, "#3e5a2b");
     }
     else {
-      game.toolUses.undo += rewards.undo;
-      game.toolUses.hint += rewards.hint;
-      game.toolUses.shuffle += rewards.shuffle;
-      showMessage(`兑换成功！获得撤销x${rewards.undo}, 提示x${rewards.hint}, 洗牌x${rewards.shuffle}`, "#3e5a2b");
+      game.toolUses.undo += (rewards.undo || 0);
+      game.toolUses.hint += (rewards.hint || 0);
+      game.toolUses.shuffle += (rewards.shuffle || 0);
+      game.toolUses.revive += (rewards.revive || 0); // Added revive reward
+      showMessage(`兑换成功！获得撤销x${rewards.undo || 0}, 提示x${rewards.hint || 0}, 洗牌x${rewards.shuffle || 0}, 复活卡x${rewards.revive || 0}`, "#3e5a2b");
     }
     updateToolButtons();
   } else {
