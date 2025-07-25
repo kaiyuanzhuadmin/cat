@@ -2640,6 +2640,7 @@ function showEventMessage(icon, text) {
     eventOverlay.style.display = 'flex';
     setTimeout(() => eventOverlay.style.display = 'none', 3500);
 }
+
 function eventCatNap() {
     const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
     if (clickableCards.length < 3) return;
@@ -2654,8 +2655,8 @@ function eventCatNap() {
     nappingCards.forEach(card => card.isNapping = true);
     renderBoard();
     game.lock = false;
-    // MODIFIED: Randomize napping duration between 1 and 5 seconds
-    const nappingDuration = randBetween(1000, 5000); // Random duration between 1 and 5 seconds
+    // MODIFIED: Randomize napping duration between 3 and 8 seconds
+    const nappingDuration = randBetween(3000, 8000); // Random duration between 3 and 8 seconds
     setTimeout(() => {
         nappingCards.forEach(card => {
             const boardCard = game.board.find(c => c.id === card.id);
@@ -2664,24 +2665,57 @@ function eventCatNap() {
         renderBoard();
     }, nappingDuration); // Use the random duration here
 }
+
 function eventCuriousPaw() {
-    const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
-    const unclickableCards = game.board.filter(c => !c.matched && !isCardClickable(c, game.board));
+    let clickableCards = game.board.filter(c => isCardClickable(c, game.board));
+    let unclickableCards = game.board.filter(c => !c.matched && !isCardClickable(c, game.board));
+
     if (clickableCards.length === 0 || unclickableCards.length === 0) return;
-    showEventMessage('🐾', '好奇的爪子...<br>一张可见卡牌和一张不可见卡牌的图标被交换了！');
+
+    // Determine how many pairs to swap (1 to 5)
+    const swapCount = Math.floor(Math.random() * 5) + 1;
+    const actualSwapCount = Math.min(swapCount, clickableCards.length, unclickableCards.length);
+
+    if (actualSwapCount === 0) return;
+
+    showEventMessage('🐾', `好奇的爪子...<br>${actualSwapCount}对可见与不可见卡牌的图标被交换了！`);
     game.lock = true;
-    const card1 = clickableCards[Math.floor(Math.random() * clickableCards.length)];
-    const card2 = unclickableCards[Math.floor(Math.random() * unclickableCards.length)];
-    [card1.icon, card2.icon] = [card2.icon, card1.icon];
-    const card1El = document.querySelector(`.card[data-id='${card1.id}']`);
-    const card2El = document.querySelector(`.card[data-id='${card2.id}']`);
-    if (card1El) card1El.classList.add('hinted-shake');
-    if (card2El) card2El.classList.add('hinted-shake');
+
+    const swappedElements = [];
+
+    for (let i = 0; i < actualSwapCount; i++) {
+        // Pick a random clickable card
+        const clickableIndex = Math.floor(Math.random() * clickableCards.length);
+        const card1 = clickableCards[clickableIndex];
+
+        // Pick a random unclickable card
+        const unclickableIndex = Math.floor(Math.random() * unclickableCards.length);
+        const card2 = unclickableCards[unclickableIndex];
+
+        // Swap icons
+        if(card1 && card2) {
+            [card1.icon, card2.icon] = [card2.icon, card1.icon];
+        }
+
+        // Animate the swapped cards
+        const card1El = document.querySelector(`.card[data-id='${card1.id}']`);
+        const card2El = document.querySelector(`.card[data-id='${card2.id}']`);
+        if (card1El) swappedElements.push(card1El);
+        if (card2El) swappedElements.push(card2El);
+
+        // Remove the swapped cards from the pools to avoid picking them again
+        clickableCards.splice(clickableIndex, 1);
+        unclickableCards.splice(unclickableIndex, 1);
+    }
+
+    swappedElements.forEach(el => el.classList.add('hinted-shake'));
+
     setTimeout(() => {
-        renderBoard();
+        renderBoard(); // Re-render the board to show the icon changes
         game.lock = false;
     }, 800);
 }
+
 function eventGiftOffering() {
     const tools = ['undo', 'hint', 'shuffle', 'revive']; // Added revive to tools list for random event
     const toolNames = { undo: '撤销', hint: '提示', shuffle: '洗牌', revive: '复活卡' }; // Added revive tool name
@@ -2690,6 +2724,7 @@ function eventGiftOffering() {
     updateToolButtons();
     showEventMessage('🎁', `猫咪送来了礼物！<br>获得1次免费<b>${toolNames[randomTool]}</b>！`);
 }
+
 const randomEvents = [
     { name: 'catNap', func: eventCatNap, weight: 3 },
     { name: 'curiousPaw', func: eventCuriousPaw, weight: 3 },
