@@ -1523,7 +1523,7 @@
 <script>
 // Game configuration constants
 const CARD_ICONS = [
-  "🐈", "💐", "👒", "🏵️", "🧸", "🔮", "🎡", "🐈‍⬛", "🪭",
+  "🐈", "💐", "👒", "🏵️", "🧸", "🔮", "🎡", "🪭",
   "🐖", "🧶", "🌻", "💎", "🌈", "🍂", "🪷"
 ];
 const LEVELS = [
@@ -2099,6 +2099,14 @@ function clickCard(id) {
 }
 
 function checkWin() {
+    // MODIFIED: Add an early exit if a game end screen is already visible
+    const levelFinishScreen = document.getElementById('level-finish');
+    const gameOverScreen = document.getElementById('game-over');
+    if (levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex') {
+        // A game end screen is already active, do not proceed with win/lose checks
+        return;
+    }
+
     const allCardsMatched = game.board.every(c => c.matched);
     const scoreMet = game.score >= game.targetScore;
     
@@ -2183,7 +2191,7 @@ function hintStep(){
   let allAvailableIcons = [...tempIcons, ...clickableBoardIcons];
   let iconCounts = {};
   allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
-  let targetIcon = Object.keys(iconCounts).find(icon => iconCounts[icon] >= 3);
+  let targetIcon = Object.keys(iconCnt).find(icon => iconCnt[icon] >= 3);
   document.querySelectorAll('.hinted-shake').forEach(el => el.classList.remove('hinted-shake'));
   if (targetIcon) {
     let hintDone = 0;
@@ -2550,7 +2558,7 @@ function showLevelFinish(msg){
   }
   level2OutroScreen.style.display = 'none';
   skipOutroBtn.style.display = 'none';
-  game.lock = false;
+  // game.lock = false; // 移除这行，保持游戏锁定状态
   const levelFinishScreen = document.getElementById('level-finish');
   levelFinishScreen.style.display='flex';
   levelFinishTextElement.innerHTML = msg;
