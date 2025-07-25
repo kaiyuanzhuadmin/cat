@@ -1915,19 +1915,8 @@ function clickCard(id) {
     return;
   }
 
-  // 2. Pre-flight checks for game over condition
-  const tempCheck = [...game.temp, { icon: cardData.icon, id: cardData.id }];
-  const iconCntCheck = {};
-  tempCheck.forEach(c => iconCntCheck[c.icon] = (iconCntCheck[c.icon] || 0) + 1);
-  const wouldCreateMatch = Object.keys(iconCntCheck).some(k => iconCntCheck[k] === 3);
-
-  // Check for game over condition, considering cards currently in flight
-  // The +1 is for the current card being clicked.
-  const futureOccupiedSlots = game.temp.length + game.flyingCardCount + 1; 
-  if (futureOccupiedSlots > TEMP_LIMIT && !wouldCreateMatch) {
-      gameOver('暂存区已超限，游戏失败！');
-      return;
-  }
+  // 2. Pre-flight checks for game over condition (Removed the premature game over check here)
+  // The game over check for temp area full will now happen in checkWin() after card placement.
 
   // 3. If the move is valid, proceed: Update game state immediately.
   playClickSound();
@@ -2035,7 +2024,7 @@ function clickCard(id) {
               game.temp = game.temp.filter(c => !c.matched);
               renderTemp();
               renderBoard(); // Re-render board after temp cleanup to update disabled states
-              checkWin();
+              checkWin(); // Call checkWin after potential match cleanup
           }
       };
 
@@ -2099,7 +2088,7 @@ function clickCard(id) {
           }
       });
     } else {
-      checkWin();
+      checkWin(); // Call checkWin if no match was made
     }
   }, animationDuration);
 }
@@ -2107,6 +2096,15 @@ function clickCard(id) {
 function checkWin() {
     const allCardsMatched = game.board.every(c => c.matched);
     const scoreMet = game.score >= game.targetScore;
+    
+    // Check for game over condition (temp area full and no match)
+    // This check is now correctly placed after a card has been added to temp
+    // and after any potential matches have been processed.
+    if (game.temp.length === TEMP_LIMIT && !allCardsMatched) { 
+        gameOver('暂存区已超限，游戏失败！');
+        return;
+    }
+
     if (allCardsMatched && scoreMet) {
         stopRandomEvents();
         stopCurtainRandomToggle();
