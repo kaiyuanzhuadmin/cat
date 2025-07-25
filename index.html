@@ -1893,7 +1893,7 @@ function genLevel(levelIdx){
 }
 
 function isCardClickable(card, board){
-  if(card.matched || card.isNapping || card.isFlying) return false;
+  if(card.matched || card.isFlying || card.isNapping) return false; // Added card.isNapping check
   const activeCards = board.filter(c => !c.matched && !c.isFlying); // Filter out matched and flying cards when checking for coverage
   const cardW = game.cardDimensions.width;
   const cardH = game.cardDimensions.height;
@@ -1935,7 +1935,7 @@ function clickCard(id) {
 
   const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
   if (!clickedCardEl) {
-    // If the element is somehow already gone, revert state and return.
+    // If the element is somehow already gone, revert state and then return.
     cardData.matched = false; // Revert matched state if element not found
     cardData.isFlying = false;
     game.flyingCardCount--;
@@ -2164,6 +2164,7 @@ function undoStep(){
     game.totalDisplaySetsGenerated = prev.totalDisplaySetsGenerated;
     renderAll();
     showMessage('已撤销');
+    updateToolButtons(); // Ensure tool buttons are updated after undo
     updateWigglingCatVisibility();
   } else {
     showMessage('无法撤销更多', '#888');
@@ -2191,11 +2192,17 @@ function hintStep(){
   let allAvailableIcons = [...tempIcons, ...clickableBoardIcons];
   let iconCounts = {};
   allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
-  let targetIcon = Object.keys(iconCnt).find(icon => iconCnt[icon] >= 3);
+  // Fixed typo: changed iconCnt to iconCounts
+  let targetIcon = Object.keys(iconCounts).find(icon => iconCounts[icon] >= 3);
+  
+  // Remove any existing hinted-shake classes before applying new ones
   document.querySelectorAll('.hinted-shake').forEach(el => el.classList.remove('hinted-shake'));
+
   if (targetIcon) {
     let hintDone = 0;
     const hintedElements = [];
+
+    // Highlight cards in temp area
     for (let i = 0; i < game.temp.length && hintDone < 3; i++) {
       if (game.temp[i].icon === targetIcon && !game.temp[i].matched) {
         const tempCardElement = document.querySelectorAll('#temp-area .temp-slot .temp-card')[i];
@@ -2206,6 +2213,8 @@ function hintStep(){
         }
       }
     }
+
+    // Highlight cards on the board
     for (let i = 0; i < clickableBoardCards.length && hintDone < 3; i++) {
       let boardCard = clickableBoardCards[i];
       if (boardCard.icon === targetIcon) {
@@ -2217,7 +2226,9 @@ function hintStep(){
         }
       }
     }
+    
     showMessage('已提示可消除三张');
+    // Remove the shake animation after a short delay
     setTimeout(() => hintedElements.forEach(el => el.classList.remove('hinted-shake')), 2000);
   } else {
     showMessage('当前无可三消', "#888");
@@ -2643,13 +2654,15 @@ function eventCatNap() {
     nappingCards.forEach(card => card.isNapping = true);
     renderBoard();
     game.lock = false;
+    // MODIFIED: Randomize napping duration between 1 and 5 seconds
+    const nappingDuration = randBetween(1000, 5000); // Random duration between 1 and 5 seconds
     setTimeout(() => {
         nappingCards.forEach(card => {
             const boardCard = game.board.find(c => c.id === card.id);
             if (boardCard) boardCard.isNapping = false;
         });
         renderBoard();
-    }, 10000);
+    }, nappingDuration); // Use the random duration here
 }
 function eventCuriousPaw() {
     const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
