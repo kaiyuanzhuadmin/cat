@@ -1532,7 +1532,7 @@ const LEVELS = [
 ];
 const TEMP_LIMIT = 7;
 const DISPLAY_CARD_MATCH_SCORE = 5;
-const INITIAL_DISPLAY_SETS_VISIBLE = 4;
+const INITIAL_DISPLAY_SETS_VISIBLE = 2;
 const FLYING_SPEED_PPS = 800; // Pixels per second for card animation
 
 const REDEMPTION_CODES = {
@@ -2672,8 +2672,8 @@ function eventCuriousPaw() {
 
     if (clickableCards.length === 0 || unclickableCards.length === 0) return;
 
-    // Determine how many pairs to swap (1 to 5)
-    const swapCount = Math.floor(Math.random() * 5) + 1;
+    // Determine how many pairs to swap (1 to 3)
+    const swapCount = Math.floor(Math.random() * 3) + 1;
     const actualSwapCount = Math.min(swapCount, clickableCards.length, unclickableCards.length);
 
     if (actualSwapCount === 0) return;
