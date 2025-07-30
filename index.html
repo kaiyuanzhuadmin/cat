@@ -21,7 +21,7 @@
   
   <!-- Critical audio/video assets for specific game moments, prioritized for loading screen -->
   <link rel="preload" href="kaa.mp3" as="audio"> <!-- Critical for click sound -->
-  <link rel="preload" href="lovers.mp3" as="audio"> <!-- Critical for BGM -->
+  <link rel="preload" href="Sukidakara.mp3" as="audio"> <!-- Critical for BGM -->
   <link rel="preload" href="mao2.mp4" as="video"> <!-- Critical for Level 2 outro -->
   <link rel="preload" href="mao2.webp" as="image"> <!-- Fallback image for Level 2 outro -->
 
@@ -1672,8 +1672,8 @@ async function initAudio() {
 function playBgm(on) {
   const bgmElement = document.getElementById('bgm');
   if (on) {
-    if (bgmElement.src.indexOf('lovers.mp3') === -1) {
-      bgmElement.src = 'lovers.mp3';
+    if (bgmElement.src.indexOf('Sukidakara.mp3') === -1) {
+      bgmElement.src = 'Sukidakara.mp3';
     }
     bgmElement.volume = 0.2; 
     const playPromise = bgmElement.play();
@@ -3099,7 +3099,7 @@ function initializeRealisticLoadingScreen() {
         { type: 'video', src: 'mao2.mp4', name: '彩蛋视频' },
         { type: 'image', src: 'mao2.webp', name: '彩蛋图片' },
         { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
-        { type: 'audio', src: 'lovers.mp3', name: '背景音乐' },
+        { type: 'audio', src: 'Sukidakara.mp3', name: '背景音乐' },
         { type: 'image', src: 'run.gif', name: '跑动猫咪GIF' } // Added run.gif to preload list
     ];
     let assetsLoaded = 0;
