@@ -22,6 +22,11 @@
     <link rel="preload" href="mao.mp4" as="video">
     <link rel="preload" href="mao2.mp4" as="video">
     <link rel="preload" href="mao2.webp" as="image">
+
+    <!-- Music Player Specific CSS -->
+    <link rel="stylesheet" href="font/iconfont.css">
+    <link rel="stylesheet" href="css/style.css">
+
     <style>
         /* Keyframe animations */
         @keyframes card-float-out {
@@ -616,16 +621,16 @@
         .card.disabled > *:not(.disabled::before) {
             opacity: 0.5;
         }
+        .card.matched {
+            opacity: 0.05;
+            transition: opacity 0.1s;
+            pointer-events: none;
+        }
         .card:not(.disabled):not(.matched):hover {
             transform: translateY(-5px) scale(1.05) rotate(2deg);
             box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.5);
             transition: transform 0.08s ease-out, box-shadow 0.05s ease-out;
             z-index: 2;
-        }
-        .card.matched {
-            opacity: 0.05;
-            transition: opacity 0.1s;
-            pointer-events: none;
         }
         .card .mini {
             font-size: 1.2rem;
@@ -1577,28 +1582,48 @@
         <div id="netease-player" class="responsive-video-container" style="display:none;">
             <iframe allow="encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="https://player.bilibili.com/player.html?isOutside=true&aid=114878413148199&bvid=BV1X9uQz6E6v&cid=31143166462&p=1"></iframe>
         </div>
+        <!-- Music Player HTML - Embedded from original index.html -->
         <div id="player" style="display:none;">
+            <!-- Song Info Module -->
             <div id="player-content1">
+                <!-- Song Name -->
                 <div class="music-name"></div>
+                <!-- Artist Name -->
                 <div class="artist-name"></div>
+                <!-- Song Time -->
                 <div class="time">
+                    <!-- Current Playback Time -->
                     <div class="current-time"></div>
+                    <!-- Total Song Duration -->
                     <div class="total-time"></div>
                 </div>
+                <!-- Progress Bar -->
                 <div id="s-area">
+                    <!-- Time Info on Mouse Hover -->
                     <div id="ins-time"></div>
+                    <!-- Darker Part of Progress Bar on Mouse Hover -->
                     <div id="s-hover"></div>
+                    <!-- Blue Progress Bar Indicating Current Playback -->
                     <div id="seek-bar"></div>
                 </div>
             </div>
+
+            <!-- Control Module -->
             <div id="player-content2">
+                <!-- Left Album Cover Rotation Module -->
                 <div class="music-imgs">
+                    <!-- Album Cover Image -->
                     <div class="img"></div>
+                    <!-- Loading Text for Song Buffering -->
                     <div id="buffer-box">缓冲,稍等...</div>
                 </div>
+                <!-- Right Song Operation Module -->
                 <div class="player-controls">
+                    <!-- Previous Song Button -->
                     <div class="btn prev iconfont"></div>
+                    <!-- Pause/Play Button -->
                     <div class="btn play-pause icon-jiediankaishi iconfont"></div>
+                    <!-- Next Song Button -->
                     <div class="btn next iconfont"></div>
                 </div>
             </div>
@@ -1637,9 +1662,12 @@
     您的浏览器不支持音频元素。
 </audio>
 <audio id="click-sound" src="kaa.mp3" preload="auto"></audio> <!-- Changed to original resource -->
-    <!-- 恢复原 index(cat) 中的外部 JavaScript 引用，已注释以避免冲突 -->
-<script src="https://apps.bdimg.com/libs/jquery/3.4.1/jquery.min.js"></script>
+
+<!-- jQuery library - Already present in indx.html, no duplication needed -->
+<script src="js/jquery-3.4.1.min.js"></script>
+<!-- Main game logic script -->
 <script src="js/index.js"></script>
+
 <script>
     // Game configuration constants
     const CARD_ICONS = [
@@ -1692,7 +1720,7 @@
     const codeBtn = document.getElementById('code-btn');
     const levelFinishTextElement = document.getElementById('level-finish-text');
     const neteasePlayerDiv = document.getElementById('netease-player');
-    const playerDiv = document.getElementById('player');
+    const playerDiv = document.getElementById('player'); // Reference to the embedded music player
     const currentScoreElement = document.getElementById('current-score');
     const targetScoreElement = document.getElementById('target-score');
     const levelInfoElement = document.getElementById('level-info');
@@ -2677,7 +2705,7 @@
         if (game.level === 1) {
             levelFinishTextElement.style.animation = 'shake 6s infinite, show-card-property 15s forwards';
             levelFinishTextElement.innerHTML += '<br>下一关后有彩蛋🪅！';
-            playerDiv.style.display = 'block';
+            playerDiv.style.display = 'block'; // Show the embedded music player
             neteasePlayerDiv.style.display = 'none';
             gobangBtn.style.display = 'none';
             restartGameBtn.style.display = 'none';
@@ -2685,7 +2713,7 @@
             closeGameBtnLevel.onclick = () => handleCloseGame('level');
         } else if (game.level === 2) {
             levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
-            playerDiv.style.display = 'none';
+            playerDiv.style.display = 'none'; // Hide the embedded music player
             neteasePlayerDiv.style.display = 'block';
             gobangBtn.style.display = 'inline-block';
             restartGameBtn.style.display = 'inline-block';
