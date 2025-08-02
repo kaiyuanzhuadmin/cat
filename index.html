@@ -2055,9 +2055,22 @@ function isCardClickable(card, board) {
 function clickCard(id) {
   let cardData = game.board.find(c => c.id === id);
   // 1. Initial checks: If card is already matched, flying, napping, or not clickable, ignore click.
-  if (!cardData || cardData.matched || cardData.isFlying || cardData.isNapping || !isCardClickable(cardData, game.board)) {
-    return;
+  if (!cardData || cardData.matched || cardData.isFlying || !isCardClickable(cardData, game.board)) {
+  return;
+}
+
+// 若是 nap 状态的卡片，唤醒它后返回，不执行消除逻辑
+if (cardData.isNapping) {
+  cardData.isNapping = false; // 移除 nap 状态
+  const cardEl = document.querySelector(`.card[data-id='${cardData.id}']`);
+  if (cardEl) {
+    cardEl.classList.remove('napping');
   }
+  renderBoard();
+  showMessage('卡片苏醒了 🐱💨', '#3e5a2b');
+  return;
+}
+
 
   // 2. Pre-flight checks for game over condition (Removed the premature game over check here)
   // The game over check for temp area full will now happen in checkWin() after card placement.
@@ -2420,6 +2433,13 @@ function reviveGame() {
             } else {
                 break; // No more steps to undo
             }
+       game.board.forEach(card => {
+      if (card.isNapping) {
+       card.isNapping = false;
+        }
+       });
+       renderBoard(); // 重新渲染以显示醒来的卡片
+       showMessage('卡片苏醒了 🐱💨', '#3e5a2b');
         }
 
         // Revert to the state of the new last step, or initial state if stack is empty
@@ -2794,8 +2814,8 @@ function showEventMessage(icon, text) {
 }
 
 function eventCatNap() {
-    const CATNAP_MIN_DURATION = 2000;
-    const CATNAP_MAX_DURATION = 4000;
+    const CATNAP_MIN_DURATION = 12000;
+    const CATNAP_MAX_DURATION = 14000;
     const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
     if (clickableCards.length < 3) return;
     showEventMessage('💤', '猫咪在打盹...<br>有些卡牌暂时拿不到了！');
