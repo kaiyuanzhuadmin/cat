@@ -26,6 +26,44 @@
   <link rel="preload" href="mao2.webp" as="image"> <!-- Fallback image for Level 2 outro -->
 
   <style>
+@media screen and (orientation: landscape) {
+  #game-container {
+    max-width: 100vw;
+    margin: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+
+  #main-area {
+    flex-direction: row;
+    justify-content: space-around;
+    align-items: flex-start;
+    padding: 20px 10px;
+  }
+
+  #display-area,
+  #card-stack-area {
+    width: 48vw;
+    min-height: 60vh;
+    margin: 0;
+  }
+}
+
+@keyframes rotateTransition {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(10deg) scale(1.05);
+  }
+  100% {
+    transform: rotate(0deg) scale(1);
+  }
+}
+
+.card-rotate-animate {
+  animation: rotateTransition 0.6s ease-in-out;
+}
     /* Keyframe animations */
     @keyframes card-float-out {
       0% {
@@ -1616,6 +1654,7 @@ let clickAudioFailed = false;
 
 /* 核心函数 */
 function handleOrientation(e) {
+    document.body.classList.toggle('landscape', isLandscape);
     isLandscape = e.matches;      // true = 横屏
     updateToolButtons();          // 只更新按钮状态即可
     // 可选：横竖切换时，重新布局
@@ -2933,7 +2972,9 @@ function handleRotationRefresh() {
     renderAll();
     // Lock the game during refresh
     game.lock = true;
-    showEventMessage('✨', '发现新大陆，<br>撤销功能被禁用了。');
+    if (isLandscape) {
+       showEventMessage('✨', '发现新大陆，<br>撤销功能被禁用了。');
+    }
 
     game.stepStack = [];
    
@@ -2948,6 +2989,11 @@ function handleRotationRefresh() {
         // Unlock the game
         game.lock = false;
     }, 250); // 250ms delay to ensure browser has completed the rotation
+  const cards = document.querySelectorAll('#card-stack-area .card');
+  cards.forEach(card => {
+  card.classList.add('card-rotate-animate');
+  setTimeout(() => card.classList.remove('card-rotate-animate'), 700); // 清除类名以便下次旋转可重播动画
+});
 } // ===== END OF handleRotationRefresh =====
 
 // =================================================================================
