@@ -1521,14 +1521,14 @@
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/index.js"></script>
 <script>
+// =================================================================================
+// START OF MODIFICATION: Reduced card variety and optimized layout parameters.
+// =================================================================================
 // Game configuration constants
 const CARD_ICONS = [
   "🐈", "💐", "👒", "🏵️", "🧸", "🔮", "🎡", "🪭",
-  "🐖", "🧶", "🌻", "💎", "🌈", "🍂", "🪷"
+  "🌈", "🍂", "🪷" // Reduced the number of icons to make the game easier
 ];
-// =================================================================================
-// START OF MODIFICATION: Adjusted level parameters for better heart shape formation.
-// =================================================================================
 const LEVELS = [
   // Level 1 now has more cards to ensure a visible heart shape can be formed.
   {num: 1, visible: 18, total: 51, stack: 2, rows: 3, cols: 5, overlap: 20, targetScore: 25, totalDisplaySets: 17},
@@ -1864,13 +1864,6 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
     // The scale must account for the card's own dimensions extending beyond the points.
     const scale = Math.min((areaW - cardW) / heartWidth, (areaH - cardH) / heartHeight);
 
-    // Calculate the offset to perfectly center the heart pattern including card dimensions.
-    const scaledHeartWidth = heartWidth * scale;
-    const scaledHeartHeight = heartHeight * scale;
-    const baseOffsetX = (areaW - scaledHeartWidth - cardW) / 2 - (minX * scale);
-    const baseOffsetY = (areaH - scaledHeartHeight - cardH) / 2 - (minY * scale);
-
-
     // --- 4. Place the remaining cards along the multi-layered heart shape ---
     const heartCards = mutableCardsToPlace;
     const numLayers = game.level === 1 ? 3 : 4;
@@ -1880,11 +1873,11 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
         if (cardIndex >= heartCards.length) break;
 
         // Increased layer separation for a "looser" feel.
-        const layerScale = 1 - layer * 0.15; 
+        const layerScale = 1 - layer * 0.16; 
         
         // The offset for each layer needs to be recalculated to keep it centered as it scales down.
-        const layerScaledWidth = scaledHeartWidth * layerScale;
-        const layerScaledHeight = scaledHeartHeight * layerScale;
+        const layerScaledWidth = heartWidth * scale * layerScale;
+        const layerScaledHeight = heartHeight * scale * layerScale;
         const layerOffsetX = (areaW - layerScaledWidth - cardW) / 2 - (minX * scale * layerScale);
         const layerOffsetY = (areaH - layerScaledHeight - cardH) / 2 - (minY * scale * layerScale);
         
@@ -2919,22 +2912,11 @@ function stopCurtainRandomToggle() {
 }
 
 function handleResize() {
-    if (!game.board || game.board.length === 0 || document.getElementById('start-screen').style.display === 'flex' || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
-        positionCatWalker();
-        positionCurtain();
-        return;
-    }
-    const currentAreaWidth = cardStackArea.offsetWidth;
-    const currentAreaHeight = cardStackArea.offsetHeight;
-    if (game.layout.areaWidth === currentAreaWidth && game.layout.areaHeight === currentAreaHeight) {
-        return;
-    }
-    game.layout.areaWidth = currentAreaWidth;
-    game.layout.areaHeight = currentAreaHeight;
-    calculateResponsiveSizes();
-    // Use the new heart-shaped layout function on resize
-    game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
-    renderAll();
+    // MODIFICATION: No longer re-layouts on resize to prevent orientation change issues.
+    // The layout is now fixed on game start.
+    if (game.lock) return;
+    positionCatWalker();
+    positionCurtain();
 }
 
 function handleDeviceMotion(event) {
@@ -2958,6 +2940,25 @@ function handleDeviceMotion(event) {
     }
 }
 
+// =================================================================================
+// START OF MODIFICATION: Added screen orientation lock.
+// =================================================================================
+async function lockScreenOrientation() {
+  try {
+    // Check if the Screen Orientation API is supported
+    if (screen.orientation && screen.orientation.lock) {
+      await screen.orientation.lock('portrait-primary');
+      console.log('Screen orientation locked to portrait.');
+    }
+  } catch (error) {
+    // Log a warning if locking fails. This is expected on desktop browsers.
+    console.warn('Screen orientation lock failed:', error);
+  }
+}
+// =================================================================================
+// END OF MODIFICATION
+// =================================================================================
+
 
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
@@ -2969,29 +2970,9 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeRealisticLoadingScreen();
     attemptVideoAutoplay();
     
-    const orientationQuery = window.matchMedia("(orientation: landscape)");
-    isLandscape = orientationQuery.matches;
-    if (isLandscape && !hasShownLandscapeMessage && 
-        document.getElementById('loading-screen').style.display === 'none' &&
-        document.getElementById('start-screen').style.display === 'none') {
-        showEventMessage('✨', '发现了新功能！<br>横屏模式下，撤销按钮会暂时禁用哦！');
-        hasShownLandscapeMessage = true;
-    }
-
-    function handleOrientationChange(event) {
-        isLandscape = event.matches;
-        updateToolButtons();
-        if (isLandscape && !hasShownLandscapeMessage && 
-            document.getElementById('loading-screen').style.display === 'none' &&
-            document.getElementById('start-screen').style.display === 'none') {
-            showEventMessage('✨', '发现了新功能！<br>横屏模式下，撤销按钮会暂时禁用哦！');
-            hasShownLandscapeMessage = true;
-        } else if (!isLandscape) {
-            hasShownLandscapeMessage = false;
-        }
-    }
-    
-    orientationQuery.addEventListener('change', handleOrientationChange);
+    // The orientation change listener is no longer needed as we lock the orientation.
+    // However, we keep the initial check for landscape mode to disable the undo button if needed.
+    isLandscape = window.matchMedia("(orientation: landscape)").matches;
 
     if (window.DeviceMotionEvent) {
         window.addEventListener('devicemotion', handleDeviceMotion);
@@ -3012,8 +2993,6 @@ document.addEventListener('DOMContentLoaded', function() {
             if (game.bgmOn && !isGameEndScreenVisible) {
                 playBgm(true);
             }
-            // MODIFIED: Re-render the entire game state when tab becomes visible
-            // to ensure UI is in sync with the game logic.
             if (!isGameEndScreenVisible && document.getElementById('start-screen').style.display === 'none') {
                 renderAll();
             }
@@ -3057,7 +3036,7 @@ document.addEventListener('DOMContentLoaded', function() {
     codeBtn.disabled = true;
     codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
 
-    window.addEventListener('resize', debounce(handleResize, 200));
+    // We still call handleResize once to set initial positions, but don't listen for resize events anymore.
     handleResize(); 
 
     // MODIFIED: Added event delegation for both touch and mouse events
@@ -3156,6 +3135,8 @@ musicToggleBtn.onclick = function(){
 };
 startBtn.onclick = function(){
   document.getElementById('start-screen').style.display = 'none';
+  // Lock screen orientation on game start
+  lockScreenOrientation();
   initAudio(); 
   startGame(1);
 };
