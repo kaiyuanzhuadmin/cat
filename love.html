@@ -504,9 +504,9 @@
 
     #card-stack-area {
       margin-top: 20px;
-      width: 90%;
       max-width: 580px;
-      height: 500px;
+      aspect-ratio: 4 / 5;       /* 宽:高 = 4:5，可自行修改 */
+      max-height: 90vh;          /* 避免过高盖住工具栏 */
       position: relative;
       background: rgba(240, 230, 210, 0.6);
       border-radius: 15px;
@@ -1606,7 +1606,7 @@ let outroVideoTimeout = null;
 let decorationInterval = null;
 let randomEventTimer = null;
 let curtainTimer = null;
-let isLandscape = false; 
+let isLandscape = window.matchMedia("(orientation: landscape)").matches;
 let hasShownLandscapeMessage = false;
 let lastShakeTime = 0;
 
@@ -1614,6 +1614,16 @@ let audioContext;
 let clickSoundBuffer;
 let clickAudioFailed = false;
 
+/* 核心函数 */
+function handleOrientation(e) {
+    isLandscape = e.matches;      // true = 横屏
+    updateToolButtons();          // 只更新按钮状态即可
+    // 可选：横竖切换时，重新布局
+    handleRotationRefresh();      
+}
+
+/* 监听一次就够 */
+window.matchMedia("(orientation: landscape)").addEventListener('change', handleOrientation);
 // Game State Object
 let game = {
   level: 1,
@@ -1780,9 +1790,16 @@ function generateDisplayCardSet(excludeIcons = []) {
         return null;
     }
 }
-
+const STACK_RATIO = 5 / 4; 
 function calculateResponsiveSizes() {
     const areaW = cardStackArea.offsetWidth;
+    const areaH = cardStackArea.offsetHeight;
+
+    /* 若浏览器不认 aspect-ratio 或被外层约束扭曲，这里强制修正高度 */
+    const expectedH = areaW * STACK_RATIO;
+    if (Math.abs(areaH - expectedH) > 1) {          // 误差 1px 以内忽略
+        cardStackArea.style.height = `${expectedH}px`;
+    }
     const lv = LEVELS[game.level - 1];
     // Make cards slightly smaller to fit more complex shapes
     const baseCardWidth = areaW / (lv.cols + 3); 
@@ -2616,14 +2633,8 @@ function updateToolButtons() {
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
   document.getElementById('revive-count').textContent = game.toolUses.revive; // Update revive count
 
-  const undoDisabledByCount = game.toolUses.undo <= 0;
-  if (isLandscape) {
-    undoBtn.disabled = true;
-    undoBtn.title = "横屏模式下不可用";
-  } else {
-    undoBtn.disabled = undoDisabledByCount;
-    undoBtn.title = "撤销(需兑换码)";
-  }
+  undoBtn.disabled = isLandscape || game.toolUses.undo <= 0;
+  undoBtn.title = isLandscape ? "横屏模式下不可用" : "撤销(需兑换码)";
   hintBtn.disabled = game.toolUses.hint <= 0;
   shuffleBtn.disabled = game.toolUses.shuffle <= 0;
   reviveBtn.disabled = game.toolUses.revive <= 0; // Disable revive button if count is 0
@@ -2915,22 +2926,17 @@ function stopCurtainRandomToggle() {
 // START OF MODIFICATION: Handle screen rotation by refreshing the layout.
 // =================================================================================
 function handleRotationRefresh() {
-    // Only refresh if the game is actively being played
-    if (game.lock || document.getElementById('start-screen').style.display !== 'none' || document.getElementById('level-finish').style.display !== 'none' || document.getElementById('game-over').style.display !== 'none') {
-        return;
-    }
-
+    if (game.lock) return;
+    // 旋转后重新计算 layout
+    const remainingCards = game.board.filter(c => !c.matched);
+    game.board = repositionCardsAndLayout(remainingCards, LEVELS[game.level - 1]);
+    renderAll();
     // Lock the game during refresh
     game.lock = true;
     showEventMessage('✨', '发现新大陆，<br>撤销功能被禁用了。');
 
-    // Disable undo functionality as the history is now invalid
     game.stepStack = [];
-    game.toolUses.undo = 0;
-    
-    // Get all cards that haven't been matched yet
-    const remainingCards = game.board.filter(c => !c.matched);
-    
+   
     // After a short delay to allow the screen to resize, re-layout the cards
     setTimeout(() => {
         // Recalculate the layout with the new screen dimensions
@@ -2942,7 +2948,8 @@ function handleRotationRefresh() {
         // Unlock the game
         game.lock = false;
     }, 250); // 250ms delay to ensure browser has completed the rotation
-}
+} // ===== END OF handleRotationRefresh =====
+
 // =================================================================================
 // END OF MODIFICATION
 // =================================================================================
@@ -2978,9 +2985,6 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeRealisticLoadingScreen();
     attemptVideoAutoplay();
     
-    // Add the orientation change listener
-    window.addEventListener('orientationchange', handleRotationRefresh);
-
     if (window.DeviceMotionEvent) {
         window.addEventListener('devicemotion', handleDeviceMotion);
     } else {
