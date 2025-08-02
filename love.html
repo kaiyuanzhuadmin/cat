@@ -2911,13 +2911,41 @@ function stopCurtainRandomToggle() {
     }
 }
 
-function handleResize() {
-    // MODIFICATION: No longer re-layouts on resize to prevent orientation change issues.
-    // The layout is now fixed on game start.
-    if (game.lock) return;
-    positionCatWalker();
-    positionCurtain();
+// =================================================================================
+// START OF MODIFICATION: Handle screen rotation by refreshing the layout.
+// =================================================================================
+function handleRotationRefresh() {
+    // Only refresh if the game is actively being played
+    if (game.lock || document.getElementById('start-screen').style.display !== 'none' || document.getElementById('level-finish').style.display !== 'none' || document.getElementById('game-over').style.display !== 'none') {
+        return;
+    }
+
+    // Lock the game during refresh
+    game.lock = true;
+    showEventMessage('✨', '发现新大陆，<br>撤销功能被禁用了。');
+
+    // Disable undo functionality as the history is now invalid
+    game.stepStack = [];
+    game.toolUses.undo = 0;
+    
+    // Get all cards that haven't been matched yet
+    const remainingCards = game.board.filter(c => !c.matched);
+    
+    // After a short delay to allow the screen to resize, re-layout the cards
+    setTimeout(() => {
+        // Recalculate the layout with the new screen dimensions
+        game.board = repositionCardsAndLayout(remainingCards, LEVELS[game.level - 1]);
+        
+        // Re-render the entire game state
+        renderAll();
+        
+        // Unlock the game
+        game.lock = false;
+    }, 250); // 250ms delay to ensure browser has completed the rotation
 }
+// =================================================================================
+// END OF MODIFICATION
+// =================================================================================
 
 function handleDeviceMotion(event) {
     if (game.lock || game.toolUses.shuffle <= 0) {
@@ -2940,26 +2968,6 @@ function handleDeviceMotion(event) {
     }
 }
 
-// =================================================================================
-// START OF MODIFICATION: Added screen orientation lock.
-// =================================================================================
-async function lockScreenOrientation() {
-  try {
-    // Check if the Screen Orientation API is supported
-    if (screen.orientation && screen.orientation.lock) {
-      await screen.orientation.lock('portrait-primary');
-      console.log('Screen orientation locked to portrait.');
-    }
-  } catch (error) {
-    // Log a warning if locking fails. This is expected on desktop browsers.
-    console.warn('Screen orientation lock failed:', error);
-  }
-}
-// =================================================================================
-// END OF MODIFICATION
-// =================================================================================
-
-
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Prevent copy, paste, and cut
@@ -2970,9 +2978,8 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeRealisticLoadingScreen();
     attemptVideoAutoplay();
     
-    // The orientation change listener is no longer needed as we lock the orientation.
-    // However, we keep the initial check for landscape mode to disable the undo button if needed.
-    isLandscape = window.matchMedia("(orientation: landscape)").matches;
+    // Add the orientation change listener
+    window.addEventListener('orientationchange', handleRotationRefresh);
 
     if (window.DeviceMotionEvent) {
         window.addEventListener('devicemotion', handleDeviceMotion);
@@ -3037,7 +3044,11 @@ document.addEventListener('DOMContentLoaded', function() {
     codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
 
     // We still call handleResize once to set initial positions, but don't listen for resize events anymore.
-    handleResize(); 
+    window.addEventListener('resize', debounce(() => {
+        if (game.lock) return;
+        positionCatWalker();
+        positionCurtain();
+    }, 200)); 
 
     // MODIFIED: Added event delegation for both touch and mouse events
     cardStackArea.addEventListener('click', function(e) {
@@ -3135,8 +3146,6 @@ musicToggleBtn.onclick = function(){
 };
 startBtn.onclick = function(){
   document.getElementById('start-screen').style.display = 'none';
-  // Lock screen orientation on game start
-  lockScreenOrientation();
   initAudio(); 
   startGame(1);
 };
