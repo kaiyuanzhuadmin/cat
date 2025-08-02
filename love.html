@@ -2776,6 +2776,8 @@ function showEventMessage(icon, text) {
 }
 
 function eventCatNap() {
+    const CATNAP_MIN_DURATION = 2000;
+    const CATNAP_MAX_DURATION = 4000;
     const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
     if (clickableCards.length < 3) return;
     showEventMessage('💤', '猫咪在打盹...<br>有些卡牌暂时拿不到了！');
@@ -2789,8 +2791,7 @@ function eventCatNap() {
     nappingCards.forEach(card => card.isNapping = true);
     renderBoard();
     game.lock = false;
-    // MODIFIED: Randomize napping duration between 3 and 8 seconds
-    const nappingDuration = randBetween(3000, 8000); // Random duration between 3 and 8 seconds
+    const nappingDuration = randBetween(CATNAP_MIN_DURATION, CATNAP_MAX_DURATION);
     setTimeout(() => {
         nappingCards.forEach(card => {
             const boardCard = game.board.find(c => c.id === card.id);
