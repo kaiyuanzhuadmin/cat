@@ -145,10 +145,10 @@
       100% { opacity: 0; transform: scale(0.9); }
     }
     @keyframes shake {
-  0%, 100% { transform: translate3d(0, 0, 0) rotate(0deg); }
-  10%, 30%, 50%, 70%, 90% { transform: translate3d(-3px, 0, 0) rotate(-1deg); }
-  20%, 40%, 60%, 80% { transform: translate3d(3px, 0, 0) rotate(1deg); }
-}
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-1deg); }
+      20%, 40%, 60%, 80% { transform: translateX(3px) rotate(1deg); }
+    }
 
     @keyframes score-pop {
       0% { opacity: 0; transform: translateY(0) scale(0.8); }
@@ -650,25 +650,21 @@
     }
 
     .card {
-  position: absolute;
-  transform: translate3d(var(--x), var(--y), 0);
-  will-change: transform, opacity;
-  contain: layout style paint;
-
-  background: #fffdf7;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
-  border: 3px solid #d4a762;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  user-select: none;
-  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.2s, border-color 0.15s;
-  z-index: 1;
-  overflow: hidden;
-  color: #5d4037;
-}
+      background: #fffdf7;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
+      border: 3px solid #d4a762;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.2s, border-color 0.15s;
+      z-index: 1;
+      overflow: hidden;
+      color: #5d4037;
+    }
     .hint-animation {
       animation: show-card-property 2s forwards;
     }
@@ -785,23 +781,31 @@
 
     /* MODIFIED: Flying Card Animation for dynamic duration */
     .flying-card {
-  position: fixed;
-  transform: translate3d(var(--fx), var(--fy), 0) scale(var(--scale));
+      background: #fffdf7;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
+      border: 3px solid #d4a762;
+      position: fixed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      z-index: 10000;
+      /* transition properties are now set by JS for dynamic duration */
+      transition-property: top, left, transform;
+      transition-timing-function: ease-out;
+      overflow: hidden;
+      color: #5d4037;
+    }
+.card,
+.card-rotate-animate,
+.card-floating-in,
+.score-animation,
+.flying-card,
+.heart-animation,
+.card.swirl-in,
+.card.swirl-out {
   will-change: transform, opacity;
-  contain: layout style paint;
-
-  background: #fffdf7;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
-  border: 3px solid #d4a762;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  user-select: none;
-  z-index: 10000;
-  transition: transform 0.3s ease-out;
-  overflow: hidden;
-  color: #5d4037;
 }
 
     #tools-bar {
@@ -1526,8 +1530,11 @@
   </div>
 
   <div id="level2-outro-screen" style="display:none;">
-    <video id="outro-video" playsinline muted>
-        <source src="mao2.mp4" type="video/mp4">
+    <video id="outro-video" playsinline muted
+        preload="auto"
+        style="will-change: transform; transform: translateZ(0);"
+    >
+        <source src="mao2.mp4" type="video/mp4" />
         您的浏览器不支持视频播放。
     </video>
     <img id="outro-image" src="mao2.webp" alt="Level 2 Outro Image" style="display:none;">
@@ -2640,9 +2647,8 @@ function renderBoard(){
       el.classList.remove('napping');
     }
     
-    el.style.setProperty('--x', `${card.x}px`);
-    el.style.setProperty('--y', `${card.y}px`);
-    el.style.transform = `translate3d(var(--x), var(--y), 0)`;
+    el.style.left = card.x + 'px';
+    el.style.top = card.y + 'px';
     el.style.zIndex = card.z;
     el.innerHTML = card.icon;
     el.style.width = `${game.cardDimensions.width}px`;
