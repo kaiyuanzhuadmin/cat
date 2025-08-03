@@ -2129,18 +2129,24 @@ function clickCard(id) {
       };
 
       game.temp.forEach((c, index) => {
-          if (c.icon === matchedIcon) {
-              c.matched = true;
-              const slot = tempSlots[index];
-              if (slot) {
-                  const cardEl = slot.querySelector('.temp-card');
-                  if (cardEl) {
-                      cardEl.classList.add('disappearing');
-                      matchedElements.push(cardEl); // Collect matched card DOM elements
-                  }
-              }
-          }
-      });
+  if (c.icon === matchedIcon) {
+    c.matched = true;
+    const slot = tempSlots[index];
+    if (slot) {
+      const cardEl = slot.querySelector('.temp-card');
+      if (cardEl) {
+        cardEl.classList.add('disappearing');
+        slot.classList.add('clearing');
+
+        // 等待动画结束再清除
+        cardEl.addEventListener('animationend', () => {
+          slot.innerHTML = '';
+          slot.classList.remove('clearing');
+        }, { once: true });
+      }
+    }
+  }
+});
 
       // Add 'clearing' animation to slots
       matchedElements.forEach(cardEl => {
