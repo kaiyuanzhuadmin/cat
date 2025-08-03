@@ -2124,47 +2124,52 @@ function clickCard(id) {
     let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
 
         if (matchedIcon) {
-      triggerMatchFeedback();
-      
-      const matchedCardsInTemp = game.temp.filter(c => c.icon === matchedIcon && !c.matched);
-      let animationsToComplete = matchedCardsInTemp.length;
+    triggerMatchFeedback();
 
-      // 清理函数，在所有动画结束后执行
-      const performCleanup = () => {
-          game.temp = game.temp.filter(c => !c.matched); // 从状态中移除已匹配的卡片
-          renderTemp(); // 重新渲染暂存区
-          renderBoard(); // 更新主区域卡片的可点击状态
-          checkWin(); // 检查游戏是否胜利或失败
-      };
+    // 记录要消除的卡片索引
+    const toVanishIndexes = [];
+    game.temp.forEach((card, i) => {
+        if (card.icon === matchedIcon && !card.matched) {
+            card.matched = true;
+            toVanishIndexes.push(i);
+        }
+    });
 
-      // 动画结束回调
-      const onAnimationEnd = () => {
-          animationsToComplete--;
-          if (animationsToComplete === 0) {
-              performCleanup();
-          }
-      };
-      
-      // 遍历暂存区，为匹配的卡片启动动画
-      game.temp.forEach((card, index) => {
-          if (card.icon === matchedIcon && !card.matched) {
-              card.matched = true; // 在数据模型中标记为已匹配
-              const slot = tempSlots[index];
-              if (slot) {
-                  const cardEl = slot.querySelector('.temp-card');
-                  if (cardEl) {
-                      cardEl.classList.add('vanishing'); // 添加新的、更明显的动画类
-                      // 监听动画结束事件，{ once: true } 确保监听器触发一次后自动移除
-                      cardEl.addEventListener('animationend', onAnimationEnd, { once: true });
-                  } else {
-                      // 如果DOM元素不存在，直接减少计数器
-                      onAnimationEnd();
-                  }
-              } else {
-                  onAnimationEnd();
-              }
-          }
-      });
+    let animationsToComplete = toVanishIndexes.length;
+    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+
+    const finishCleanup = () => {
+        game.temp = game.temp.filter(c => !c.matched);  // 彻底移除
+        renderTemp();
+        renderBoard();
+        checkWin();
+    };
+
+    if (animationsToComplete === 0) {
+        finishCleanup();
+    } else {
+        // 绑定动画结束事件
+        toVanishIndexes.forEach(idx => {
+            const slot = tempSlots[idx];
+            if (slot) {
+                const cardEl = slot.querySelector('.temp-card');
+                if (cardEl) {
+                    cardEl.classList.add('vanishing');
+                    cardEl.addEventListener('animationend', () => {
+                        animationsToComplete--;
+                        if (animationsToComplete === 0) finishCleanup();
+                    }, { once: true });
+                } else {
+                    animationsToComplete--;
+                    if (animationsToComplete === 0) finishCleanup();
+                }
+            }
+        });
+        // 超时兜底，防止动画事件丢失
+        setTimeout(() => {
+            if (animationsToComplete > 0) finishCleanup();
+        }, 700);
+    }
 
       // 处理计分展示区的逻辑保持不变
       game.displayCards.forEach(displaySet => {
