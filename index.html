@@ -107,6 +107,8 @@
     }
     .temp-card.disappearing {
         animation: card-disappear 0.3s ease-out forwards;
+        transform: translateZ(0); /* 或 translate3d(0, 0, 0) */
+        will-change: transform, opacity;
     }
 
     @keyframes slot-flash {
