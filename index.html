@@ -664,7 +664,6 @@
       z-index: 1;
       overflow: hidden;
       color: #5d4037;
-      will-change: transform, opacity, left, top;
     }
     .hint-animation {
       animation: show-card-property 2s forwards;
@@ -798,6 +797,16 @@
       overflow: hidden;
       color: #5d4037;
     }
+.card,
+.card-rotate-animate,
+.card-floating-in,
+.score-animation,
+.flying-card,
+.heart-animation,
+.card.swirl-in,
+.card.swirl-out {
+  will-change: transform, opacity;
+}
 
     #tools-bar {
       margin: 20px auto 0 auto;
@@ -1521,8 +1530,10 @@
   </div>
 
   <div id="level2-outro-screen" style="display:none;">
-    <video id="outro-video" playsinline muted>
-        <source src="mao2.mp4" type="video/mp4">
+    <video id="outro-video" autoplay muted playsinline
+        preload="auto"
+    >
+        <source src="mao2.mp4" type="video/mp4" />
         您的浏览器不支持视频播放。
     </video>
     <img id="outro-image" src="mao2.webp" alt="Level 2 Outro Image" style="display:none;">
