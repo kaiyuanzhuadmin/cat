@@ -170,15 +170,19 @@
     /* 吸入动画 */
 @keyframes swirlIn {
   0% {
-    transform: scale(1) rotate(0deg);
+    transform: scale(1);
     opacity: 1;
   }
   100% {
-    transform: scale(0.2) rotate(720deg);
+    transform: scale(0.2);
     opacity: 0.5;
     left: 50%;
     top: 50%;
   }
+}
+
+.card.swirl-in {
+  animation: swirlIn 0.5s ease-in-out forwards;
 }
 
 /* 喷出动画 */
@@ -660,6 +664,7 @@
       z-index: 1;
       overflow: hidden;
       color: #5d4037;
+      will-change: transform, opacity, left, top;
     }
     .hint-animation {
       animation: show-card-property 2s forwards;
@@ -2359,38 +2364,16 @@ function shuffleStep() {
   saveStep(); // 保存当前状态
   game.lock = true;
 
-  const cards = document.querySelectorAll('.card');
+  const allCards = Array.from(document.querySelectorAll('.card'));
 
-  // 吸入动画
-  cards.forEach(card => {
-    card.classList.remove('swirl-out');
-    card.classList.add('swirl-in');
-  });
+  // 只动画可见卡片
+  const visibleCards = allCards.filter(card => card.offsetParent !== null);
 
-  // 吸入完成后执行喷出动画
-  setTimeout(() => {
-    // 重新计算新布局
-    const newBoard = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
-    game.board = newBoard;
+  // 清除旧动画类（如果需要重复动画）
+  visibleCards.forEach(card => card.classList.remove('swirl-in'));
 
-    // 渲染新位置前，先设置动画目标位置
-    newBoard.forEach(card => {
-      const cardEl = document.querySelector(`.card[data-id='${card.id}']`);
-      if (cardEl) {
-        cardEl.style.setProperty('--final-left', card.x + 'px');
-        cardEl.style.setProperty('--final-top', card.y + 'px');
-        cardEl.classList.remove('swirl-in');
-        cardEl.classList.add('swirl-out');
-      }
-    });
-
-    // 喷出动画完成后刷新游戏状态
-    setTimeout(() => {
-      renderAll(); // 重新渲染所有区域
-      game.lock = false;
-      showMessage('已洗牌');
-    }, 600); // 喷出动画时间
-  }, 600); // 吸入动画时间
+  // 分批执行动画
+  animateCardsInBatches(visibleCards, 20, 100);
 }
 
 function hintStep(){
@@ -3122,7 +3105,22 @@ function handleDeviceMotion(event) {
         }
     }
 }
+function animateCardsInBatches(cards, batchSize = 20, delay = 100) {
+  let index = 0;
 
+  function animateBatch() {
+    const batch = cards.slice(index, index + batchSize);
+    batch.forEach(card => {
+      card.classList.add('swirl-in');
+    });
+    index += batchSize;
+    if (index < cards.length) {
+      setTimeout(animateBatch, delay);
+    }
+  }
+
+  animateBatch();
+}
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Prevent copy, paste, and cut
