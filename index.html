@@ -2356,6 +2356,9 @@ function undoStep(){
 }
 
 function shuffleStep() {
+  saveStep(); // 保存当前状态
+  game.lock = true;
+
   const cards = document.querySelectorAll('.card');
 
   // 吸入动画
@@ -2364,23 +2367,28 @@ function shuffleStep() {
     card.classList.add('swirl-in');
   });
 
-  // 等待吸入动画完成后执行喷出
+  // 吸入完成后执行喷出动画
   setTimeout(() => {
-    cards.forEach(card => {
-      // 设置最终位置变量（你可以根据布局逻辑动态设置）
-      const finalLeft = card.dataset.left;
-      const finalTop = card.dataset.top;
-      card.style.setProperty('--final-left', finalLeft + 'px');
-      card.style.setProperty('--final-top', finalTop + 'px');
+    // 重新计算新布局
+    const newBoard = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+    game.board = newBoard;
 
-      card.classList.remove('swirl-in');
-      card.classList.add('swirl-out');
+    // 渲染新位置前，先设置动画目标位置
+    newBoard.forEach(card => {
+      const cardEl = document.querySelector(`.card[data-id='${card.id}']`);
+      if (cardEl) {
+        cardEl.style.setProperty('--final-left', card.x + 'px');
+        cardEl.style.setProperty('--final-top', card.y + 'px');
+        cardEl.classList.remove('swirl-in');
+        cardEl.classList.add('swirl-out');
+      }
     });
 
-    // 等待喷出动画完成后重新渲染布局
+    // 喷出动画完成后刷新游戏状态
     setTimeout(() => {
-      repositionCardsAndLayout();
-      renderBoard();
+      renderAll(); // 重新渲染所有区域
+      game.lock = false;
+      showMessage('已洗牌');
     }, 600); // 喷出动画时间
   }, 600); // 吸入动画时间
 }
