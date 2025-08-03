@@ -2370,6 +2370,21 @@ function animateCardsInBatches(cards, batchSize = 20, delay = 100) {
     index += batchSize;
     if (index < cards.length) {
       setTimeout(animateBatch, delay);
+    } else {
+      // 所有动画完成后，强制刷新游戏状态
+      setTimeout(() => {
+        // 重新计算卡片位置
+        game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+
+        // 清除动画类名，防止干扰点击
+        cards.forEach(card => card.classList.remove('swirl-in'));
+
+        // 强制刷新 DOM
+        renderAll();
+
+        game.lock = false;
+        showMessage('已洗牌');
+      }, 600); // 等待最后一批动画完成
     }
   }
 
