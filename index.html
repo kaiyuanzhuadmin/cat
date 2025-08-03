@@ -2359,7 +2359,22 @@ function undoStep(){
     showMessage('无法撤销更多', '#888');
   }
 }
+function animateCardsInBatches(cards, batchSize = 20, delay = 100) {
+  let index = 0;
 
+  function animateBatch() {
+    const batch = cards.slice(index, index + batchSize);
+    batch.forEach(card => {
+      card.classList.add('swirl-in');
+    });
+    index += batchSize;
+    if (index < cards.length) {
+      setTimeout(animateBatch, delay);
+    }
+  }
+
+  animateBatch();
+}
 function shuffleStep() {
   saveStep(); // 保存当前状态
   game.lock = true;
@@ -3105,22 +3120,7 @@ function handleDeviceMotion(event) {
         }
     }
 }
-function animateCardsInBatches(cards, batchSize = 20, delay = 100) {
-  let index = 0;
 
-  function animateBatch() {
-    const batch = cards.slice(index, index + batchSize);
-    batch.forEach(card => {
-      card.classList.add('swirl-in');
-    });
-    index += batchSize;
-    if (index < cards.length) {
-      setTimeout(animateBatch, delay);
-    }
-  }
-
-  animateBatch();
-}
 // Event Listeners
 document.addEventListener('DOMContentLoaded', function() {
     // Prevent copy, paste, and cut
