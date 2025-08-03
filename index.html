@@ -2377,6 +2377,22 @@ function undoStep(){
     showMessage('无法撤销更多', '#888');
   }
 }
+function animateCard(card, targetX, targetY, duration = 300) {
+  const startX = card.offsetLeft;
+  const startY = card.offsetTop;
+  const startTime = performance.now();
+
+  function step(now) {
+    const progress = Math.min((now - startTime) / duration, 1);
+    const ease = 1 - Math.pow(1 - progress, 3); // easeOutCubic
+
+    card.style.transform = `translate(${startX + (targetX - startX) * ease}px, ${startY + (targetY - startY) * ease}px)`;
+
+    if (progress < 1) requestAnimationFrame(step);
+  }
+
+  requestAnimationFrame(step);
+}
 function animateCardsInBatches(cards, batchSize = 20, delay = 100) {
   let index = 0;
 
