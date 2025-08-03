@@ -2424,50 +2424,45 @@ function reviveGame() {
         return;
     }
 
-    showConfirm('确定要使用1次复活卡吗？这将撤销最后3步。', () => {
+    showConfirm('确定要使用1次复活卡吗？这将回到游戏界面并解除打盹卡片。', () => {
         game.toolUses.revive--;
-        // Pop the last 3 steps, or fewer if not enough steps are available
-        for (let i = 0; i < 3; i++) {
-            if (game.stepStack.length > 0) {
-                game.stepStack.pop();
-            } else {
-                break; // No more steps to undo
-            }
-       game.board.forEach(card => {
-      if (card.isNapping) {
-       card.isNapping = false;
-        }
-       });
-       renderBoard(); // 重新渲染以显示醒来的卡片
-       showMessage('卡片苏醒了 🐱💨', '#3e5a2b');
+
+        // 撤销最后一步（只pop一次，并还原到前一个状态）
+        if (game.stepStack.length > 0) {
+            game.stepStack.pop();
         }
 
-        // Revert to the state of the new last step, or initial state if stack is empty
+        // 还原到上一步状态（如果有）
         if (game.stepStack.length > 0) {
-            let prev = game.stepStack[game.stepStack.length - 1]; // Get the state before the last 3 actions
+            let prev = game.stepStack[game.stepStack.length - 1];
             game.board = deepClone(prev.board);
             game.temp = deepClone(prev.temp);
             game.score = prev.score;
             game.displayCards = deepClone(prev.displayCards);
             game.totalDisplaySetsGenerated = prev.totalDisplaySetsGenerated;
         } else {
-            // If no steps left, restart the level
-            startGame(game.level); // This will reset everything for the current level
+            // 如果没有历史步骤，则重开当前关卡
+            startGame(game.level);
             showMessage('复活成功！已回到本关初始状态。', '#3e5a2b');
-            return; // Exit as startGame will handle rendering
+            return;
         }
-        
-        document.getElementById('game-over').style.display = 'none'; // Hide game over screen
-        game.lock = false; // Unlock game interaction
-        renderAll(); // Re-render the game state
-        showMessage('复活成功！已撤销最后3步。', '#3e5a2b');
-        startRandomEvents(); // Restart random events
-        startCurtainRandomToggle(); // Restart curtain toggle
-        startDecorationUpdates(); // Restart decoration updates
+
+        // 解除所有 nap 状态
+        game.board.forEach(card => {
+            card.isNapping = false;
+        });
+
+        document.getElementById('game-over').style.display = 'none'; // 隐藏game-over
+        game.lock = false;
+        renderAll();
+        showMessage('复活成功！撤销最后一步并唤醒全部卡片。', '#3e5a2b');
+        startRandomEvents();
+        startCurtainRandomToggle();
+        startDecorationUpdates();
     });
 }
 
-
+        
 function startGame(level){
   game.lock = true;
   footer.style.display = 'block';
