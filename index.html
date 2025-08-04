@@ -1581,8 +1581,8 @@ const CARD_ICONS = [
 ];
 const LEVELS = [
   // Level 1 now has more cards to ensure a visible heart shape can be formed.
-  {num: 1, visible: 15, total: 36, stack: 1, rows: 3, cols: 5, overlap: 20, targetScore: 25, totalDisplaySets: 17},
-  {num: 2, visible: 15, total: 120, stack: 2, rows: 3, cols: 5, overlap: 20, targetScore: 100, totalDisplaySets: 26}
+  {num: 1, visible: 15, total: 36, stack: 1, rows: 3, cols: 5, overlap: 20, targetScore: 25, totalDisplaySets: 12},
+  {num: 2, visible: 15, total: 123, stack: 2, rows: 3, cols: 5, overlap: 20, targetScore: 100, totalDisplaySets: 30}
 ];
 const TEMP_LIMIT = 7;
 const DISPLAY_CARD_MATCH_SCORE = 5;
@@ -2718,17 +2718,27 @@ function showMessage(msg, color){
   if(msg) setTimeout(()=>{bar.textContent='';}, 2300);
 }
 
+function hasTripleMatch() {
+  let tempIcons = game.temp.filter(c => !c.matched).map(c => c.icon);
+  let clickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+  let clickableBoardIcons = clickableBoardCards.map(c => c.icon);
+  let allAvailableIcons = [...tempIcons, ...clickableBoardIcons];
+  let iconCounts = {};
+  allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
+  return Object.values(iconCounts).some(cnt => cnt >= 3);
+}
+
 function updateToolButtons() {
   document.getElementById('undo-count').textContent = game.toolUses.undo;
   document.getElementById('hint-count').textContent = game.toolUses.hint;
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
-  document.getElementById('revive-count').textContent = game.toolUses.revive; // Update revive count
+  document.getElementById('revive-count').textContent = game.toolUses.revive;
 
   undoBtn.disabled = isLandscape || game.toolUses.undo <= 0;
   undoBtn.title = isLandscape ? "横屏模式下不可用" : "撤销(需兑换码)";
-  hintBtn.disabled = game.toolUses.hint <= 0;
+  hintBtn.disabled = game.toolUses.hint <= 0 || !hasTripleMatch(); // 新增三消检测
   shuffleBtn.disabled = game.toolUses.shuffle <= 0;
-  reviveBtn.disabled = game.toolUses.revive <= 0; // Disable revive button if count is 0
+  reviveBtn.disabled = game.toolUses.revive <= 0;
 }
 
 function renderAll(){
