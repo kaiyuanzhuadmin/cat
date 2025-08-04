@@ -1,0 +1,4013 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
+  <title>小心肝加载中...</title>
+  <link rel="icon" type="image/png" sizes="96x96" href="me.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
+  <!-- 资源预加载部分保持不变 -->
+  <link rel="preload" href="mao3.webp" as="image">
+  <link rel="preload" href="mao1.webp" as="image">
+  <link rel="preload" href="font/iconfont.css" as="style">
+  <link rel="preload" href="css/style.css" as="style">
+  <link rel="preload" href="mao.webp" as="image">
+  <link rel="preload" href="mao.mp4" as="video">
+  <link rel="preload" href="cat1.webp" as="image">
+  <link rel="preload" href="js/index.js" as="script">
+  <link rel="preload" href="run.gif" as="image">
+  <link rel="preload" href="kaa.mp3" as="audio">
+  <link rel="preload" href="Sukidakara.mp3" as="audio">
+  <link rel="preload" href="mao2.mp4" as="video">
+  <link rel="preload" href="mao2.webp" as="image">
+
+  <style>
+/* 添加屏幕过渡动画 */
+@keyframes rotateToPortrait {
+  0% { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+  50% { transform: rotateY(0deg) scale(1.05); opacity: 1; }
+  100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+}
+
+.rotate-transition {
+  animation: rotateToPortrait 0.7s ease-in-out forwards;
+}
+
+@media (orientation: landscape) {
+  #display-area,
+  #card-stack-area {
+    max-width: 90vw;  /* 增加最大宽度 */
+    width: 90vw;
+  }
+
+  #display-area {
+    min-height: 140px; /* 可根据需要增加高度以更突出显示区域 */
+  }
+
+  #card-stack-area {
+    height: 75vh;  /* 更高一点，使得比例更协调 */
+  }
+}
+#risk-modal .modal-content {
+  animation: risk-modal-in 0.3s ease-out;
+  min-width: 280px;
+  max-width: 90%;
+  width: auto;
+  transition: all 0.3s ease;
+}
+
+#risk-modal .modal-content[data-type="info"] {
+  background: #f0f9ff;
+  border-color: #3b82f6;
+}
+
+#risk-modal .modal-content[data-type="risk"] {
+  background: #fff3f3;
+  border-color: #dc2626;
+}
+
+#risk-modal .modal-content[data-type="warning"] {
+  background: #fefce8;
+  border-color: #ca8a04;
+}
+
+#risk-modal button {
+  padding: 8px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'ZCOOL KuaiLe', cursive;
+  background: white;
+}
+
+#risk-modal button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#risk-modal p {
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* 添加不同类型按钮的样式 */
+#risk-modal[data-type="info"] button {
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+#risk-modal[data-type="risk"] button {
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+#risk-modal[data-type="warning"] button {
+  border-color: #ca8a04;
+  color: #854d0e;
+}
+
+    @keyframes card-vanish {
+      0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(0.1) rotate(15deg) translateY(50px);
+        opacity: 0;
+      }
+    }
+    .temp-card.vanishing {
+      position: relative; /* 确保 z-index 生效 */
+      z-index: 10;
+      animation: card-vanish 0.5s ease-out forwards;
+    }
+
+    /* 原有的 card-disappear 动画不再使用，可以安全移除或保留 */
+    @keyframes card-disappear {
+        from {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.4) rotate(20deg);
+        }
+    }
+    .temp-card.disappearing {
+        animation: card-disappear 0.3s ease-out forwards;
+    }
+
+    /* 其他样式保持不变 */
+    @keyframes card-float-out {
+      0% {
+        opacity: 0;
+        transform: translateY(40px);
+      }
+      100% {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    .card-floating-in {
+        animation: card-float-out 0.5s ease-out forwards;
+    }
+
+    @keyframes lid-open {
+        0% {
+            transform: rotateX(0deg);
+            opacity: 1;
+        }
+        70% {
+            transform: rotateX(80deg);
+            opacity: 1;
+        }
+        100% {
+            transform: rotateX(90deg);
+            opacity: 0;
+            visibility: hidden;
+        }
+    }
+
+    @keyframes slot-flash {
+        0% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
+        50% { background-color: #fff8dc; box-shadow: inset 0 0 10px rgba(255, 215, 0, 0.8), 0 0 15px rgba(255, 215, 0, 0.5); }
+        100% { background-color: #fdf5e6; box-shadow: inset 0 1px 4px rgba(0,0,0,0.05); }
+    }
+    .temp-slot.clearing {
+        animation: slot-flash 0.4s ease-out;
+    }
+
+    @keyframes pulse-scale {
+      0%, 100% { transform: scale(1); opacity: 0.8; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+    @keyframes text-progress {
+      0% { content: "."; }
+      33% { content: ".."; }
+      66% { content: "..."; }
+      100% { content: "."; }
+    }
+    @keyframes wave {
+      0%, 100% { transform: translateY(0) rotate(0deg); }
+      25% { transform: translateY(-10px) rotate(2deg); }
+      75% { transform: translateY(5px) rotate(-1deg); }
+    }
+    @keyframes show-card-property {
+      0% { opacity: 0; }
+      20% { opacity: 1; }
+      80% { opacity: 1; }
+      100% { opacity: 0; }
+    }
+    @keyframes fade-in-out-scale {
+      0% { opacity: 0; transform: scale(0.8); }
+      50% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.9); }
+    }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0) rotate(0deg); }
+      10%, 30%, 50%, 70%, 90% { transform: translateX(-3px) rotate(-1deg); }
+      20%, 40%, 60%, 80% { transform: translateX(3px) rotate(1deg); }
+    }
+
+    @keyframes score-pop {
+      0% { opacity: 0; transform: translateY(0) scale(0.8); }
+      20% { opacity: 1; transform: translateY(-15px) scale(1.1); }
+      80% { opacity: 1; transform: translateY(-30px) scale(1); }
+      100% { opacity: 0; transform: translateY(-40px) scale(0.7); }
+    }
+    .score-animation {
+      position: absolute;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: #4CAF50;
+      text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+      pointer-events: none;
+      animation: score-pop 1s ease-out forwards;
+      z-index: 2000;
+    }
+
+    /* 吸入动画 (源文件效果) */
+@keyframes swirlIn {
+  0% {
+    transform: scale(1);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.2);
+    opacity: 0.5;
+    /* 动画终点是父容器的中心 */
+    left: 50%;
+    top: 50%;
+  }
+}
+
+/* 喷出动画 (源文件效果，虽然洗牌没用上，但最好保留) */
+@keyframes swirlOut {
+  0% {
+    transform: scale(0.2) rotate(720deg);
+    opacity: 0.5;
+    left: 50%;
+    top: 50%;
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+    left: var(--final-left);
+    top: var(--final-top);
+  }
+}
+
+/* 应用动画的类名 */
+.card.swirl-in {
+  animation: swirlIn 0.6s ease-in forwards;
+  z-index: 10;
+}
+
+.card.swirl-out {
+  animation: swirlOut 0.6s ease-out forwards;
+  z-index: 10;
+}
+
+    @keyframes fade-in-out-heart {
+      0% { opacity: 0; transform: scale(0.5); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0; transform: scale(0.8); }
+    }
+    .heart-animation {
+      position: absolute;
+      font-size: 30px;
+      color: #ff69b4;
+      pointer-events: none;
+      animation: fade-in-out-heart 2.5s ease-out infinite alternate;
+      z-index: 1000;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    }
+    
+    .confetti-container {
+        position: absolute;
+        top: -30vh;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        overflow: hidden;
+        z-index: 9999;
+    }
+    .confetti-piece {
+        position: absolute;
+        width: 8px;
+        height: 16px;
+        background: #f00;
+        top: -20px;
+        opacity: 0;
+        animation: fall linear forwards;
+    }
+    @keyframes fall {
+        0% {
+            transform: translateY(0) rotateZ(0deg);
+            opacity: 1;
+        }
+        100% {
+            transform: translateY(110vh) rotateZ(720deg);
+            opacity: 0;
+        }
+    }
+
+    @keyframes button-scale-pulse {
+      0%, 100% {
+        transform: scale(1);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.08);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+    }
+
+    @keyframes button-scale-fade-pulse {
+      0%, 100% {
+        transform: scale(1);
+        opacity: 0.8;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      50% {
+        transform: scale(1.08);
+        opacity: 1;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+      }
+    }
+    .animated-scale-fade {
+        animation: button-scale-fade-pulse 1.8s infinite ease-in-out;
+    }
+
+    @keyframes cloud-pass {
+      from {
+        transform: translateX(-250px);
+      }
+      to {
+        transform: translateX(100vw);
+      }
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      overflow-x: hidden;
+      font-family: 'ZCOOL KuaiLe', 'HanyiSentyLotus', 'FangSong', cursive, sans-serif;
+      color: #3e2723;
+      position: relative;
+      user-select: none;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+    }
+    body::before {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: #f7f0e8 url('cat1.webp') no-repeat center center;
+      background-size: cover;
+      z-index: -2;
+    }
+    body::after {
+      content: "";
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-color: white;
+      opacity: 0.3;
+      z-index: -1;
+    }
+    body.no-scroll {
+      overflow: hidden;
+    }
+
+    #game-container {
+      max-width: 650px;
+      margin: 30px auto;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 25px;
+      box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
+      padding: 0 0 20px 0;
+      position: relative;
+      min-height: 880px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      border: 3px solid #8B4513;
+    }
+    @media (max-width: 700px) {
+      #game-container {
+        max-width: 100vw;
+        margin: 0;
+        box-shadow: none;
+        border-radius: 0;
+        min-height: 100vh;
+        border: none;
+        padding-top: env(safe-area-inset-top);
+        padding-bottom: env(safe-area-inset-bottom);
+        padding-left: env(safe-area-inset-left);
+        padding-right: env(safe-area-inset-right);
+      }
+    }
+    @media (min-width: 701px) {
+      #game-container {
+        max-width: 900px;
+        min-height: 90vh;
+        margin: 5vh auto;
+      }
+    }
+
+    #header-bar {
+      width: 100%;
+      padding: 15px 25px 0 25px;
+      box-sizing: border-box;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0));
+      border-top-left-radius: 22px;
+      border-top-right-radius: 22px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    #progress-info {
+      font-size: 1.55rem;
+      font-weight: bold;
+      color: #5d4037;
+      text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
+      display: flex;
+      gap: 15px;
+      align-items: center;
+    }
+    #music-toggle {
+      background: none;
+      border: none;
+      outline: none;
+      font-size: 1.8rem;
+      cursor: pointer;
+      color: #6d4c41;
+      transition: transform 0.2s ease-in-out;
+    }
+    #music-toggle:hover {
+      transform: scale(1.1);
+    }
+    .score-display, .target-display {
+        font-size: 1.2rem;
+        color: #8B4513;
+        font-weight: bold;
+        text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
+    }
+
+    #main-area {
+      flex:1;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      position: relative;
+      padding-top: 10px;
+    }
+
+    #display-area {
+        margin-top: 20px;
+        width: 90%;
+        max-width: 580px;
+        min-height: 100px;
+        background: rgba(240, 230, 210, 0.6);
+        border-radius: 15px;
+        box-shadow: inset 0 2px 10px rgba(100, 60, 40, 0.15), 0 5px 15px rgba(100, 60, 40, 0.2);
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+        justify-content: center;
+        align-items: center;
+        border: 2px dashed #b8860b;
+        padding: 10px;
+        box-sizing: border-box;
+        gap: 10px;
+    }
+    @media (max-width: 650px) {
+      #display-area {
+        width: 96vw;
+        min-width: unset;
+        min-height: 80px;
+      }
+    }
+
+    .display-group {
+        display: flex;
+        gap: 5px;
+        align-items: center;
+        justify-content: center;
+        background: rgba(255, 255, 255, 0.5);
+        border-radius: 8px;
+        padding: 5px 10px;
+        border: 1px solid #d4a762;
+    }
+
+    .display-card {
+        background: #fffdf7;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        border: 2px solid #a0522d;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        user-select: none;
+        opacity: 1;
+        transition: opacity 0.3s ease-out;
+    }
+    .display-card.matched-display {
+        opacity: 0;
+    }
+
+    #curtain {
+        position: absolute;
+        background-color: rgba(255, 255, 255, 0.95);
+        z-index: 1050;
+        display: none;
+        border-radius: 15px;
+        transition: opacity 0.5s ease-in-out;
+        overflow: hidden;
+        opacity: 1;
+    }
+
+    #curtain::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(to bottom, #f7f0e8, #e0d8cf);
+        opacity: 0.9;
+    }
+
+    #curtain.open {
+        opacity: 0;
+        pointer-events: none;
+    }
+
+    #curtain.closed {
+        opacity: 1;
+        pointer-events: all;
+    }
+
+    #cat-path {
+        position: absolute;
+        width: 100%;
+        height: 20px;
+        left: 0;
+        z-index: 1060;
+        pointer-events: none;
+        overflow: visible;
+    }
+
+        @keyframes cat-walk {
+        0% { left: 0; transform: scaleX(1); }
+        49% { transform: scaleX(1); }
+        50% { left: calc(100% - 95px); transform: scaleX(-1); }
+        99% { transform: scaleX(-1); }
+        100% { left: 0; transform: scaleX(1); }
+    }
+
+    #walking-cat {
+        position: absolute;
+        width: 95px;
+        height: 71px;
+        display: flex;
+        z-index: 10;
+        align-items: center;
+        justify-content: center;
+        top: -30px;
+        animation: cat-walk 15s linear infinite;
+        --cat-width: 95px;
+    }
+
+    #walking-cat img {
+        width: 100%;
+        height: 100%;
+        object-fit: contain;
+    }
+
+    .path-decoration {
+        position: absolute;
+        bottom: -5px;
+        font-size: 23px;
+        transition: transform 0.2s ease-in-out;
+        z-index: 9;
+    }
+    .path-decoration.shaking {
+        animation: gentle-shake 0.5s ease-in-out infinite alternate;
+    }
+    @keyframes gentle-shake {
+        0% { transform: rotate(-2deg) scale(1.05); }
+        100% { transform: rotate(2deg) scale(1); }
+    }
+
+    .wiggling-cat-instance {
+        position: absolute;
+        width: 29px;
+        height: 29px;
+        font-size: 29px;
+        line-height: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #5d4037;
+        transform: translateX(-50%);
+        animation: shake 1.8s ease-in-out infinite alternate;
+        z-index: 10;
+        pointer-events: none;
+        display: none;
+    }
+
+    #card-stack-area {
+      margin-top: 20px;
+      max-width: 580px;
+      aspect-ratio: 4 / 5;       /* 宽:高 = 4:5，可自行修改 */
+      max-height: 90vh;          /* 避免过高盖住工具栏 */
+      position: relative;
+      background: rgba(240, 230, 210, 0.6);
+      border-radius: 15px;
+      box-shadow: inset 0 2px 10px rgba(100, 60, 40, 0.15), 0 5px 15px rgba(100, 60, 40, 0.2);
+      overflow: visible;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 2px dashed #b8860b;
+      perspective: 1500px;
+    }
+    @media (max-width: 650px) {
+      #card-stack-area {
+        width: 96vw;
+        min-width: unset;
+        height: 60vh;
+        max-height: 420px;
+        margin-top: 15px;
+        margin-bottom: 15px;
+      }
+    }
+    @media (min-width: 701px) {
+      #card-stack-area {
+        height: 600px;
+        max-height: 60vh;
+      }
+    }
+    
+    #card-stack-lid {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: #f7e9d7;
+        border: 2px dashed #b8860b;
+        border-radius: 15px;
+        z-index: 10000;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: space-around;
+        padding: 20px;
+        box-sizing: border-box;
+        color: #6e352f;
+        transform-origin: top center;
+        font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #card-stack-lid .lid-text-top {
+        font-size: 2rem;
+        font-weight: bold;
+    }
+    #card-stack-lid .lid-emoji {
+        font-size: 10rem;
+        line-height: 1;
+    }
+    #card-stack-lid .lid-footer {
+        font-size: 0.9rem;
+    }
+
+    #card-stack-area.level-starting #card-stack-lid {
+        display: flex;
+        animation: lid-open 4s ease-in-out forwards;
+    }
+    #card-stack-area.level-starting .card {
+        visibility: hidden;
+    }
+
+    .card {
+      background: #fffdf7;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
+      border: 3px solid #d4a762;
+      position: absolute;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      user-select: none;
+      transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.2s, border-color 0.15s;
+      z-index: 1;
+      overflow: hidden;
+      color: #5d4037;
+    }
+    .hint-animation {
+      animation: show-card-property 2s forwards;
+    }
+    .card.selected {
+      border: 3.5px solid #a0522d;
+      box-shadow: 0 4px 20px rgba(160, 82, 45, 0.4), 0 0 25px rgba(255,255,0,0.5);
+      z-index: 100 !important;
+      transform: scale(1.01) rotate(-4deg);
+    }
+    .card.disabled {
+      pointer-events: none;
+      position: absolute;
+      opacity: 1;
+    }
+    .card.disabled::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(128, 128, 128, 0.5);
+      border-radius: 8px;
+      z-index: 2;
+      transition: background 0.5s ease;
+    }
+    .card.disabled > *:not(.disabled::before) {
+        opacity: 0.5;
+    }
+    .card:not(.disabled):not(.matched):hover {
+      transform: translateY(-5px) scale(1.05) rotate(2deg);
+      box-shadow: 0 8px 20px rgba(0,0,0,0.15), inset 0 0 0 1px rgba(255,255,255,0.5);
+      transition: transform 0.08s ease-out, box-shadow 0.05s ease-out;
+      z-index: 2;
+    }
+    .card.matched {
+      opacity: 0.05;
+      transition: opacity 0.1s;
+      pointer-events: none;
+    }
+    .card .mini {
+      font-size: 1.2rem;
+      position: absolute;
+      bottom: 7px;
+      right: 9px;
+      opacity: 0.5;
+      user-select: none;
+    }
+    
+    .card.napping {
+        pointer-events: none !important;
+    }
+    .card.napping::after {
+        content: '💤';
+        position: absolute;
+        top: -10px;
+        right: -5px;
+        font-size: 1.5rem;
+        animation: wave 1.5s infinite ease-in-out;
+        z-index: 5;
+    }
+    .card.napping::before {
+        background: rgba(100, 100, 150, 0.3) !important;
+    }
+
+    #temp-area {
+      margin: 20px auto 0 auto;
+      display: flex;
+      justify-content: space-evenly;
+      align-items: center;
+      min-height: 80px;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 12px;
+      background: #fffcf0;
+      border: 2px dashed #b8860b;
+      padding: 8px 0;
+      box-sizing: border-box;
+      box-shadow: inset 0 1px 5px rgba(0,0,0,0.08);
+    }
+    .temp-slot {
+      margin: 0;
+      background: #fdf5e6;
+      border-radius: 9px;
+      border: 2px dashed #d4a762;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #92776c;
+      box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+      position: relative;
+      overflow: hidden;
+      flex-shrink: 0;
+    }
+    .temp-card {
+      width: 100%;
+      height: 100%;
+      background: #fffdf7;
+      border-radius: 9px;
+      border: 2.5px solid #a0522d;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(160, 82, 45, 0.3);
+      cursor: default;
+      position: absolute;
+      transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
+      box-sizing: border-box;
+      color: #5d4037;
+    }
+    .temp-card.matched {
+      opacity: 0.05;
+    }
+
+    .flying-card {
+      background: #fffdf7;
+      border-radius: 10px;
+      box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
+      border: 3px solid #d4a762;
+      position: fixed;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      user-select: none;
+      z-index: 10000;
+      transition-property: top, left, transform;
+      transition-timing-function: ease-out;
+      overflow: hidden;
+      color: #5d4037;
+    }
+
+    /* ... 其他所有CSS样式保持不变 ... */
+    #tools-bar {
+      margin: 20px auto 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 18px;
+      width: 90%;
+      max-width: 500px;
+      flex-wrap: wrap;
+    }
+    #tools-bar button {
+      padding: 9px 18px;
+      background: #f7e9d7;
+      border: 2px solid #b8860b;
+      border-radius: 10px;
+      font-size: 1.05rem;
+      color: #6e352f;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      outline: none;
+      position: relative;
+      min-width: 75px;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #tools-bar button:hover {
+      background: #e9d9c6;
+      transform: translateY(-1px);
+    }
+    #tools-bar button:disabled {
+      background: #f0f0f0;
+      color: #b0b0b0;
+      border-color: #d0d0d0;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    #restart-btn {
+      background: #ffe0b3;
+      border-color: #ffcc80;
+      color: #96602c;
+    }
+    #restart-btn:hover {
+      background: #ffd599;
+    }
+
+    #code-bar {
+      margin: 15px auto 0 auto;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      width: 90%;
+      max-width: 450px;
+    }
+    #code-bar input {
+      flex-grow: 1;
+      max-width: 180px;
+      padding: 7px 10px;
+      border-radius: 8px;
+      border: 2px solid #b8860b;
+      outline: none;
+      font-size: 1.05rem;
+      color: #5d4037;
+      background: #fffdf7;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #code-bar input::placeholder {
+      color: #a0a0a0;
+    }
+    #code-bar button {
+      padding: 7px 12px;
+      font-size: 1.05rem;
+      background: #e6f6d3;
+      border: 2px solid #a0c388;
+      border-radius: 9px;
+      cursor: pointer;
+      color: #3e5a2b;
+      font-weight: bold;
+      transition: background 0.15s;
+      min-width: 65px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #code-bar button:hover {
+      background: #d2e5bb;
+    }
+
+    #message-bar {
+      margin: 15px auto 0 auto;
+      text-align: center;
+      font-size: 1.1rem;
+      color: #c0392b;
+      min-height: 28px;
+      font-weight: bold;
+      letter-spacing: 1.2px;
+    }
+
+    #event-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        z-index: 2200;
+        pointer-events: none;
+    }
+    #event-message-box {
+        background: rgba(255, 253, 247, 0.9);
+        padding: 20px 30px;
+        border-radius: 15px;
+        border: 3px solid #b8860b;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.2);
+        text-align: center;
+        animation: fade-in-out-scale 3.5s forwards;
+    }
+    #event-message-box p {
+        font-size: 1.3rem;
+        color: #6e352f;
+        margin: 0;
+        font-weight: bold;
+        text-shadow: 1px 1px 0 rgba(255,255,255,0.5);
+    }
+    #event-message-box .event-icon {
+        font-size: 2rem;
+        margin-bottom: 10px;
+    }
+
+    #start-screen, #game-over, #level-finish {
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      z-index: 1100;
+      background: rgba(255,255,255,0.98);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-direction: column;
+      font-size: 1.1rem;
+      border-radius: 25px;
+      text-align: center;
+    }
+    #level-finish {
+      justify-content: flex-start;
+    }
+    #level-finish > * {
+      margin-top: 30%;
+    }
+    #start-screen {
+      padding-top: 10vh;
+      overflow: hidden;
+      box-sizing: border-box;
+    }
+    
+    #start-screen-video {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        z-index: -1;
+        opacity: 0.99;
+        object-fit: cover; 
+    }
+
+    #start-screen::before {
+      content: "";
+      position: absolute;
+      left: 0; right: 0; top: 0; bottom: 0;
+      background-image: url('mao.webp');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.5;
+      z-index: -2;
+    }
+    #start-screen h1 {
+      font-size: clamp(3rem, 12vw, 5rem);
+      margin: 0 0 25px 0;
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
+      display: inline-block;
+    }
+    #start-screen h1 span {
+      display: inline-block;
+      animation: wave 2s infinite ease-in-out;
+    }
+    #start-screen h1 span:nth-child(1) { animation-delay: -0.4s; }
+    #start-screen h1 span:nth-child(2) { animation-delay: -0.2s; }
+    #start-screen h1 span:nth-child(3) { animation-delay: 0s; }
+    #start-screen h1 span:nth-child(4) { animation-delay: 0.2s; }
+    #start-screen h1 span:nth-child(5) { animation-delay: 0.4s; }
+    #start-screen .start-btn {
+      margin-top: 30px;
+      padding: 15px 50px;
+      font-size: 1.4rem;
+      background: linear-gradient(90deg, #a0c388, #88b368);
+      border: none;
+      border-radius: 15px;
+      color: #3e5a2b;
+      font-weight: bold;
+      cursor: pointer;
+      box-shadow: 0 4px 15px rgba(160, 195, 136, 0.5);
+      animation: pulse-scale 1.5s infinite ease-in-out;
+      transition: background 0.2s, transform 0.1s;
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #start-screen .start-btn:hover {
+      background: linear-gradient(90deg, #88b368, #a0c388);
+      transform: translateY(-2px);
+    }
+    #start-screen p {
+        color: #5d4037;
+        line-height: 1.6;
+        margin: 0 40px 15px;
+        margin-top: 15vh;
+    }
+    #start-screen span {
+        color: #c0392b;
+        font-weight: bold;
+    }
+
+    .loading-footer {
+        color: #795548;
+        font-size: 0.85rem;
+        position: absolute;
+        bottom: 30px;
+        left: 0;
+        right: 0;
+        text-align: center;
+        letter-spacing: 1.5px;
+        text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
+    }
+
+    #level-finish, #game-over {
+      font-size: 1.8rem;
+      color: #5d4037;
+      background: rgba(255,243,245,0.99);
+      border-radius: 25px;
+      position: absolute;
+      overflow: hidden;
+      border: 3px solid #8B4513;
+      box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
+    }
+    
+    #game-over {
+      overflow: hidden;
+    }
+    #game-over-content {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      margin-top: -30%;
+      animation: wave 2s infinite;
+    }
+    .cloud-layer {
+      content: '';
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+    }
+    .cloud-layer::before,
+    .cloud-layer::after {
+      content: '🌧️';
+      position: absolute;
+      opacity: 0.88;
+      color: #888;
+      animation-name: cloud-pass;
+      animation-timing-function: linear;
+      animation-iteration-count: infinite;
+    }
+    .cloud-layer::before {
+      font-size: 120px;
+      top: 10%;
+      animation-duration: 20s;
+      animation-delay: -5s;
+    }
+    .cloud-layer::after {
+      font-size: 80px;
+      top: 25%;
+      animation-duration: 15s;
+    }
+    #game-over > * {
+      position: relative;
+      z-index: 1;
+    }
+
+    #level-finish::before, #game-over::before {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      bottom: 0;
+      background-image: url('mao1.webp');
+      background-size: cover;
+      background-position: center;
+      opacity: 0.4;
+      z-index: -1;
+    }
+    #level-finish button, #game-over button {
+      margin-top: 20px;
+      padding: 12px 35px;
+      font-size: 1.25rem;
+      background: #e6f6d3;
+      border: 2px solid #a0c388;
+      border-radius: 12px;
+      color: #3e5a2b;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #level-finish button:hover, #game-over button:hover {
+      background: #d2e5bb;
+      transform: translateY(-1px);
+    }
+    #retry-btn {
+      margin-top: 18px;
+      padding: 10px 30px;
+      font-size: 1.15rem;
+      background: #f7e9d7;
+      border: 2px solid #d4a762;
+      border-radius: 10px;
+      color: #6e352f;
+      font-weight: bold;
+      cursor: pointer;
+      transition: background 0.15s, transform 0.1s;
+      display: inline-block;
+      box-shadow: 0 1px 5px rgba(0,0,0,0.1);
+    }
+    #retry-btn:hover {
+      background: #f0e1d0;
+      transform: translateY(-1px);
+    }
+
+    #retry-btn2,
+    #next-btn {
+       animation: button-scale-pulse 1.5s infinite ease-in-out;
+    }
+
+    #footer {
+      margin: 20px auto 20px auto;22:31 2025/8/3
+      width: 100%;
+      text-align: center;
+      font-size: 1rem;
+      color: #8B4513;
+      letter-spacing: 1.5px;
+      text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.5);
+    }
+
+    .hinted-shake {
+      animation: shake 0.5s ease-in-out 4;
+    }
+
+    .modal-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0,0,0,0.6);
+        z-index: 2500;
+        display: none;
+        align-items: center;
+        justify-content: center;
+    }
+    .modal-content {
+        background: #fffdf7;
+        padding: 30px 40px;
+        border-radius: 15px;
+        text-align: center;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.3);
+        border: 3px solid #d4a762;
+    }
+    .modal-content p {
+        font-size: 1.2rem;
+        color: #5d4037;
+        margin: 0 0 25px 0;
+        font-weight: bold;
+    }
+    .modal-content button {
+        padding: 9px 25px;
+        background: #f7e9d7;
+        border: 2px solid #b8860b;
+        border-radius: 10px;
+        font-size: 1.05rem;
+        color: #6e352f;
+        font-weight: bold;
+        cursor: pointer;
+        margin: 0 10px;
+        transition: background 0.15s, transform 0.1s;
+        font-family: 'ZCOOL KuaiLe', cursive;
+    }
+    #confirm-yes {
+        background: #e6f6d3;
+        border-color: #a0c388;
+        color: #3e5a2b;
+    }
+    #confirm-yes:hover {
+        background: #d2e5bb;
+    }
+    #confirm-no:hover {
+        background: #e9d9c6;
+    }
+
+    #level-finish-text {
+      color: #3e2723;
+      font-size: 1.2em;
+      text-align: center;
+      margin-top: 20px;
+      margin-bottom: 0px;
+    }
+
+    #loading-screen {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      z-index: 1199;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background-color: #f7f0e8;
+      background-size: cover;
+      transition: opacity 0.5s ease-out;
+      border-radius: 25px;
+      overflow: hidden;
+    }
+    #loading-screen::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      background-image: url('mao3.webp');
+      background-repeat: no-repeat;
+      background-position: center center;
+      background-size: cover;
+      opacity: 0.6;
+    }
+    .loading-content {
+      position: relative;
+      z-index: 1001;
+      text-align: center;
+      width: 80%;
+      max-width: 500px;
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+      align-items: center;
+      justify-content: flex-start;
+      padding-top: 10vh;
+      box-sizing: border-box;
+    }
+    .loading-title {
+      font-size: 2.8rem;
+      margin: 0 0 40px 0;
+      color: #3e2723;
+      letter-spacing: 3px;
+      text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
+      animation: pulse-scale 1.5s infinite ease-in-out;
+    }
+    .loading-title::after {
+      content: ".";
+      animation: text-progress 2s infinite;
+    }
+    .progress-bar-container {
+      width: 100%;
+      height: 30px;
+      background: rgba(184, 134, 11, 0.2);
+      border-radius: 10px;
+      border: 2px solid #b8860b;
+      overflow: hidden;
+      margin-bottom: 15px;
+      box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+      margin-top: 40vh;
+      z-index: 1004;
+    }
+    #progress-bar {
+      width: 0%;
+      height: 100%;
+      background: linear-gradient(90deg, #a0c388, #88b368);
+      border-radius: 8px;
+      transition: width 0.3s ease-out;
+    }
+    #loading-text {
+      font-size: 1.1rem;
+      color: #5d4037;
+      margin-bottom: 40px;
+      min-height: 20px;
+      text-align: center;
+    }
+
+    .responsive-video-container {
+        position: relative;
+        width: 100%;
+        max-width: 660px;
+        padding-bottom: 68.1818%;
+        height: 0;
+        overflow: hidden;
+        border-radius: 10px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    .responsive-video-container iframe {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        border: 0;
+        border-radius: 10px;
+    }
+
+    #level2-outro-screen {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.9);
+        z-index: 2000;
+        display: none;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        border-radius: 25px;
+        overflow: hidden;
+    }
+
+    #level2-outro-screen video,
+    #level2-outro-screen img {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        min-width: 100%;
+        min-height: 100%;
+        width: auto;
+        height: auto;
+        object-fit: cover;
+        border-radius: 0;
+        box-shadow: none;
+    }
+    #level2-outro-screen .loading-text {
+        color: white;
+        font-size: 1.5rem;
+        margin-top: 20px;
+    }
+
+    #skip-outro-btn {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        padding: 8px 15px;
+        background: rgba(255, 255, 255, 0.7);
+        border: 1px solid #ccc;
+        border-radius: 8px;
+        font-size: 1rem;
+        color: #333;
+        cursor: pointer;
+        z-index: 2001;
+        transition: background 0.2s, transform 0.2s;
+    }
+    #skip-outro-btn:hover {
+        background: rgba(255, 255, 255, 0.9);
+        transform: scale(1.05);
+    }
+
+    @media (max-width: 500px) {
+      #card-stack-area, #temp-area, #tools-bar, #code-bar { width: 98vw; }
+      #tools-bar button {
+          min-width: unset;
+          width: 30%;
+          margin-bottom: 8px;
+          padding: 8px 10px;
+          font-size: 0.95rem;
+      }
+      #tools-bar {
+          gap: 6px;
+      }
+      #temp-area {
+        width: 98vw;
+        margin: 15px auto 0 auto;
+      }
+      #code-bar input {
+        width: 50%;
+      }
+      #display-area {
+        width: 96vw;
+        padding: 5px;
+      }
+      #level-finish, #game-over {
+        font-size: 1.2rem;
+        padding: 20px;
+        box-sizing: border-box;
+      }
+
+      #level-finish button, #game-over button, #retry-btn {
+          font-size: 1rem;
+          padding: 10px 20px;
+      }
+
+      #level-finish-text {
+          font-size: 1em;
+      }
+    }
+  </style>
+  <link rel="stylesheet" href="font/iconfont.css">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<!-- HTML 结构保持不变 -->
+<div id="game-container">
+  <div id="loading-screen">
+    <div class="loading-content">
+      <h1 class="loading-title">Loading.</h1>
+      <div class="progress-bar-container">
+        <div id="progress-bar"></div>
+      </div>
+      <p id="loading-text">正在初次加载资源，请等待...</p>
+      <small class="loading-footer">喵了个喵 &copy; 2025 | Designed by 开元</small>
+    </div>
+  </div>
+
+  <div id="header-bar">
+    <div id="progress-info">
+        <span id="level-info">关卡: 1 / 2</span>
+        <span class="score-display">分数: <span id="current-score">0</span></span>
+        <span class="target-display">目标: <span id="target-score">0</span></span>
+    </div>
+    <button id="music-toggle" title="音乐开关">🎼</button>
+  </div>
+  <div id="main-area">
+    <div id="display-area">
+        </div>
+    <div id="curtain"></div>
+    <div id="cat-path">
+        <div id="walking-cat"><img src="run.gif" alt="Walking Cat"></div>
+        <span class="path-decoration" style="left: 20%;">💌</span>
+        <span class="path-decoration" style="left: 40%;">🌿</span>
+        <span class="path-decoration" style="left: 60%;">☘️</span>
+        <span class="path-decoration" style="left: 80%;">🌼</span>
+    </div>
+    <div id="card-stack-area"></div>
+    <div id="wiggling-cat-1" class="wiggling-cat-instance">🥳</div>
+    <div id="wiggling-cat-4" class="wiggling-cat-instance">🎉</div>
+    <div id="wiggling-cat-7" class="wiggling-cat-instance">🎀</div>
+
+    <div id="temp-area">
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+      <div class="temp-slot"></div>
+    </div>
+    <div id="tools-bar">
+      <button id="undo-btn" disabled title="撤销(需兑换码)">↩️ 撤销 (<span id="undo-count">0</span>)</button>
+      <button id="hint-btn" disabled title="提示(需兑换码)"> 提示💡 (<span id="hint-count">0</span>)</button>
+      <button id="shuffle-btn" disabled title="洗牌(需兑换码)"> 洗牌🔀 (<span id="shuffle-count">0</span>)</button>
+      <button id="revive-btn" disabled title="复活(需兑换码)">💖 复活 (<span id="revive-count">0</span>)</button>
+      <button id="restart-btn" title="重新开始当前关卡"> 🔄重新开始</button>
+      <button id="auto-collect-btn" title="自动收集" disabled> 自动🤖 (<span id="auto-collect-count">0</span>)</button>
+    </div>
+    <div id="code-bar">
+      <input type="text" id="code-input" placeholder="兑换码" maxlength="12">
+      <button id="code-btn">兑换</button>
+    </div>
+    <div id="message-bar"></div>
+  </div>
+  <div id="footer">
+    <p>喵了个喵 &copy; 2025 | Designed by 开元</p>
+  </div>
+
+  <div id="event-overlay">
+      <div id="event-message-box">
+          <div class="event-icon"></div>
+          <p class="event-text"></p>
+      </div>
+  </div>
+
+  <div id="start-screen">
+    <video id="start-screen-video" autoplay loop muted playsinline>
+      <source src="mao.webm" type="video/webm">
+      <source src="mao.mp4" type="video/mp4">
+      <img src="mao.webp" alt="背景图">
+    </video>
+    <h1><span>喵</span><span>了</span><span>个</span><span>喵</span><span> 🐾</span></h1>
+    <p> </p> <p>
+      <button class="start-btn" id="start-btn">开始游戏</button>
+    </p>
+    <p>收集卡牌获得分数、全部清空过关<br>
+    <span style="color:#c0392b;">第二关难度略有升级<br></span>可使用兑换码解锁道具</p>
+    <small class="loading-footer">喵了个喵 &copy; 2025 | Designed by 开元</small>
+  </div>
+
+  <div id="level2-outro-screen" style="display:none;">
+    <video id="outro-video" playsinline muted>
+        <source src="mao2.mp4" type="video/mp4">
+        您的浏览器不支持视频播放。
+    </video>
+    <img id="outro-image" src="mao2.webp" alt="Level 2 Outro Image" style="display:none;">
+    <div class="loading-text" style="display:none;">正在加载...</div>
+    <button id="skip-outro-btn" style="display:none;">跳过动画</button>
+  </div>
+
+  <div id="level-finish" style="display:none;">
+    <div id="netease-player" class="responsive-video-container" style="display:none;">
+      <iframe allow="encrypted-media *; fullscreen *; clipboard-write" frameborder="0" height="450" style="width:100%;max-width:660px;overflow:hidden;border-radius:10px;" sandbox="allow-forms allow-popups allow-same-origin allow-scripts allow-storage-access-by-user-activation allow-top-navigation-by-user-activation" src="https://player.bilibili.com/player.html?isOutside=true&aid=114878413148199&bvid=BV1X9uQz6E6v&cid=31143166462&p=1"></iframe>
+    </div>
+    <div id="player" style="display:none;">
+        <div id="player-content1">
+            <div class="music-name"></div>
+            <div class="artist-name"></div>
+            <div class="time">
+                <div class="current-time"></div>
+                <div class="total-time"></div>
+            </div>
+            <div id="s-area">
+                <div id="ins-time"></div>
+                <div id="s-hover"></div>
+                <div id="seek-bar"></div>
+            </div>
+        </div>
+        <div id="player-content2">
+            <div class="music-imgs">
+                <div class="img"></div>
+                <div id="buffer-box">缓冲,稍等...</div>
+            </div>
+            <div class="player-controls">
+                <div class="btn prev iconfont"></div>
+                <div class="btn play-pause icon-jiediankaishi iconfont"></div>
+                <div class="btn next iconfont"></div>
+            </div>
+        </div>
+    </div>
+    <div id="level-finish-text"></div>
+    <button id="next-btn">下一关</button>
+    <button id="retry-btn" style="margin-left:10px;">重玩</button>
+    <button id="gobang-btn" style="margin-left:10px; display:none;">五子棋对弈</button>
+    <button id="restart-game-btn" style="margin-left:10px; display:none;">重开游戏</button>
+    <button id="close-game-btn-level" style="margin-left:10px;">关闭游戏</button>
+  </div>
+
+  <div id="game-over" style="display:none;">
+    <div class="cloud-layer"></div>
+    <div id="game-over-content">
+        <div id="game-over-text"></div>
+        <button id="retry-btn2">重试</button>
+        <button id="revive-btn-gameover" style="margin-left:10px; display:none;">💖 复活</button>
+        <button id="close-game-btn-gameover" style="margin-left:10px;">关闭游戏</button>
+    </div>
+  </div>
+</div>
+
+<div id="confirm-modal" class="modal-overlay">
+  <div class="modal-content">
+    <p id="confirm-msg">你确定吗？</p>
+    <div class="modal-buttons">
+        <button id="confirm-yes">确定</button>
+        <button id="confirm-no">取消</button>
+    </div>
+  </div>
+</div>
+
+<audio id="bgm" loop preload="auto">
+  您的浏览器不支持音频元素。
+</audio>
+
+<script src="js/jquery-3.4.1.min.js"></script>
+<script src="js/index.js"></script>
+<script>
+// 游戏配置和逻辑部分保持不变
+const CARD_ICONS = [
+  "🐈", "💐", "👒", "🏵️", "🧸", "🔮", "🎡", "🐈‍⬛", "🪭",
+  "🐖", "🧶", "🌻", "💎", "🌈", "🍂", "🪷"
+];
+const LEVELS = [
+  // Level 1 now has more cards to ensure a visible heart shape can be formed.
+  {num: 1, visible: 15, total: 36, stack: 1, rows: 3, cols: 5, overlap: 20, targetScore: 25, totalDisplaySets: 12},
+  {num: 2, visible: 15, total: 123, stack: 2, rows: 3, cols: 5, overlap: 20, targetScore: 100, totalDisplaySets: 30}
+];
+const TEMP_LIMIT = 7;
+const DISPLAY_CARD_MATCH_SCORE = 5;
+const INITIAL_DISPLAY_SETS_VISIBLE = 2;
+const FLYING_SPEED_PPS = 1000;
+
+const REDEMPTION_CODES = {
+  "kaiyuan": { undo: 20, hint: 20, shuffle: 20, autoCollect: 20 },
+  "兑换码": { undo: 5, hint: 5, shuffle: 5 },
+  "喵了个喵": { undo: 50, hint: 50, shuffle: 50, autoCollect: 40 },
+  "不知道": { undo: 3, hint: 1, shuffle: 1 },
+  "开元": { undo: 10, hint: 10, shuffle: 10 },
+  "通关": { type: "skip_level" },
+  "xianshi": { type: "curtain_off" },
+  "shuaige": { revive: 3 }
+};
+
+// DOM 元素获取部分保持不变
+const bgm = document.getElementById('bgm');
+const confirmModal = document.getElementById('confirm-modal');
+const confirmMsg = document.getElementById('confirm-msg');
+const confirmYes = document.getElementById('confirm-yes');
+const confirmNo = document.getElementById('confirm-no');
+const footer = document.getElementById('footer');
+const musicToggleBtn = document.getElementById('music-toggle');
+const startBtn = document.getElementById('start-btn');
+const nextBtn = document.getElementById('next-btn');
+const retryBtnLevelFinish = document.getElementById('retry-btn');
+const retryBtnGameOver = document.getElementById('retry-btn2');
+const gobangBtn = document.getElementById('gobang-btn');
+const restartGameBtn = document.getElementById('restart-game-btn');
+const closeGameBtnLevel = document.getElementById('close-game-btn-level');
+const closeGameBtnGameOver = document.getElementById('close-game-btn-gameover');
+const undoBtn = document.getElementById('undo-btn');
+const hintBtn = document.getElementById('hint-btn');
+const shuffleBtn = document.getElementById('shuffle-btn');
+const reviveBtn = document.getElementById('revive-btn');
+const reviveBtnGameOver = document.getElementById('revive-btn-gameover');
+const restartCurrentLevelBtn = document.getElementById('restart-btn');
+const codeInput = document.getElementById('code-input');
+const codeBtn = document.getElementById('code-btn');
+const levelFinishTextElement = document.getElementById('level-finish-text');
+const neteasePlayerDiv = document.getElementById('netease-player');
+const playerDiv = document.getElementById('player');
+const currentScoreElement = document.getElementById('current-score');
+const targetScoreElement = document.getElementById('target-score');
+const levelInfoElement = document.getElementById('level-info');
+const displayArea = document.getElementById('display-area');
+const cardStackArea = document.getElementById('card-stack-area');
+const catPath = document.getElementById('cat-path');
+const walkingCat = document.getElementById('walking-cat');
+const curtainElement = document.getElementById('curtain');
+const wigglingCat1 = document.getElementById('wiggling-cat-1');
+const wigglingCat4 = document.getElementById('wiggling-cat-4');
+const wigglingCat7 = document.getElementById('wiggling-cat-7');
+const level2OutroScreen = document.getElementById('level2-outro-screen');
+const outroVideo = document.getElementById('outro-video');
+const outroImage = document.getElementById('outro-image');
+const outroLoadingText = level2OutroScreen.querySelector('.loading-text');
+const skipOutroBtn = document.getElementById('skip-outro-btn');
+const eventOverlay = document.getElementById('event-overlay');
+const eventMessageBox = document.getElementById('event-message-box');
+const eventIconEl = eventMessageBox.querySelector('.event-icon');
+const eventTextEl = eventMessageBox.querySelector('.event-text');
+const autoCollectBtn = document.getElementById('auto-collect-btn');
+const autoCollectCountEl = document.getElementById('auto-collect-count');
+
+// 游戏状态和工具函数保持不变
+let autoCollectCount = 0;
+let autoCollectActive = false;
+let autoCollectTimer = null;
+let confirmCallback = null;
+let outroVideoTimeout = null;
+let decorationInterval = null;
+let randomEventTimer = null;
+let curtainTimer = null;
+let isLandscape = false; 
+let hasShownLandscapeMessage = false;
+let lastShakeTime = 0;
+
+let audioContext;
+let clickSoundBuffer;
+let clickAudioFailed = false;
+
+let game = {
+  level: 1,
+  levelStartTime: 0,
+  cards: [],
+  board: [],
+  temp: [],
+  matched: [],
+  usedIcons: [],
+  toolUses: {undo: 0, hint: 0, shuffle: 0, revive: 0},
+  score: 0,
+  targetScore: 0,
+  displayCards: [],
+  totalDisplaySetsGenerated: 0,
+  progress: 0,
+  stepStack: [],
+  bgmOn: true,
+  isNewLevel: false,
+  lock: false,
+  flyingCardCount: 0,
+  cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
+  layout: { areaWidth: 0, areaHeight: 0 },
+  autoCollectEnabled: false, 
+  isCurtainEnabled: true
+};
+
+function randArr(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } }
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
+function randBetween(a, b) { return a + Math.random() * (b - a); }
+
+async function initAudio() {
+    try {
+        if (!audioContext) {
+            audioContext = new (window.AudioContext || window.webkitAudioContext)();
+        }
+        if (audioContext.state === 'suspended') {
+            await audioContext.resume();
+        }
+        if (!clickSoundBuffer) {
+            const response = await fetch('kaa.mp3');
+            const arrayBuffer = await response.arrayBuffer();
+            clickSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
+        }
+    } catch (e) {
+        console.error("Web Audio API failed for click sound (kaa.mp3). Falling back to HTML5 Audio.", e);
+        clickAudioFailed = true;
+    }
+}
+
+function playBgm(on) {
+  const bgmElement = document.getElementById('bgm');
+  if (on) {
+    if (bgmElement.src.indexOf('Sukidakara.mp3') === -1) {
+      bgmElement.src = 'Sukidakara.mp3';
+    }
+    bgmElement.volume = 0.2; 
+    const playPromise = bgmElement.play();
+    if (playPromise !== undefined) {
+      playPromise.catch(error => {
+        console.log("BGM play failed, most likely due to browser autoplay policy.", error);
+      });
+    }
+  } else {
+    bgmElement.pause();
+  }
+}
+
+function playClickSound() {
+    if (!game.bgmOn) return;
+    if (clickAudioFailed) {
+        const clickAudio = new Audio('kaa.mp3');
+        clickAudio.play().catch(e => console.error("HTML5 Audio fallback for click sound failed:", e));
+    } else {
+        if (!clickSoundBuffer || !audioContext) return;
+        try {
+            const source = audioContext.createBufferSource();
+            source.buffer = clickSoundBuffer;
+            source.connect(audioContext.destination);
+            source.start(0);
+        } catch (e) {
+            console.error("Failed to play click sound via Web Audio API:", e);
+        }
+    }
+}
+
+function triggerMatchFeedback() {
+    if (navigator.vibrate) {
+        navigator.vibrate(100);
+    }
+    playClickSound();
+}
+
+function showConfirm(msg, callback) {
+  confirmMsg.innerHTML = msg;
+  confirmCallback = callback;
+  confirmModal.style.display = 'flex';
+}
+
+function hideConfirm() {
+  confirmModal.style.display = 'none';
+  confirmCallback = null;
+}
+
+confirmYes.onclick = () => {
+  const callback = confirmCallback;
+  hideConfirm();
+  if (callback) {
+    setTimeout(callback, 20);
+  }
+};
+confirmNo.onclick = hideConfirm;
+
+function generateDisplayCardSet(excludeIcons = []) {
+    let chosenIcon = null;
+    const visibleLayeredCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.stack >= 0 && c.stack <= 3);
+    const visibleLayeredIconCounts = {};
+    visibleLayeredCards.forEach(c => visibleLayeredIconCounts[c.icon] = (visibleLayeredIconCounts[c.icon] || 0) + 1);
+    let potentialVisibleLayeredIcons = Object.keys(visibleLayeredIconCounts).filter(icon => !excludeIcons.includes(icon) && visibleLayeredIconCounts[icon] >= 3);
+    if (potentialVisibleLayeredIcons.length > 0) {
+        chosenIcon = potentialVisibleLayeredIcons[Math.floor(Math.random() * potentialVisibleLayeredIcons.length)];
+    } else {
+        const allClickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+        const combinedClickableIcons = [...allClickableBoardCards.map(c => c.icon), ...game.temp.map(c => c.icon)];
+        const combinedClickableIconCounts = {};
+        combinedClickableIcons.forEach(icon => combinedClickableIconCounts[icon] = (combinedClickableIconCounts[icon] || 0) + 1);
+        let potentialCombinedIcons = Object.keys(combinedClickableIconCounts).filter(icon => !excludeIcons.includes(icon) && combinedClickableIconCounts[icon] >= 3);
+        if (potentialCombinedIcons.length > 0) {
+            chosenIcon = potentialCombinedIcons[Math.floor(Math.random() * potentialCombinedIcons.length)];
+        } else {
+            const allIconsInGame = game.cards.map(c => c.icon);
+            const allIconCounts = {};
+            allIconsInGame.forEach(icon => allIconCounts[icon] = (allIconCounts[icon] || 0) + 1);
+            const anyTripletIcons = Object.keys(allIconCounts).filter(icon => !excludeIcons.includes(icon) && allIconCounts[icon] >= 3);
+            if (anyTripletIcons.length > 0) {
+                chosenIcon = anyTripletIcons[Math.floor(Math.random() * anyTripletIcons.length)];
+            } else {
+                const availableIconsWithoutExclusion = allIconsInGame.filter(icon => !excludeIcons.includes(icon));
+                if (availableIconsWithoutExclusion.length > 0) {
+                    chosenIcon = availableIconsWithoutExclusion[Math.floor(Math.random() * availableIconsWithoutExclusion.length)];
+                } else if (allIconsInGame.length > 0) {
+                    chosenIcon = allIconsInGame[Math.floor(Math.random() * allIconsInGame.length)];
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+    if (chosenIcon) {
+        return [{ icon: chosenIcon, id: Date.now() + 1 }, { icon: chosenIcon, id: Date.now() + 2 }, { icon: chosenIcon, id: Date.now() + 3 }];
+    } else {
+        return null;
+    }
+}
+const STACK_RATIO = 5 / 4; 
+function calculateResponsiveSizes() {
+    const areaW = cardStackArea.offsetWidth;
+    const areaH = cardStackArea.offsetHeight;
+
+    /* 若浏览器不认 aspect-ratio 或被外层约束扭曲，这里强制修正高度 */
+    const expectedH = areaW * STACK_RATIO;
+    // 若为横屏，可适当放大高度
+    const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+    const adjustedH = isLandscape ? expectedH * 1.2 : expectedH;
+    if (Math.abs(areaH - expectedH) > 1) {          // 误差 1px 以内忽略
+        cardStackArea.style.height = `${expectedH}px`;
+    }
+    const lv = LEVELS[game.level - 1];
+    // Make cards slightly smaller to fit more complex shapes
+    const baseCardWidth = areaW / (lv.cols + 3); 
+    const clampedCardWidth = Math.max(35, Math.min(baseCardWidth, 75));
+    const cardAspectRatio = 65 / 85;
+    const finalCardW = clampedCardWidth;
+    const finalCardH = finalCardW / cardAspectRatio;
+    game.cardDimensions = {
+        width: finalCardW,
+        height: finalCardH,
+        fontSize: finalCardW * 0.45,
+        borderRadius: finalCardW * 0.15,
+        borderWidth: Math.max(2, finalCardW * 0.04)
+    };
+}
+
+// =================================================================================
+// START OF MODIFICATION: Refined heart shape layout logic for centering and consistency.
+// =================================================================================
+/**
+ * (源文件算法) 生成一个多层的、居中的心形卡片布局。
+ * 该函数会在底部创建一个随机的“坑”，然后将剩余的卡片以心形排列在上面。
+ * @param {Array} cardsToPlace - 要放置的卡片对象数组。
+ * @param {Object} levelConfig - 当前关卡的配置。
+ * @returns {Array} 包含心形布局位置的新board数组。
+ */
+function repositionCardsAndLayout(cardsToPlace, levelConfig) {
+    const areaW = cardStackArea.offsetWidth;
+    const areaH = cardStackArea.offsetHeight;
+    calculateResponsiveSizes(); // 根据区域宽度确定卡片尺寸
+    const cardW = game.cardDimensions.width;
+    const cardH = game.cardDimensions.height;
+
+    let finalBoard = [];
+    let mutableCardsToPlace = [...cardsToPlace];
+    shuffle(mutableCardsToPlace);
+    let zCounter = 0;
+
+    // --- 1. 在底部放置一个“坑”以增加难度 ---
+    const pitRatio = game.level === 1 ? 0.25 : 0.4;
+    const pitCardCount = Math.floor(mutableCardsToPlace.length * pitRatio);
+    const pitCards = mutableCardsToPlace.splice(0, pitCardCount);
+    for (let i = 0; i < pitCards.length; i++) {
+        const card = pitCards[i];
+        const x = randBetween(cardW * 1.5, areaW - cardW * 2.5);
+        const y = randBetween(cardH * 1.5, areaH - cardH * 2.5);
+        finalBoard.push({
+            ...card,
+            x: x,
+            y: y,
+            z: zCounter++,
+            stack: 0 // “坑”的层级为0
+        });
+    }
+
+    // --- 2. 生成心形的点 ---
+    const heartPoints = [];
+    const heartPointStep = 0.25; 
+    for (let t = 0; t < 2 * Math.PI; t += heartPointStep) { 
+        let x = 16 * Math.pow(Math.sin(t), 3);
+        let y = -(13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t));
+        heartPoints.push({ x, y });
+    }
+
+    // --- 3. 标准化并缩放爱心以适应区域 ---
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    heartPoints.forEach(p => {
+        minX = Math.min(minX, p.x);
+        maxX = Math.max(maxX, p.x);
+        minY = Math.min(minY, p.y);
+        maxY = Math.max(maxY, p.y);
+    });
+
+    const heartWidth = maxX - minX;
+    const heartHeight = maxY - minY;
+    
+    // 缩放比例必须考虑到卡片自身的尺寸
+    const scale = Math.min((areaW - cardW) / heartWidth, (areaH - cardH) / heartHeight);
+
+    // --- 4. 将剩余卡片沿多层心形放置 ---
+    const heartCards = mutableCardsToPlace;
+    const numLayers = game.level === 1 ? 3 : 4;
+    let cardIndex = 0;
+
+    for (let layer = 0; layer < numLayers; layer++) {
+        if (cardIndex >= heartCards.length) break;
+
+        const layerScale = 1 - layer * 0.16; 
+        
+        const layerScaledWidth = heartWidth * scale * layerScale;
+        const layerScaledHeight = heartHeight * scale * layerScale;
+        const layerOffsetX = (areaW - layerScaledWidth - cardW) / 2 - (minX * scale * layerScale);
+        const layerOffsetY = (areaH - layerScaledHeight - cardH) / 2 - (minY * scale * layerScale);
+        
+        for (let i = 0; i < heartPoints.length; i++) {
+            if (cardIndex >= heartCards.length) break;
+
+            const p = heartPoints[i];
+            const card = heartCards[cardIndex++];
+            
+            let x = p.x * scale * layerScale + layerOffsetX;
+            let y = p.y * scale * layerScale + layerOffsetY;
+            
+            finalBoard.push({
+                ...card,
+                x: x,
+                y: y,
+                z: zCounter++,
+                stack: 1 + layer // 心形层从1开始
+            });
+        }
+    }
+
+    // 按z-index排序以确保正确的渲染顺序
+    finalBoard.sort((a, b) => (a.z || 0) - (b.z || 0));
+    return finalBoard;
+}
+
+function genLevel(levelIdx){
+  const lv = LEVELS[levelIdx - 1];
+  game.score = 0;
+  game.targetScore = lv.targetScore;
+  game.totalDisplaySetsGenerated = 0;
+  game.isCurtainEnabled = true;
+  let allIcons = [];
+  const requiredUniqueIcons = Math.ceil(lv.total / 3);
+  let availableIcons = randArr(CARD_ICONS).slice(0, Math.min(CARD_ICONS.length, requiredUniqueIcons + 2));
+  let iconPool = [];
+  for (let i = 0; i < requiredUniqueIcons; i++) {
+    for (let j = 0; j < 3; j++) {
+      iconPool.push(availableIcons[i % availableIcons.length]);
+    }
+  }
+  while (iconPool.length < lv.total) {
+      const remaining = lv.total - iconPool.length;
+      if (remaining < 3) {
+          for (let i = 0; i < remaining; i++) iconPool.push(availableIcons[i % availableIcons.length]);
+      } else {
+          const iconToAdd = availableIcons[Math.floor(Math.random() * availableIcons.length)];
+          iconPool.push(iconToAdd, iconToAdd, iconToAdd);
+      }
+  }
+  shuffle(iconPool);
+  allIcons = iconPool;
+  let cards = [];
+  for(let i = 0; i < lv.total; i++){
+    cards.push({ id: i, icon: allIcons[i], matched: false });
+  }
+  game.cards = cards;
+  // Use the new heart-shaped layout function
+  game.board = repositionCardsAndLayout(cards.map(c => ({...c, covered: false, isNapping: false})), lv);
+  game.displayCards = [];
+  const usedDisplayIconsForLevel = new Set();
+  for (let i = 0; i < INITIAL_DISPLAY_SETS_VISIBLE; i++) {
+      const newSet = generateDisplayCardSet(Array.from(usedDisplayIconsForLevel));
+      if (newSet) {
+          game.displayCards.push({ id: `display-set-${i}`, cards: newSet, matched: false });
+          usedDisplayIconsForLevel.add(newSet[0].icon);
+          game.totalDisplaySetsGenerated++;
+      }
+  }
+  return {cards: game.cards, board: game.board, usedIcons: availableIcons.slice(0, Math.ceil(lv.total/3))};
+}
+
+/**
+ * Checks if a card is clickable by verifying it's not covered by another card.
+ * This logic is crucial for the stacking mechanic.
+ * @param {Object} card - The card to check.
+ * @param {Array} board - The current game board.
+ * @returns {boolean} - True if the card is on the top layer and clickable, false otherwise.
+ */
+function isCardClickable(card, board) {
+    // A card cannot be clicked if it's already matched, being animated, or "napping".
+    if (card.matched || card.isFlying || card.isNapping) return false;
+
+    const activeCards = board.filter(c => !c.matched && !c.isFlying);
+    const cardW = game.cardDimensions.width;
+    const cardH = game.cardDimensions.height;
+    
+    // To be clickable, a card must not be covered. We check this by seeing if the
+    // center point of the card is inside the bounding box of any other card
+    // that has a higher z-index (is stacked on top).
+    const centerX = card.x + cardW / 2;
+    const centerY = card.y + cardH / 2;
+
+    for (const otherCard of activeCards) {
+        if (card.id === otherCard.id) continue;
+
+        // The core of the "top layer" logic: only cards with a higher z-index can block the current card.
+        if (otherCard.z > card.z) {
+            const otherLeft = otherCard.x;
+            const otherRight = otherCard.x + cardW;
+            const otherTop = otherCard.y;
+            const otherBottom = otherCard.y + cardH;
+
+            // Check if the center of the current card falls within the bounds of the other card.
+            if (centerX > otherLeft && centerX < otherRight && centerY > otherTop && centerY < otherBottom) {
+                return false; // It's blocked by a card on top.
+            }
+        }
+    }
+    return true; // No card is blocking it, so it's on the top layer and clickable.
+}
+
+
+// MODIFIED: clickCard function with robust state checking
+function clickCard(id) {
+  let cardData = game.board.find(c => c.id === id);
+    if (autoCollectActive) {
+    const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
+    if (unMatchedTempCards >= TEMP_LIMIT - 1) {
+      // 在临界状态下进行额外检查
+      if (!isSafeToClickCard(id)) {
+        stopAutoCollect();
+        showRiskModal(`
+          <div style="text-align: center;">
+            <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 操作提醒</div>
+            <div>自动收集已停止</div>
+            <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
+              当前操作可能导致游戏失败，建议重新考虑
+            </div>
+          </div>
+        `);
+        return;
+      }
+    }
+  }
+  if (game.lock) return; // 游戏锁定时不允许点击
+  if (!cardData || cardData.matched || cardData.isFlying || cardData.isNapping || !isCardClickable(cardData, game.board)) {
+  if (game.temp.filter(c => !c.matched).length >= TEMP_LIMIT) {
+    showMessage('暂存区已满，无法再放入卡片');
+    return;
+    }
+  }
+  playClickSound();
+  saveStep();
+  
+  cardData.matched = true; 
+  cardData.isFlying = true;
+  game.flyingCardCount++;
+
+  const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
+  if (!clickedCardEl) {
+    cardData.matched = false;
+    cardData.isFlying = false;
+    game.flyingCardCount--;
+    return;
+  }
+
+  const startRect = clickedCardEl.getBoundingClientRect();
+  
+  const flyingCard = document.createElement('div');
+  flyingCard.className = 'flying-card swirl-in';
+  flyingCard.innerHTML = cardData.icon;
+  document.body.appendChild(flyingCard);
+  flyingCard.style.left = `${startRect.left}px`;
+  flyingCard.style.top = `${startRect.top}px`;
+  flyingCard.style.width = `${startRect.width}px`;
+  flyingCard.style.height = `${startRect.height}px`;
+  flyingCard.style.fontSize = `${game.cardDimensions.fontSize}px`;
+  flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
+  flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
+
+  clickedCardEl.style.visibility = 'hidden';
+  
+  const tempForPositionCalculation = [...game.temp, { icon: cardData.icon, id: cardData.id }];
+  tempForPositionCalculation.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
+  const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
+  const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+  
+  if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
+      if(flyingCard.parentNode) document.body.removeChild(flyingCard);
+      cardData.matched = false;
+      cardData.isFlying = false;
+      game.flyingCardCount--;
+      clickedCardEl.style.visibility = 'visible';
+      return;
+  }
+  
+  const endRect = tempSlots[endSlotIndex].getBoundingClientRect();
+  const tempSlotStyle = window.getComputedStyle(tempSlots[endSlotIndex]);
+  const flyingCardFinalWidth = parseFloat(tempSlotStyle.width) * 0.9;
+  
+  const dx = (endRect.left + endRect.width / 2) - (startRect.left + startRect.width / 2);
+  const dy = (endRect.top + endRect.height / 2) - (startRect.top + startRect.height / 2);
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  const animationDuration = Math.max(200, (distance / FLYING_SPEED_PPS) * 1000);
+
+  flyingCard.style.transitionDuration = `${animationDuration}ms`;
+
+  requestAnimationFrame(() => {
+    const destLeft = endRect.left + (endRect.width - flyingCardFinalWidth) / 2;
+    const destTop = endRect.top + (endRect.height - flyingCardFinalWidth / (startRect.width / startRect.height)) / 2;
+    flyingCard.style.left = `${destLeft}px`;
+    flyingCard.style.top = `${destTop}px`;
+    flyingCard.style.transform = `scale(${flyingCardFinalWidth / startRect.width})`;
+  });
+
+  setTimeout(() => {
+    if (flyingCard.parentNode) document.body.removeChild(flyingCard);
+    
+    game.flyingCardCount--;
+    
+    delete cardData.isFlying;
+    game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
+    game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
+    
+    renderTemp();
+    renderBoard();
+    renderProgressAndScore();
+    updateWigglingCatVisibility();
+
+    let iconCnt = {};
+    game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
+    let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
+
+        if (matchedIcon) {
+    triggerMatchFeedback();
+    if (autoCollectActive) {
+      autoCollectCount--;
+      updateAutoCollectStatus();
+      if (autoCollectCount <= 0) stopAutoCollect();
+    }
+    // 记录要消除的卡片索引
+    const toVanishIndexes = [];
+    game.temp.forEach((card, i) => {
+        if (card.icon === matchedIcon && !card.matched) {
+            card.matched = true;
+            toVanishIndexes.push(i);
+        }
+    });
+
+    let animationsToComplete = toVanishIndexes.length;
+    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+
+    const finishCleanup = () => {
+        game.temp = game.temp.filter(c => !c.matched);  // 彻底移除
+        renderTemp();
+        renderBoard();
+        checkWin();
+    };
+
+    if (animationsToComplete === 0) {
+        finishCleanup();
+    } else {
+        // 绑定动画结束事件
+        toVanishIndexes.forEach(idx => {
+            const slot = tempSlots[idx];
+            if (slot) {
+                const cardEl = slot.querySelector('.temp-card');
+                if (cardEl) {
+                    cardEl.classList.add('vanishing');
+                    cardEl.addEventListener('animationend', () => {
+                        animationsToComplete--;
+                        if (animationsToComplete === 0) finishCleanup();
+                    }, { once: true });
+                } else {
+                    animationsToComplete--;
+                    if (animationsToComplete === 0) finishCleanup();
+                }
+            }
+        });
+        // 超时兜底，防止动画事件丢失
+        setTimeout(() => {
+            if (animationsToComplete > 0) finishCleanup();
+        }, 700);
+    }
+
+      // 处理计分展示区的逻辑保持不变
+      game.displayCards.forEach(displaySet => {
+          if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
+              displaySet.matched = true;
+              game.score += DISPLAY_CARD_MATCH_SCORE;
+              renderProgressAndScore();
+              const matchedDisplayGroupEl = document.querySelector(`#display-area .display-group[data-id='${displaySet.id}']`);
+              if (matchedDisplayGroupEl) {
+                  const groupRect = matchedDisplayGroupEl.getBoundingClientRect();
+                  const scoreAnimDiv = document.createElement('div');
+                  scoreAnimDiv.className = 'score-animation';
+                  scoreAnimDiv.textContent = `+${DISPLAY_CARD_MATCH_SCORE}`;
+                  document.body.appendChild(scoreAnimDiv);
+                  scoreAnimDiv.style.left = `${groupRect.left + groupRect.width / 2}px`;
+                  scoreAnimDiv.style.top = `${groupRect.top + groupRect.height / 2}px`;
+                  scoreAnimDiv.style.transform = 'translate(-50%, -50%)';
+                  scoreAnimDiv.addEventListener('animationend', () => scoreAnimDiv.remove(), { once: true });
+              }
+              setTimeout(() => {
+                  const newSet = generateDisplayCardSet(game.displayCards.map(ds => ds.cards[0].icon));
+                  if (newSet) {
+                      displaySet.cards = newSet;
+                      displaySet.matched = false;
+                  } else {
+                      game.displayCards = game.displayCards.filter(ds => ds.id !== displaySet.id);
+                  }
+                  renderDisplay();
+              }, 400);
+          }
+      });
+    } else {
+      checkWin(); // 如果没有匹配，也需要检查游戏状态
+    }
+    if (game.autoCollectEnabled) {
+      tryResumeAutoCollect();
+    }
+  }, animationDuration);
+}
+
+function checkWin() {
+    // MODIFIED: Add an early exit if a game end screen is already visible
+    const levelFinishScreen = document.getElementById('level-finish');
+    const gameOverScreen = document.getElementById('game-over');
+    if (levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex') {
+        // A game end screen is already active, do not proceed with win/lose checks
+        return;
+    }
+
+    const allCardsMatched = game.board.every(c => c.matched);
+    const scoreMet = game.score >= game.targetScore;
+    
+    // Check for game over condition (temp area full and no match)
+    // This check is now correctly placed after a card has been added to temp
+    // and after any potential matches have been processed.
+    if (game.temp.filter(c => !c.matched).length >= TEMP_LIMIT && !allCardsMatched) {
+        gameOver('暂存区已超限，游戏失败！');
+        return;
+    }
+
+    if (allCardsMatched && scoreMet) {
+        stopAutoCollect(); // 关卡结束时彻底停止自动收集
+        stopRandomEvents();
+        stopCurtainRandomToggle();
+        stopDecorationUpdates();
+        game.lock = true;
+        const elapsedSeconds = ((Date.now() - game.levelStartTime) / 1000).toFixed(1);
+        const message = `本关过关用时 ${elapsedSeconds} 秒`;
+        const originalYesText = confirmYes.textContent;
+        const originalNoDisplay = confirmNo.style.display;
+        confirmYes.textContent = '好的';
+        confirmNo.style.display = 'none';
+        showConfirm(message, () => {
+            if (game.level === 1) {
+                showLevelFinish('恭喜恭喜！第一关通关！');
+            } else {
+                showLevelFinish('<p> <p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉');
+            }
+            confirmYes.textContent = originalYesText;
+            confirmNo.style.display = originalNoDisplay;
+        });
+    } else if (allCardsMatched && !scoreMet) {
+        stopAutoCollect(); // 关卡结束时彻底停止自动收集
+        gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
+    }
+  updateAutoCollectStatus();
+}
+
+function saveStep(){
+  game.stepStack.push({
+    board: deepClone(game.board),
+    temp: deepClone(game.temp),
+    score: game.score,
+    displayCards: deepClone(game.displayCards),
+    totalDisplaySetsGenerated: game.totalDisplaySetsGenerated
+  });
+  if(game.stepStack.length > 20) game.stepStack.shift();
+}
+
+function undoStep(){
+  if(game.stepStack.length > 0){
+    let prev = game.stepStack.pop();
+    game.board = deepClone(prev.board);
+    game.temp = deepClone(prev.temp);
+    game.score = prev.score;
+    game.displayCards = deepClone(prev.displayCards);
+    game.totalDisplaySetsGenerated = prev.totalDisplaySetsGenerated;
+    renderAll();
+    showMessage('已撤销');
+    updateToolButtons(); // Ensure tool buttons are updated after undo
+    updateWigglingCatVisibility();
+  } else {
+    showMessage('无法撤销更多', '#888');
+  }
+}
+
+function animateCardsInBatches(cards, batchSize = 20, delay = 100) {
+  let index = 0;
+
+  function animateBatch() {
+    const batch = cards.slice(index, index + batchSize);
+    batch.forEach(card => {
+      card.classList.add('swirl-in');
+    });
+    index += batchSize;
+    if (index < cards.length) {
+      setTimeout(animateBatch, delay);
+    } else {
+      // 所有动画完成后，强制刷新游戏状态
+      setTimeout(() => {
+        // 重新计算卡片位置
+        game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+
+        // 清除动画类名，防止干扰点击
+        cards.forEach(card => card.classList.remove('swirl-in'));
+
+        // 强制刷新 DOM
+        renderAll();
+
+        game.lock = false;
+        showMessage('已洗牌');
+      }, 600); // 等待最后一批动画完成
+    }
+  }
+
+  animateBatch();
+}
+// 辅助函数：分批次为卡片添加 "swirl-in" 动画
+function animateShuffleInBatches(cards, onAnimationEnd) {
+    let index = 0;
+    const batchSize = 20; // 每批处理20个卡片
+    const delay = 100;    // 每批之间的延迟
+
+    function animateBatch() {
+        const batch = cards.slice(index, index + batchSize);
+        batch.forEach(card => {
+            card.classList.add('swirl-in');
+            // 为每个卡片添加一次性的动画结束监听器
+            card.addEventListener('animationend', onAnimationEnd, { once: true });
+        });
+        index += batchSize;
+        if (index < cards.length) {
+            setTimeout(animateBatch, delay);
+        }
+    }
+    animateBatch();
+}
+
+// 新的 shuffleStep 函数，调用上面的辅助函数
+function shuffleStep(){
+  saveStep();
+  game.lock = true;
+
+  const allCards = Array.from(document.querySelectorAll('#card-stack-area .card:not(.matched)'));
+  // 仅对当前可见的卡片应用动画
+  const visibleCards = allCards.filter(card => card.offsetParent !== null);
+
+  if (visibleCards.length === 0) {
+      game.lock = false;
+      return;
+  }
+
+  // 使用计数器确保所有动画都完成后再执行清理
+  let animationsToComplete = visibleCards.length;
+
+  const cleanupAfterShuffle = () => {
+      // 重新计算卡片布局
+      game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+      
+      // 重新渲染所有内容，新生成的卡片将不带 swirl-in 类
+      renderAll();
+
+      showMessage('已洗牌');
+      game.lock = false;
+      updateWigglingCatVisibility();
+  };
+  
+  const handleAnimationEnd = () => {
+      animationsToComplete--;
+      if (animationsToComplete === 0) {
+          cleanupAfterShuffle();
+      }
+  };
+  
+  // 清理可能残留的旧动画类
+  visibleCards.forEach(card => card.classList.remove('swirl-in'));
+  
+  // 开始分批执行动画
+  animateShuffleInBatches(visibleCards, handleAnimationEnd);
+}
+
+function hintStep(){
+  let tempIcons = game.temp.map(c => c.icon);
+  let clickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+  let clickableBoardIcons = clickableBoardCards.map(c => c.icon);
+  let allAvailableIcons = [...tempIcons, ...clickableBoardIcons];
+  let iconCounts = {};
+  allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
+  // Fixed typo: changed iconCnt to iconCounts
+  let targetIcon = Object.keys(iconCounts).find(icon => iconCounts[icon] >= 3);
+  
+  // Remove any existing hinted-shake classes before applying new ones
+  document.querySelectorAll('.hinted-shake').forEach(el => el.classList.remove('hinted-shake'));
+
+  if (targetIcon) {
+    let hintDone = 0;
+    const hintedElements = [];
+
+    // Highlight cards in temp area
+    for (let i = 0; i < game.temp.length && hintDone < 3; i++) {
+      if (game.temp[i].icon === targetIcon && !game.temp[i].matched) {
+        const tempCardElement = document.querySelectorAll('#temp-area .temp-slot .temp-card')[i];
+        if (tempCardElement) {
+          tempCardElement.classList.add('hinted-shake');
+          hintedElements.push(tempCardElement);
+          hintDone++;
+        }
+      }
+    }
+
+    // Highlight cards on the board
+    for (let i = 0; i < clickableBoardCards.length && hintDone < 3; i++) {
+      let boardCard = clickableBoardCards[i];
+      if (boardCard.icon === targetIcon) {
+        let doms = document.querySelector(`#card-stack-area .card[data-id='${boardCard.id}']`);
+        if (doms) {
+          doms.classList.add('hinted-shake');
+          hintedElements.push(doms);
+          hintDone++;
+        }
+      }
+    }
+    
+    showMessage('已提示可消除三张');
+    // Remove the shake animation after a short delay
+    setTimeout(() => hintedElements.forEach(el => el.classList.remove('hinted-shake')), 2000);
+  } else {
+    showMessage('当前无可三消', "#888");
+  }
+}
+reviveBtnGameOver.addEventListener('click', reviveGame);
+function gameOver(msg){
+  stopRandomEvents();
+  stopCurtainRandomToggle();
+  stopDecorationUpdates();
+  game.lock = true;
+  document.getElementById('card-stack-area').innerHTML = '';
+  document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
+  displayArea.innerHTML = '';
+  document.getElementById('level-info').textContent = '';
+  currentScoreElement.textContent = '0';
+  targetScoreElement.textContent = '0';
+  document.getElementById('message-bar').textContent = '';
+  hideWigglingCats();
+
+  // MODIFIED: Remove any lingering flying cards when game over is triggered
+  document.querySelectorAll('.flying-card').forEach(card => card.remove());
+  game.flyingCardCount = 0; // Reset flying card count explicitly
+  
+  const gameOverScreen = document.getElementById('game-over');
+  gameOverScreen.style.display = 'flex';
+  gameOverScreen.querySelector('#game-over-text').innerHTML = msg;
+  
+  // Show revive button if available
+  if (game.toolUses.revive > 0) {
+      reviveBtnGameOver.style.display = 'inline-block';
+  } else {
+      reviveBtnGameOver.style.display = 'none';
+  }
+updateAutoCollectStatus();
+}
+
+function reviveGame() {
+    if (game.toolUses.revive <= 0) {
+        showMessage('没有复活卡了！', '#c0392b');
+        return;
+    }
+
+    showConfirm('确定要使用1次复活卡吗？这将回到游戏界面并解除打盹卡片。', () => {
+        game.toolUses.revive--;
+
+        // 撤销最后一步（只pop一次）
+        if (game.stepStack.length > 0) {
+            game.stepStack.pop();
+        }
+
+        // 还原到上一步状态（如果有）
+        if (game.stepStack.length > 0) {
+            let prev = game.stepStack[game.stepStack.length - 1];
+            game.board = deepClone(prev.board);
+            game.temp = deepClone(prev.temp);
+            game.score = prev.score;
+            game.displayCards = deepClone(prev.displayCards);
+            game.totalDisplaySetsGenerated = prev.totalDisplaySetsGenerated;
+        } else {
+            // 如果没有历史步骤，则重开当前关卡
+            startGame(game.level);
+            showMessage('复活成功！已回到本关初始状态。', '#3e5a2b');
+            return;
+        }
+
+        // 解除所有 nap 状态
+        game.board.forEach(card => {
+            card.isNapping = false;
+        });
+
+        document.getElementById('game-over').style.display = 'none';
+        game.lock = false;
+        renderAll();
+        showMessage('复活成功！撤销最后一步并唤醒全部卡片。', '#3e5a2b');
+        startRandomEvents();
+        startCurtainRandomToggle();
+        startDecorationUpdates();
+    });
+}
+        
+function startGame(level) {
+  game.lock = true;
+  footer.style.display = 'block';
+  game.level = level;
+  game.levelStartTime = Date.now();
+  game.flyingCardCount = 0;
+
+  let lvData = genLevel(level);
+  game.cards = lvData.cards;
+  game.board = lvData.board;
+  game.usedIcons = lvData.usedIcons;
+  game.temp = [];
+  game.matched = [];
+  game.toolUses.undo = 0;
+  game.toolUses.hint = 0;
+  game.toolUses.shuffle = 0;
+  game.stepStack = [];
+  game.isNewLevel = true;
+  game.autoCollectEnabled = false; 
+  renderAll();
+
+  const cardStackArea = document.getElementById('card-stack-area');
+  const oldLid = document.getElementById('card-stack-lid');
+  if (oldLid) oldLid.remove();
+  const lid = document.createElement('div');
+  lid.id = 'card-stack-lid';
+  lid.innerHTML = `
+      <div class="lid-text-top">卡片随机生成</div>
+      <div class="lid-emoji">📩</div>
+      <div class="lid-footer"><small>Coded & Designed by 开元</small></div>
+  `;
+  cardStackArea.appendChild(lid);
+  cardStackArea.classList.add('level-starting');
+  setTimeout(() => {
+    const cards = cardStackArea.querySelectorAll('.card');
+    cards.forEach((card, index) => {
+      card.style.visibility = 'visible';
+      card.classList.add('card-floating-in');
+      card.style.animationDelay = `${index * 0.05}s`;
+    });
+  }, 1000);
+  setTimeout(() => {
+    cardStackArea.classList.remove('level-starting');
+    if (lid.parentNode) {
+        lid.remove();
+    }
+    const cards = cardStackArea.querySelectorAll('.card');
+    cards.forEach(card => {
+        card.classList.remove('card-floating-in');
+        card.style.animationDelay = '';
+    });
+    game.lock = false;
+}, 3000);
+
+  if (game.bgmOn) playBgm(true);
+  positionCatWalker();
+  updateWigglingCatVisibility();
+  startRandomEvents();
+  startDecorationUpdates();
+  positionCurtain();
+  toggleCurtain(false);
+  setTimeout(() => {
+    toggleCurtain(true);
+    startCurtainRandomToggle();
+  }, 3200);
+}
+
+function renderBoard(){
+  const area = document.getElementById('card-stack-area');
+  const existingCardElements = area.querySelectorAll('.card');
+  
+  // Get IDs of cards that should currently be rendered on the board
+  // These are cards that are not matched and not currently flying
+  const cardsToDisplayInBoard = game.board.filter(c => !c.matched && !c.isFlying);
+  const cardsToDisplayInBoardIds = new Set(cardsToDisplayInBoard.map(c => c.id));
+
+  // 1. Remove cards from DOM that should no longer be there
+  existingCardElements.forEach(el => {
+    const cardId = parseInt(el.dataset.id, 10);
+    if (!cardsToDisplayInBoardIds.has(cardId)) {
+      el.remove();
+    }
+  });
+
+  // 2. Add or update cards that should be on the board
+  cardsToDisplayInBoard.sort((a, b) => a.z - b.z); // Ensure correct z-index order for rendering
+
+  cardsToDisplayInBoard.forEach((card) => {
+    let el = document.querySelector(`#card-stack-area .card[data-id='${card.id}']`);
+    const clickable = isCardClickable(card, game.board); // Re-evaluate clickability for each card
+
+    if (!el) { // Card does not exist in DOM, create it
+      el = document.createElement('div');
+      el.dataset.id = card.id;
+      area.appendChild(el);
+    }
+
+    // Update common properties and classes for existing or new elements
+    el.className = "card" + (clickable ? "" : " disabled"); // Crucial: Update disabled class
+    if (card.isNapping) {
+      el.classList.add('napping');
+    } else {
+      el.classList.remove('napping');
+    }
+    
+    el.style.left = card.x + 'px';
+    el.style.top = card.y + 'px';
+    el.style.zIndex = card.z;
+    el.innerHTML = card.icon;
+    el.style.width = `${game.cardDimensions.width}px`;
+    el.style.height = `${game.cardDimensions.height}px`;
+    el.style.fontSize = `${game.cardDimensions.fontSize}px`;
+    el.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
+    el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
+  });
+  game.isNewLevel = false;
+  updateAutoCollectStatus();
+  if (autoCollectActive && !autoCollectTimer) {
+    autoCollectStep(); // 只在没有定时器时启动
+  }
+}
+
+function renderTemp(){
+  const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+  const tempArea = document.getElementById('temp-area');
+  const tempCardScaleFactor = 0.8;
+  const tempCardWidth = game.cardDimensions.width * tempCardScaleFactor;
+  const tempCardHeight = game.cardDimensions.height * tempCardScaleFactor;
+  const tempCardFontSize = game.cardDimensions.fontSize * tempCardScaleFactor;
+  const tempCardBorderRadius = game.cardDimensions.borderRadius * tempCardScaleFactor;
+  const tempCardBorderWidth = game.cardDimensions.borderWidth * tempCardScaleFactor;
+  tempArea.style.minHeight = `${tempCardHeight + (tempCardBorderWidth * 2) + 16}px`;
+  tempSlots.forEach((slot, i) => {
+    slot.innerHTML = '';
+    slot.style.width = `${tempCardWidth}px`;
+    slot.style.height = `${tempCardHeight}px`;
+    slot.style.borderRadius = `${tempCardBorderRadius}px`;
+    slot.style.borderWidth = `${tempCardBorderWidth}px`;
+    slot.style.margin = '0';
+    if (i < game.temp.length) {
+      const c = game.temp[i];
+      let el = document.createElement('div');
+      el.className = "temp-card" + (c.matched ? " matched" : "");
+      el.innerHTML = c.icon;
+      el.style.fontSize = `${tempCardFontSize}px`;
+      el.style.borderRadius = `${tempCardBorderRadius}px`;
+      el.style.borderWidth = `${tempCardBorderWidth}px`;
+      slot.appendChild(el);
+    }
+  });
+  let persistentHeart = document.getElementById('persistent-heart');
+  if (game.temp.length === 7) {
+    const seventhTempSlot = tempSlots[6];
+    if (seventhTempSlot) {
+      const mainArea = document.getElementById('main-area');
+      const cardStackArea = document.getElementById('card-stack-area');
+      const seventhSlotRect = seventhTempSlot.getBoundingClientRect();
+      const cardStackRect = cardStackArea.getBoundingClientRect();
+      const mainAreaRect = mainArea.getBoundingClientRect();
+      const heartVerticalMidpointAbsolute = cardStackRect.bottom + (seventhSlotRect.top - cardStackRect.bottom) / 2;
+      const heartTopRelativeToMainArea = heartVerticalMidpointAbsolute - mainAreaRect.top;
+      const heartLeftRelativeToMainArea = (seventhTempSlot.left + seventhTempSlot.offsetWidth / 2) - mainAreaRect.left;
+      if (!persistentHeart) {
+        persistentHeart = document.createElement('div');
+        persistentHeart.id = 'persistent-heart';
+        persistentHeart.className = 'heart-animation';
+        persistentHeart.innerHTML = '💝';
+        mainArea.appendChild(persistentHeart);
+      }
+      persistentHeart.style.left = `${heartLeftRelativeToMainArea}px`;
+      persistentHeart.style.top = `${heartTopRelativeToMainArea}px`;
+      persistentHeart.style.transform = 'translate(-50%, -50%)';
+      persistentHeart.style.display = 'block';
+    }
+  } else {
+    if (persistentHeart) persistentHeart.style.display = 'none';
+  }
+  updateAutoCollectStatus();
+}
+
+function renderDisplay() {
+    displayArea.innerHTML = '';
+    const displayCardWidth = game.cardDimensions.width * 0.7;
+    const displayCardHeight = game.cardDimensions.height * 0.7;
+    const displayCardFontSize = game.cardDimensions.fontSize * 0.7;
+    const displayCardBorderRadius = game.cardDimensions.borderRadius * 0.7;
+    const displayCardBorderWidth = game.cardDimensions.borderWidth * 0.7;
+    const displayGroupGap = displayCardWidth * 0.1;
+    displayArea.style.width = `${cardStackArea.offsetWidth * 0.95}px`;
+    displayArea.style.minHeight = `${displayCardHeight + displayCardBorderWidth * 2 + 20}px`;
+    game.displayCards.forEach(displaySet => {
+        const groupDiv = document.createElement('div');
+        groupDiv.className = 'display-group';
+        groupDiv.dataset.id = displaySet.id;
+        groupDiv.style.gap = `${displayGroupGap}px`;
+        displaySet.cards.forEach(card => {
+            const cardDiv = document.createElement('div');
+            cardDiv.className = 'display-card' + (displaySet.matched ? ' matched-display' : '');
+            cardDiv.innerHTML = card.icon;
+            cardDiv.style.width = `${displayCardWidth}px`;
+            cardDiv.style.height = `${displayCardHeight}px`;
+            cardDiv.style.fontSize = `${displayCardFontSize}px`;
+            cardDiv.style.borderRadius = `${displayCardBorderRadius}px`;
+            cardDiv.style.borderWidth = `${displayCardBorderWidth}px`;
+            groupDiv.appendChild(cardDiv);
+        });
+        displayArea.appendChild(groupDiv);
+    });
+}
+
+function renderProgressAndScore(){
+  levelInfoElement.textContent = `关卡: ${game.level} / 2`;
+  currentScoreElement.textContent = game.score;
+  targetScoreElement.textContent = game.targetScore;
+  updateWigglingCatVisibility();
+}
+
+function showMessage(msg, color){
+  let bar = document.getElementById('message-bar');
+  bar.style.color = color || '#c0392b';
+  bar.textContent = msg || '';
+  if(msg) setTimeout(()=>{bar.textContent='';}, 2300);
+}
+
+function hasTripleMatch() {
+  let tempIcons = game.temp.filter(c => !c.matched).map(c => c.icon);
+  let clickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+  let clickableBoardIcons = clickableBoardCards.map(c => c.icon);
+  let allAvailableIcons = [...tempIcons, ...clickableBoardIcons];
+  let iconCounts = {};
+  allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
+  return Object.values(iconCounts).some(cnt => cnt >= 3);
+}
+
+function updateToolButtons() {
+  document.getElementById('undo-count').textContent = game.toolUses.undo;
+  document.getElementById('hint-count').textContent = game.toolUses.hint;
+  document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
+  document.getElementById('revive-count').textContent = game.toolUses.revive;
+
+  undoBtn.disabled = isLandscape || game.toolUses.undo <= 0;
+  undoBtn.title = isLandscape ? "横屏模式下不可用" : "撤销(需兑换码)";
+  hintBtn.disabled = game.toolUses.hint <= 0 || !hasTripleMatch(); // 新增三消检测
+  shuffleBtn.disabled = game.toolUses.shuffle <= 0;
+  reviveBtn.disabled = game.toolUses.revive <= 0;
+}
+
+function renderAll(){
+  renderBoard();
+  renderTemp();
+  renderDisplay();
+  renderProgressAndScore();
+  updateToolButtons();
+  positionCatWalker();
+  updateWigglingCatVisibility();
+  positionCurtain();
+  toggleCurtain(false);
+  updateAutoCollectStatus();
+  if (autoCollectActive && !autoCollectTimer) {
+    autoCollectStep(); // 只在没有定时器时启动
+  }
+}
+
+function showLevelFinish(msg){
+  stopRandomEvents();
+  stopCurtainRandomToggle();
+  stopDecorationUpdates();
+  playBgm(false);
+  if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+  if (outroVideo) {
+      outroVideo.pause();
+      outroVideo.currentTime = 0;
+  }
+  level2OutroScreen.style.display = 'none';
+  skipOutroBtn.style.display = 'none';
+
+  const levelFinishScreen = document.getElementById('level-finish');
+  levelFinishScreen.style.display='flex';
+  levelFinishTextElement.innerHTML = msg;
+  const existingConfetti = levelFinishScreen.querySelector('.confetti-container');
+  if (existingConfetti) existingConfetti.remove();
+  const confettiContainer = document.createElement('div');
+  confettiContainer.className = 'confetti-container';
+  levelFinishScreen.appendChild(confettiContainer);
+  const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+  for (let i = 0; i < 150; i++) {
+      const piece = document.createElement('div');
+      piece.className = 'confetti-piece';
+      piece.style.left = Math.random() * 100 + 'vw';
+      piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+      const duration = Math.random() * 3 + 4;
+      piece.style.animationDuration = `${duration}s`;
+      piece.style.animationDelay = `${Math.random() * 5}s`;
+      piece.style.transform = `rotate(${Math.random() * 360}deg)`;
+      confettiContainer.appendChild(piece);
+  }
+  nextBtn.style.display = (game.level === 1) ? 'inline-block' : 'none';
+  gobangBtn.classList.remove('animated-scale-fade');
+  closeGameBtnLevel.classList.remove('animated-scale-fade');
+  if (game.level === 1) {
+    levelFinishTextElement.style.animation = 'shake 6s infinite, show-card-property 15s forwards';
+    levelFinishTextElement.innerHTML += '<br>下一关后有彩蛋🪅！';
+    playerDiv.style.display = 'block';
+    neteasePlayerDiv.style.display = 'none';
+    gobangBtn.style.display = 'none';
+    restartGameBtn.style.display = 'none';
+    retryBtnLevelFinish.style.display = 'inline-block';
+    closeGameBtnLevel.onclick = () => handleCloseGame('level');
+  } else if (game.level === 2) {
+    levelFinishTextElement.style.animation = 'pulse-scale 2s infinite alternate, wave 2s infinite';
+    playerDiv.style.display = 'none';
+    neteasePlayerDiv.style.display = 'block';
+    gobangBtn.style.display = 'inline-block';
+    restartGameBtn.style.display = 'inline-block';
+    retryBtnLevelFinish.style.display = 'none';
+    gobangBtn.classList.add('animated-scale-fade');
+    closeGameBtnLevel.classList.add('animated-scale-fade');
+    closeGameBtnLevel.onclick = () => {
+        document.getElementById('level-finish').style.display = 'none';
+        playLevel2Outro();
+    };
+  }
+}
+
+function initializeGame(){
+  createRiskModal(); // 创建风险提示框
+  musicToggleBtn.innerHTML = game.bgmOn ? '🎼' : '🔇';
+  updateToolButtons();
+}
+
+function handleCloseGame(type) {
+    showConfirm('确定要关闭游戏吗？', () => {
+        window.close();
+        setTimeout(() => {
+            document.getElementById('game-container').style.display = 'none';
+            let messageHtml = '';
+
+            if (type === 'level') {
+                if (game.level === 1) {
+                    messageHtml = `
+                        <p>当前客户端暂不支持自动关闭，</p>
+                        <p><small>小提示：可输入"kaiyuan"兑换提示次数。</small></p>
+                        <br> 如果想重新开始游戏，请点击<br>
+                        <br><button onclick="window.location.href='https://www.kaiyuanzhu.qzz.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>
+                    `;
+                } else {
+                    messageHtml = `
+                        <p>当前客户端暂不支持自动关闭</p>
+                        <p>感谢游玩全部关卡！</p>
+                        <br> 如需重开，请点击<br><br>
+                        <button onclick="window.location.href='https://sub.kaiyuanzhu.qzz.io/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>
+                    `;
+                }
+            } else if (type === 'gameover') {
+                messageHtml = `
+                    <p>当前客户端暂不支持自动关闭</p>
+                    <p><small>小提示：可输入"<b>kaiyuan</b>"兑换提示次数。</small></p>
+                    <br> 如果想重新开始游戏，请点击<br><br>
+                    <button onclick="window.location.href='https://www.kaiyuanzhu.qzz.io/cat/'" style="padding: 10px 20px; border: 1px solid #dc2626; background-color: #fef2f2; cursor: pointer; border-radius: 0.375rem;">重新开始</button>
+                `;
+            }
+
+            document.body.innerHTML = `
+                <div style="display:flex; flex-direction:column; align-items:center; justify-content:center; height:60vh; font-size:1.2em; color:#5d4037; text-align:center; opacity: 1;">
+                    ${messageHtml}
+                    <br><small class="loading-footer mt-8">喵了个喵 &copy; 2025 | Designed by 开元</small>
+                </div>
+            `;
+        }, 100);
+    });
+}
+
+function showEventMessage(icon, text) {
+    eventIconEl.textContent = icon;
+    eventTextEl.innerHTML = text;
+    eventOverlay.style.display = 'flex';
+    setTimeout(() => eventOverlay.style.display = 'none', 3500);
+}
+
+function eventCatNap() {
+    const CATNAP_MIN_DURATION = 12000;
+    const CATNAP_MAX_DURATION = 14000;
+    const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
+    if (clickableCards.length < 3) return;
+    showEventMessage('💤', '猫咪在打盹...<br>有些卡牌暂时拿不到了！');
+    game.lock = true;
+    const nappingCards = [];
+    const centerCard = clickableCards[Math.floor(Math.random() * clickableCards.length)];
+    nappingCards.push(centerCard);
+    const otherCards = game.board.filter(c => !c.matched && c.id !== centerCard.id);
+    otherCards.sort((a, b) => Math.hypot(a.x - centerCard.x, a.y - centerCard.y) - Math.hypot(b.x - centerCard.x, b.y - centerCard.y));
+    nappingCards.push(...otherCards.slice(0, Math.floor(Math.random() * 2) + 2));
+    nappingCards.forEach(card => card.isNapping = true);
+    renderBoard();
+    game.lock = false;
+    const nappingDuration = randBetween(CATNAP_MIN_DURATION, CATNAP_MAX_DURATION);
+setTimeout(() => {
+    nappingCards.forEach(card => {
+        const boardCard = game.board.find(c => c.id === card.id);
+        if (boardCard) boardCard.isNapping = false;
+    });
+    renderBoard();
+    checkWin(); // ✅ 添加此行
+    tryResumeAutoCollect(); // ✅ 添加此行
+}, nappingDuration);
+}
+
+function eventCuriousPaw() {
+    let clickableCards = game.board.filter(c => isCardClickable(c, game.board));
+    let unclickableCards = game.board.filter(c => !c.matched && !isCardClickable(c, game.board));
+
+    if (clickableCards.length === 0 || unclickableCards.length === 0) return;
+
+    // Determine how many pairs to swap (1 to 3)
+    const swapCount = Math.floor(Math.random() * 3) + 1;
+    const actualSwapCount = Math.min(swapCount, clickableCards.length, unclickableCards.length);
+
+    if (actualSwapCount === 0) return;
+
+    showEventMessage('🐾', `好奇的爪子...<br>${actualSwapCount}对可见与不可见卡牌的图标被交换了！`);
+    game.lock = true;
+
+    const swappedElements = [];
+
+    for (let i = 0; i < actualSwapCount; i++) {
+        // Pick a random clickable card
+        const clickableIndex = Math.floor(Math.random() * clickableCards.length);
+        const card1 = clickableCards[clickableIndex];
+
+        // Pick a random unclickable card
+        const unclickableIndex = Math.floor(Math.random() * unclickableCards.length);
+        const card2 = unclickableCards[unclickableIndex];
+
+        // Swap icons
+        if(card1 && card2) {
+            [card1.icon, card2.icon] = [card2.icon, card1.icon];
+        }
+
+        // Animate the swapped cards
+        const card1El = document.querySelector(`.card[data-id='${card1.id}']`);
+        const card2El = document.querySelector(`.card[data-id='${card2.id}']`);
+        if (card1El) swappedElements.push(card1El);
+        if (card2El) swappedElements.push(card2El);
+
+        // Remove the swapped cards from the pools to avoid picking them again
+        clickableCards.splice(clickableIndex, 1);
+        unclickableCards.splice(unclickableIndex, 1);
+    }
+
+    swappedElements.forEach(el => el.classList.add('hinted-shake'));
+
+    setTimeout(() => {
+        renderBoard(); // Re-render the board to show the icon changes
+        game.lock = false;
+    }, 800);
+}
+
+function eventGiftOffering() {
+    const tools = ['undo', 'hint', 'shuffle', 'revive']; // Added revive to tools list for random event
+    const toolNames = { undo: '撤销', hint: '提示', shuffle: '洗牌', revive: '复活卡' }; // Added revive tool name
+    const randomTool = tools[Math.floor(Math.random() * tools.length)];
+    game.toolUses[randomTool]++;
+    updateToolButtons();
+    showEventMessage('🎁', `猫咪送来了礼物！<br>获得1次免费<b>${toolNames[randomTool]}</b>！`);
+}
+
+const randomEvents = [
+    { name: 'catNap', func: eventCatNap, weight: 3 },
+    { name: 'curiousPaw', func: eventCuriousPaw, weight: 3 },
+    { name: 'giftOffering', func: eventGiftOffering, weight: 2 }
+];
+function startRandomEvents() {
+    stopRandomEvents(); // Ensure no multiple timers are running
+    randomEventTimer = setInterval(() => {
+        if (game.lock || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') return;
+        const weightedList = [];
+        randomEvents.forEach(event => { for (let i = 0; i < event.weight; i++) weightedList.push(event.func); });
+        const randomEventFunc = weightedList[Math.floor(Math.random() * weightedList.length)];
+        randomEventFunc();
+    }, randBetween(20000, 30000));
+}
+function stopRandomEvents() {
+    if (randomEventTimer) clearInterval(randomEventTimer);
+    randomEventTimer = null;
+}
+
+function startDecorationUpdates() {
+    stopDecorationUpdates();
+    const decorations = document.querySelectorAll('.path-decoration');
+    if (decorations.length === 0) return;
+    decorationInterval = setInterval(() => {
+        if (!walkingCat) return;
+        const catRect = walkingCat.getBoundingClientRect();
+        const catCenterX = catRect.left + catRect.width / 2;
+        decorations.forEach(deco => {
+            const decoRect = deco.getBoundingClientRect();
+            const decoCenterX = decoRect.left + decoRect.width / 2;
+            const distance = Math.abs(catCenterX - decoCenterX);
+            if (distance < 50) {
+                deco.classList.add('shaking');
+            } else {
+                deco.classList.remove('shaking');
+            }
+        });
+    }, 100);
+}
+
+function stopDecorationUpdates() {
+    if (decorationInterval) {
+        clearInterval(decorationInterval);
+        decorationInterval = null;
+    }
+}
+
+function positionCurtain() {
+    if (!curtainElement || !displayArea) return;
+    const displayRect = displayArea.getBoundingClientRect();
+    const mainAreaRect = document.getElementById('main-area').getBoundingClientRect();
+    curtainElement.style.left = `${displayRect.left - mainAreaRect.left}px`;
+    curtainElement.style.top = `${displayRect.top - mainAreaRect.top}px`;
+    curtainElement.style.width = `${displayRect.width}px`;
+    curtainElement.style.height = `${displayRect.height}px`;
+    curtainElement.style.borderRadius = window.getComputedStyle(displayArea).borderRadius;
+    curtainElement.style.display = 'block';
+}
+
+function toggleCurtain(open) {
+    if (!curtainElement) return;
+    if (!game.isCurtainEnabled) {
+        curtainElement.classList.remove('closed');
+        curtainElement.classList.add('open');
+        return;
+    }
+    if (open) {
+        curtainElement.classList.remove('closed');
+        curtainElement.classList.add('open');
+    } else {
+        curtainElement.classList.remove('open');
+        curtainElement.classList.add('closed');
+    }
+}
+
+function startCurtainRandomToggle() {
+    stopCurtainRandomToggle();
+    curtainTimer = setInterval(() => {
+        if (game.lock || !game.isCurtainEnabled || document.getElementById('level-finish').style.display === 'flex' || document.getElementById('game-over').style.display === 'flex') {
+            toggleCurtain(true);
+            return;
+        }
+        const shouldClose = Math.random() < 0.5;
+        if (shouldClose) {
+            toggleCurtain(false);
+            setTimeout(() => {
+                toggleCurtain(true);
+            }, 2000);
+        } else {
+            toggleCurtain(true);
+        }
+    }, randBetween(20000, 30000));
+}
+
+function stopCurtainRandomToggle() {
+    if (curtainTimer) {
+        clearInterval(curtainTimer);
+        curtainTimer = null;
+    }
+}
+
+// =================================================================================
+// START OF MODIFICATION: Handle screen rotation by refreshing the layout.
+// =================================================================================
+// (源文件逻辑)
+/* 核心函数 */
+function handleOrientation(e) {
+ // 检测从横屏切回竖屏
+  if (e.matches === false && isLandscape === true) {
+    const container = document.getElementById('game-container');
+    container.classList.add('rotate-transition');
+
+    // 等待动画完成后刷新布局
+    setTimeout(() => {
+      handleRotationRefresh();
+      container.classList.remove('rotate-transition');
+    }, 700);
+  }
+    document.body.classList.toggle('landscape', isLandscape);
+    isLandscape = e.matches;      // true = 横屏
+    updateToolButtons();          // 只更新按钮状态即可
+    // 可选：横竖切换时，重新布局
+    handleRotationRefresh();      
+}
+
+/* 监听一次就够 */
+window.matchMedia("(orientation: landscape)").addEventListener('change', handleOrientation);
+
+function handleRotationRefresh() {
+    if (game.lock) return;
+    // 旋转后重新计算 layout
+    const remainingCards = game.board.filter(c => !c.matched);
+    game.board = repositionCardsAndLayout(remainingCards, LEVELS[game.level - 1]);
+    renderAll();
+    // Lock the game during refresh
+    game.lock = true;
+    if (isLandscape) {
+       showEventMessage('✨', '发现新大陆，<br>撤销功能被禁用了。');
+    }
+
+    game.stepStack = [];
+   
+    // After a short delay to allow the screen to resize, re-layout the cards
+    setTimeout(() => {
+        // Recalculate the layout with the new screen dimensions
+        game.board = repositionCardsAndLayout(remainingCards, LEVELS[game.level - 1]);
+        
+        // Re-render the entire game state
+        renderAll();
+        
+        // Unlock the game
+        game.lock = false;
+    }, 250); // 250ms delay to ensure browser has completed the rotation
+  }
+
+// 最后，找到 DOMContentLoaded 事件监听器，并将里面的 window.addEventListener('resize', ...) 这一行删除或注释掉，
+// 因为屏幕方向的改变已经由上面的 handleOrientation 统一处理了。
+// window.addEventListener('resize', debounce(handleResize, 200)); // <--- 删除这一行
+// =================================================================================
+// END OF MODIFICATION
+// =================================================================================
+function updateAutoCollectStatus() {
+  if (autoCollectCountEl) {
+    autoCollectCountEl.textContent = autoCollectCount;
+  }
+  
+  const hasTriple = hasTripleMatch();
+  const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
+  const isNearLimit = unMatchedTempCards >= TEMP_LIMIT - 1;
+  
+  // 更新按钮状态和提示文本
+  autoCollectBtn.disabled = 
+    autoCollectCount <= 0 || 
+    autoCollectActive || 
+    !hasTriple || 
+    (isNearLimit && !findSafeTripleMatch());
+
+  // 根据不同状态显示不同的提示
+  if (!game.autoCollectEnabled) {
+    autoCollectBtn.title = "点击启用自动收集功能";
+    autoCollectBtn.innerHTML = `自动🤖  (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+  } else {
+    autoCollectBtn.title = autoCollectCount <= 0 ? 
+      "需要兑换码获取使用次数" : 
+      "自动收集已启用";
+    autoCollectBtn.innerHTML = `自动中 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+  }
+}
+updateAutoCollectStatus();
+function handleDeviceMotion(event) {
+    if (game.lock || game.toolUses.shuffle <= 0) {
+        return;
+    }
+    const currentTime = new Date().getTime();
+    if ((currentTime - lastShakeTime) > 1500) {
+        const acceleration = event.accelerationIncludingGravity;
+        const shakeThreshold = 18;
+        if (
+            Math.abs(acceleration.x) > shakeThreshold ||
+            Math.abs(acceleration.y) > shakeThreshold
+        ) {
+            lastShakeTime = currentTime;
+            shuffleStep();
+            game.toolUses.shuffle--;
+            updateToolButtons();
+            showMessage('你摇动了手机，自动使用了一次洗牌！', '#3e5a2b');
+        }
+    }
+}
+
+// Event Listeners
+document.addEventListener('DOMContentLoaded', function() {
+    // Prevent copy, paste, and cut
+    ['copy', 'paste', 'cut'].forEach(event => {
+        document.addEventListener(event, e => e.preventDefault());
+    });
+    
+    initializeRealisticLoadingScreen();
+    attemptVideoAutoplay();
+    
+    if (window.DeviceMotionEvent) {
+        window.addEventListener('devicemotion', handleDeviceMotion);
+    } else {
+        console.log("此设备不支持摇一摇功能。");
+    }
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        playBgm(false);
+    } else {
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
+        }
+        // 解决 nap 状态残留
+        if (game && game.board) {
+            game.board.forEach(card => { card.isNapping = false; });
+        }
+        renderAll();
+    }
+});
+
+    const feedbackDiv = document.createElement('div');
+    feedbackDiv.style.cssText = 'color: red; font-size: 12px; margin-top: 5px;';
+    codeInput.parentNode.insertBefore(feedbackDiv, codeInput.nextSibling);
+    codeInput.addEventListener('input', function() {
+        const code = codeInput.value.trim();
+        feedbackDiv.textContent = '';
+        codeInput.style.borderColor = '';
+        const codeRegex = /^[\u4e00-\u9fa5a-zA-Z0-9]*$/;
+        if (code.length === 7) {
+            if (codeRegex.test(code)) {
+                feedbackDiv.textContent = '字符数正确';
+                feedbackDiv.style.color = 'green';
+                codeInput.style.borderColor = 'green';
+                codeBtn.disabled = false;
+                codeBtn.click();
+            } else {
+                feedbackDiv.textContent = '兑换码包含不支持的字符';
+                feedbackDiv.style.color = 'red';
+                codeInput.style.borderColor = 'red';
+                codeBtn.disabled = true;
+            }
+        } else if (code.length < 7) {
+            feedbackDiv.textContent = `还可输入 ${7 - code.length} 位`;
+            feedbackDiv.style.color = 'orange';
+            codeInput.style.borderColor = 'orange';
+        } else {
+            codeBtn.disabled = true;
+        }
+    });
+    codeBtn.addEventListener('click', function() {
+       codeInput.value = '';
+       feedbackDiv.textContent = '';
+       codeInput.style.borderColor = '';
+    });
+    codeBtn.disabled = true;
+    codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
+
+    // We still call handleResize once to set initial positions, but don't listen for resize events anymore.
+    
+
+    // MODIFIED: Added event delegation for both touch and mouse events
+    cardStackArea.addEventListener('click', function(e) {
+        const cardEl = e.target.closest('.card:not(.disabled)');
+        if (cardEl && cardEl.dataset.id) {
+            const cardId = parseInt(cardEl.dataset.id, 10);
+            clickCard(cardId);
+        }
+    });
+
+    cardStackArea.addEventListener('touchstart', function(e) {
+        e.preventDefault();
+        Array.from(e.changedTouches).forEach(touch => {
+            const touchedEl = document.elementFromPoint(touch.clientX, touch.clientY);
+            if (touchedEl) {
+                const cardEl = touchedEl.closest('.card:not(.disabled)');
+                if (cardEl && cardEl.dataset.id) {
+                    const cardId = parseInt(cardEl.dataset.id, 10);
+                    clickCard(cardId);
+                }
+            }
+        });
+    }, { passive: false });
+
+    skipOutroBtn.addEventListener('click', () => handleCloseGame('level'));
+});
+
+undoBtn.onclick = function(){
+  if(game.toolUses.undo > 0 && game.stepStack.length > 0){
+    undoStep();
+    game.toolUses.undo--;
+    updateToolButtons();
+  } else if (game.toolUses.undo > 0 && game.stepStack.length === 0) {
+    showMessage('无法撤销更多', '#888');
+  }
+};
+hintBtn.onclick = function(){
+  if(game.toolUses.hint > 0){
+    hintStep();
+    game.toolUses.hint--;
+    updateToolButtons();
+  }
+};
+shuffleBtn.onclick = function(){
+  if(game.toolUses.shuffle > 0){
+    shuffleStep();
+    game.toolUses.shuffle--;
+    updateToolButtons();
+  }
+};
+reviveBtn.onclick = reviveGame; // Added event listener for revive button in tools bar
+reviveBtnGameOver.onclick = reviveGame; // Added event listener for revive button on game over screen
+
+restartCurrentLevelBtn.onclick = () => showConfirm('确定要重新开始当前关卡吗？', () => {
+    stopRandomEvents();
+    stopCurtainRandomToggle();
+    stopDecorationUpdates();
+    startGame(game.level);
+    showMessage('关卡已重新开始！', '#3e5a2b');
+});
+codeBtn.onclick = function(){
+  let val = codeInput.value.trim().toLowerCase();
+  if (REDEMPTION_CODES[val]) {
+    const rewards = REDEMPTION_CODES[val];
+    if (rewards.type === "skip_level") {
+      game.board.forEach(card => card.matched = true);
+      game.score = game.targetScore;
+      renderBoard();
+      renderProgressAndScore();
+      checkWin();
+      showMessage(`兑换成功！当前关卡已跳过！`, "#3e5a2b");
+    } else if (rewards.type === "curtain_off") {
+        game.isCurtainEnabled = false;
+        toggleCurtain(true);
+        stopCurtainRandomToggle();
+        showMessage(`兑换成功！幕布已在本关卡关闭！`, "#3e5a2b");
+    }
+    else {
+        game.toolUses.undo += (rewards.undo || 0);
+        game.toolUses.hint += (rewards.hint || 0);
+        game.toolUses.shuffle += (rewards.shuffle || 0);
+        game.toolUses.revive += (rewards.revive || 0);
+        if (rewards.autoCollect) {
+          autoCollectCount += rewards.autoCollect;
+          updateAutoCollectStatus();
+    }
+     if (rewards.autoCollect) {
+       autoCollectCount += rewards.autoCollect;
+       updateAutoCollectStatus();
+       showMessage(`自动收集次数+${rewards.autoCollect}`, "#3e5a2b");
+     }
+  // === 只显示有效奖励 ===
+  let rewardArr = [];
+  if (rewards.undo > 0) rewardArr.push(`撤销x${rewards.undo}`);
+  if (rewards.hint > 0) rewardArr.push(`提示x${rewards.hint}`);
+  if (rewards.shuffle > 0) rewardArr.push(`洗牌x${rewards.shuffle}`);
+  if (rewards.revive > 0) rewardArr.push(`复活卡x${rewards.revive}`);
+  if (rewards.autoCollect > 0) rewardArr.push(`自动收集x${rewards.autoCollect}`);
+  if (rewardArr.length > 0) {
+    showMessage('兑换成功！获得' + rewardArr.join('，'), "#3e5a2b");
+  }
+    }
+    updateToolButtons();
+  } else {
+    showMessage('兑换码错误', "#c0392b");
+  }
+  codeInput.value = '';
+};
+musicToggleBtn.onclick = function(){
+  game.bgmOn = !game.bgmOn;
+  this.innerHTML = game.bgmOn ? '🎼' : '🔇';
+  playBgm(game.bgmOn);
+};
+startBtn.onclick = function(){
+  document.getElementById('start-screen').style.display = 'none';
+  initAudio(); 
+  startGame(1);
+};
+nextBtn.onclick = function(){
+  document.getElementById('level-finish').style.display = 'none';
+  startGame(2);
+};
+retryBtnLevelFinish.onclick = function(){
+  document.getElementById('level-finish').style.display = 'none';
+  startGame(game.level);
+};
+retryBtnGameOver.onclick = function(){
+  document.getElementById('game-over').style.display = 'none';
+  startGame(game.level);
+};
+gobangBtn.onclick = () => window.open('https://www.kaiyuanzhu.qzz.io/kaiyuan/', '_blank');
+restartGameBtn.onclick = () => window.location.href = 'https://www.kaiyuanzhu.qzz.io/cat/';
+closeGameBtnLevel.onclick = () => handleCloseGame('level');
+closeGameBtnGameOver.onclick = () => handleCloseGame('gameover');
+
+function initializeRealisticLoadingScreen() {
+    const loadingScreen = document.getElementById('loading-screen');
+    const progressBar = document.getElementById('progress-bar');
+    const loadingText = document.getElementById('loading-text');
+    const LOAD_TIMEOUT = 5000;
+    const assetsToLoad = [
+        { type: 'image', src: 'me.png', name: '图标' },
+        { type: 'image', src: 'mao3.webp', name: '加载背景' },
+        { type: 'image', src: 'mao1.webp', name: '通关背景' },
+        { type: 'image', src: 'mao.webp', name: '开始背景' },
+        { type: 'image', src: 'cat1.webp', name: '游戏背景' },
+        { type: 'video', src: 'mao.mp4', name: '开始动画' },
+        { type: 'video', src: 'mao2.mp4', name: '彩蛋视频' },
+        { type: 'image', src: 'mao2.webp', name: '彩蛋图片' },
+        { type: 'audio', src: 'kaa.mp3', name: '点击音效' },
+        { type: 'audio', src: 'Sukidakara.mp3', name: '背景音乐' },
+        { type: 'image', src: 'run.gif', name: '跑动猫咪GIF' } // Added run.gif to preload list
+    ];
+    let assetsLoaded = 0;
+    const totalAssets = assetsToLoad.length;
+    const updateProgress = () => {
+        assetsLoaded++;
+        const progress = (assetsLoaded / totalAssets) * 100;
+        progressBar.style.width = progress + '%';
+        if (assetsLoaded === totalAssets) {
+            loadingText.textContent = '完成!';
+            setTimeout(() => {
+                loadingScreen.style.opacity = '0';
+                loadingScreen.addEventListener('transitionend', () => {
+                    loadingScreen.style.display = 'none';
+                    document.title = "喵了个喵";
+                    initializeGame();
+                }, { once: true });
+            }, 400);
+        } else {
+            loadNextAsset();
+        }
+    };
+    const loadAsset = (asset) => {
+        return new Promise((resolve, reject) => {
+            const timeoutId = setTimeout(() => {
+                reject(new Error(`Timeout loading ${asset.src}`));
+            }, LOAD_TIMEOUT);
+            const successHandler = () => {
+                clearTimeout(timeoutId);
+                resolve();
+            };
+            const errorHandler = () => {
+                clearTimeout(timeoutId);
+                reject(new Error(`Failed to load ${asset.src}`));
+            };
+            switch (asset.type) {
+                case 'image':
+                    const img = new Image();
+                    img.onload = successHandler;
+                    img.onerror = errorHandler;
+                    img.src = asset.src;
+                    break;
+                case 'audio':
+                    fetch(asset.src)
+                        .then(response => {
+                            if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                            return response.blob();
+                        })
+                        .then(() => successHandler())
+                        .catch(errorHandler);
+                    break;
+                case 'video':
+                    const video = document.createElement('video');
+                    video.addEventListener('canplaythrough', successHandler, { once: true });
+                    video.onerror = errorHandler;
+                    video.src = asset.src;
+                    video.load();
+                    break;
+            }
+        });
+    };
+    const loadNextAsset = async () => {
+        if (assetsLoaded >= totalAssets) return;
+        const asset = assetsToLoad[assetsLoaded];
+        loadingText.textContent = `正在加载 ${asset.name}... (${assetsLoaded + 1}/${totalAssets})`;
+        try {
+            await loadAsset(asset);
+        } catch (error) {
+            console.error(error.message);
+        } finally {
+            updateProgress();
+        }
+    };
+    loadNextAsset();
+}
+
+function attemptVideoAutoplay() {
+    const video = document.getElementById('start-screen-video');
+    if (!video) return;
+    const playPromise = video.play();
+    if (playPromise !== undefined) {
+        playPromise.catch(error => {
+            console.log("Video direct play failed, waiting for user interaction.", error);
+            document.body.addEventListener('touchstart', function onFirstTouch() {
+                video.play().catch(e => console.error("Video playback failed after touch:", e));
+                document.body.removeEventListener('touchstart', onFirstTouch);
+            }, { once: true });
+        });
+    }
+    if (typeof WeixinJSBridge == "object" && typeof WeixinJSBridge.invoke == "function") {
+        WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed in WeixinJSBridge:", err)));
+    } else {
+        document.addEventListener("WeixinJSBridgeReady", () => WeixinJSBridge.invoke('getNetworkType', {}, e => WeixinJSBridge.invoke('getNetworkType', {}, e => video.play().catch(err => console.error("Video playback failed on WeixinJSBridgeReady:", err)))), false);
+    }
+}
+
+function positionCatWalker() {
+    const displayArea = document.getElementById('display-area');
+    const catPath = document.getElementById('cat-path');
+    const mainArea = document.getElementById('main-area');
+    if (!displayArea || !catPath || !mainArea) return;
+    const displayAreaBottomRelativeToMainArea = displayArea.offsetTop + displayArea.offsetHeight;
+    // Adjust catPath top to align the cat GIF correctly above the display area
+    // The GIF is 50px tall, and its top is at -30px relative to catPath. So its bottom is at 20px relative to catPath.
+    // We want the bottom of the cat to be slightly above the display area.
+    // Let's assume cat's bottom should be at displayAreaBottomRelativeToMainArea + 5px
+    // catPath.top = (displayAreaBottomRelativeToMainArea + 5px) - (50px - 30px) = displayAreaBottomRelativeToMainArea - 15px
+    catPath.style.top = `${displayAreaBottomRelativeToMainArea - 15}px`; 
+    catPath.style.width = `${mainArea.offsetWidth}px`;
+}
+
+function positionWigglingCat(wigglingCatEl, slotIndex) {
+    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
+    const cardStackArea = document.getElementById('card-stack-area');
+    const mainArea = document.getElementById('main-area');
+    if (!wigglingCatEl || tempSlots.length === 0 || !cardStackArea || !mainArea || slotIndex < 0 || slotIndex >= tempSlots.length) {
+        if(wigglingCatEl) wigglingCatEl.style.display = 'none';
+        return;
+    }
+    const targetTempSlot = tempSlots[slotIndex];
+    const cardStackRect = cardStackArea.getBoundingClientRect();
+    const targetTempSlotRect = targetTempSlot.getBoundingClientRect();
+    const mainAreaRect = mainArea.getBoundingClientRect();
+    const gapMidpointAbsolute = cardStackRect.bottom + (targetTempSlotRect.top - cardStackRect.bottom) / 2;
+    const topRelativeToMainArea = gapMidpointAbsolute - mainAreaRect.top;
+    const leftRelativeToMainArea = (targetTempSlotRect.left + targetTempSlot.offsetWidth / 2) - mainAreaRect.left;
+    wigglingCatEl.style.top = `${topRelativeToMainArea - (wigglingCatEl.offsetHeight / 2)}px`;
+    wigglingCatEl.style.left = `${leftRelativeToMainArea}px`;
+    wigglingCatEl.style.display = 'block';
+}
+
+function hideWigglingCats() {
+    wigglingCat1.style.display = 'none';
+    wigglingCat4.style.display = 'none';
+    wigglingCat7.style.display = 'none';
+}
+
+function updateWigglingCatVisibility() {
+    if (game.score >= game.targetScore) {
+        positionWigglingCat(wigglingCat1, 0);
+        positionWigglingCat(wigglingCat4, 3);
+        positionWigglingCat(wigglingCat7, 6);
+    } else {
+        hideWigglingCats();
+    }
+}
+
+function playLevel2Outro() {
+    game.lock = true;
+    playBgm(false);
+    level2OutroScreen.style.display = 'flex';
+    outroLoadingText.style.display = 'block';
+    skipOutroBtn.style.display = 'block';
+    outroVideo.style.display = 'none';
+    outroImage.style.display = 'none';
+    const finalCloseAction = () => handleCloseGame('level');
+    outroVideoTimeout = setTimeout(() => {
+        outroVideo.style.display = 'none';
+        outroImage.style.display = 'block';
+        outroLoadingText.textContent = '视频无法播放，显示图片...';
+        setTimeout(finalCloseAction, 3000);
+    }, 7000);
+    outroVideo.load();
+    const playPromise = outroVideo.play();
+    if (playPromise !== undefined) {
+        playPromise.then(() => {
+            outroVideo.style.display = 'block';
+            outroLoadingText.style.display = 'none';
+            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        }).catch(error => {
+            outroVideo.style.display = 'none';
+            outroImage.style.display = 'block';
+            outroLoadingText.textContent = '视频无法播放，显示图片...';
+            if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+            setTimeout(finalCloseAction, 3000);
+        });
+    }
+    outroVideo.onended = () => {
+        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        finalCloseAction();
+    };
+    outroVideo.onerror = (e) => {
+        if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
+        outroVideo.style.display = 'none';
+        outroImage.style.display = 'block';
+        outroLoadingText.textContent = '视频加载失败，显示图片...';
+        setTimeout(finalCloseAction, 3000);
+    };
+}
+
+function debounce(func, delay) {
+  let timeout;
+  return function() {
+    const context = this;
+    const args = arguments;
+    clearTimeout(timeout);
+    timeout = setTimeout(() => func.apply(context, args), delay);
+  };
+}
+// 自动收集主循环
+function startAutoCollect() {
+  if (autoCollectCount <= 0 || autoCollectActive) return;
+  
+  // 第一次点击时启用自动收集
+  game.autoCollectEnabled = true;
+  
+  // 显示启用提示
+  showMessage('已启用自动收集功能', '#3e5a2b');
+  
+  autoCollectActive = true;
+  updateAutoCollectStatus();
+  autoCollectStep();
+}
+
+function stopAutoCollect() {
+  autoCollectActive = false;
+  // 注意这里不重置 game.autoCollectEnabled，
+  // 因为我们希望在同一关卡中保持启用状态
+  updateAutoCollectStatus();
+  if (autoCollectTimer) {
+    clearTimeout(autoCollectTimer);
+    autoCollectTimer = null;
+  }
+}
+
+function autoCollectStep() {
+  // 首先检查是否启用了自动收集
+  if (!game.autoCollectEnabled) {
+    stopAutoCollect();
+    return;
+  }
+  // 第一步：检查游戏状态和特殊条件
+  if (autoCollectCount <= 0 || game.lock) {
+    stopAutoCollect();
+    return;
+  }
+
+  // 获取未匹配的temp区卡片数量
+  const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
+  
+  // 新增：临界条件检查
+  if (unMatchedTempCards >= TEMP_LIMIT - 1) { // 只剩一个位置时需要特殊处理
+    // 检查是否存在安全的三消机会
+    const safeTriple = findSafeTripleMatch();
+    if (!safeTriple) {
+      stopAutoCollect();
+     // 使用提示框替代普通提示
+      showRiskModal(`
+        <div style="text-align: center;">
+          <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 风险提醒</div>
+          <div>暂存区即将满员，检测到潜在风险。</div>
+          <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
+            建议手动操作以避免游戏失败
+          </div>
+        </div>
+      `);
+      return;
+    }
+  }
+
+  // 其余逻辑保持不变...
+  if (autoCollectTimer) {
+    clearTimeout(autoCollectTimer);
+    autoCollectTimer = null;
+  }
+
+  let iconCnt = {};
+  game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
+  let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
+  
+  if (matchedIcon) {
+    autoCollectTimer = setTimeout(autoCollectStep, 1500);
+    return;
+  }
+
+  let triple = findDisplayAreaTriple() || findAnyTriple();
+  if (triple && triple.length > 0) {
+    const nextCardId = triple[0];
+    
+    // 新增：点击前的安全检查
+    if (isSafeToClickCard(nextCardId)) {
+      clickCard(nextCardId);
+      autoCollectTimer = setTimeout(autoCollectStep, 600);
+    } else {
+      stopAutoCollect();
+      // 使用提示框替代普通提示
+      showRiskModal(`
+        <div style="text-align: center;">
+          <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 安全提醒</div>
+          <div>自动收集已停止</div>
+          <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
+            检测到不安全的操作序列，建议手动继续
+          </div>
+        </div>
+      `);
+    }
+  } else {
+    autoCollectTimer = setTimeout(() => {
+      let retryTriple = findDisplayAreaTriple() || findAnyTriple();
+      if (retryTriple && retryTriple.length > 0) {
+        autoCollectStep();
+      } else {
+        stopAutoCollect();
+        // 添加无可三消情况的提示框
+        showRiskModal(`
+          <div style="text-align: center;">
+            <div style="font-size: 1.2em; margin-bottom: 10px;">🔍 提示</div>
+            <div>自动收集已暂停</div>
+            <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
+              当前未找到可以三消的卡片组合<br>
+              建议尝试使用洗牌或手动操作继续游戏
+            </div>
+          </div>
+        `);
+      }
+    }, 800);
+  }
+}
+
+// 新增：安全三消检查函数
+function findSafeTripleMatch() {
+  // 检查temp区已有的卡片
+  const tempCards = game.temp.filter(c => !c.matched);
+  const tempIconCounts = {};
+  tempCards.forEach(c => {
+    tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1;
+  });
+
+  // 寻找已经在temp区有2张的情况
+  const potentialMatches = Object.entries(tempIconCounts)
+    .filter(([icon, count]) => count === 2)
+    .map(([icon]) => icon);
+
+  if (potentialMatches.length > 0) {
+    // 在板上寻找对应的第三张卡
+    for (const icon of potentialMatches) {
+      const boardMatch = game.board.find(c => 
+        !c.matched && 
+        c.icon === icon && 
+        isCardClickable(c, game.board)
+      );
+      if (boardMatch) return true;
+    }
+  }
+
+  // 检查display区域的匹配
+  return game.displayCards.some(set => {
+    if (set.matched) return false;
+    const icon = set.cards[0].icon;
+    const tempCount = tempIconCounts[icon] || 0;
+    if (tempCount > 0) {
+      const boardMatches = game.board.filter(c => 
+        !c.matched && 
+        c.icon === icon && 
+        isCardClickable(c, game.board)
+      );
+      return boardMatches.length >= (3 - tempCount);
+    }
+    return false;
+  });
+}
+
+// 新增：安全点击检查函数
+function isSafeToClickCard(cardId) {
+  const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
+  if (unMatchedTempCards >= TEMP_LIMIT) return false;
+
+  // 模拟点击后的状态
+  const cardToClick = game.board.find(c => c.id === cardId);
+  if (!cardToClick) return false;
+
+  const tempCardsCopy = [...game.temp];
+  tempCardsCopy.push({
+    icon: cardToClick.icon,
+    id: cardToClick.id,
+    matched: false
+  });
+
+  // 检查是否会形成三消
+  const iconCounts = {};
+  tempCardsCopy.forEach(c => {
+    if (!c.matched) iconCounts[c.icon] = (iconCounts[c.icon] || 0) + 1;
+  });
+
+  // 如果会直接形成三消，则安全
+  if (Object.values(iconCounts).some(count => count >= 3)) return true;
+
+  // 如果不会形成三消，检查剩余空间
+  const remainingSlots = TEMP_LIMIT - tempCardsCopy.length;
+  return remainingSlots > 1; // 确保至少还有2个位置
+}
+// 查找display-area优先三消（可用temp区卡片补足，返回需点击的board卡id数组）
+function findDisplayAreaTriple() {
+  if (!game.displayCards) return null;
+  for (const set of game.displayCards) {
+    if (set.matched) continue;
+    const icon = set.cards[0].icon;
+    // 暂存区未匹配的同icon卡片数量
+    const tempCount = game.temp.filter(c => !c.matched && c.icon === icon).length;
+    // board 可点击同icon卡片
+    const boardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.icon === icon);
+    const needCount = 3 - tempCount;
+    if (needCount > 0 && boardCards.length >= needCount) {
+      // 自动点击board部分补齐到三消
+      return boardCards.slice(0, needCount).map(c => c.id);
+    }
+  }
+  return null;
+}
+
+// 查找任意三消（可用temp区补足）
+function findAnyTriple() {
+  // 统计temp区未匹配的各icon数量
+  let tempCounts = {};
+  game.temp.forEach(c => {
+    if (!c.matched) tempCounts[c.icon] = (tempCounts[c.icon] || 0) + 1;
+  });
+  // 统计board可点击各icon的卡
+  let boardIcons = {};
+  game.board.forEach(c => {
+    if (!c.matched && isCardClickable(c, game.board)) {
+      boardIcons[c.icon] = boardIcons[c.icon] || [];
+      boardIcons[c.icon].push(c.id);
+    }
+  });
+  for (const [icon, ids] of Object.entries(boardIcons)) {
+    const tempCount = tempCounts[icon] || 0;
+    const needCount = 3 - tempCount;
+    if (needCount > 0 && ids.length >= needCount) {
+      return ids.slice(0, needCount);
+    }
+  }
+  return null;
+}
+
+// 按钮监听
+autoCollectBtn.onclick = startAutoCollect;
+function tryResumeAutoCollect() {
+  // 首先检查是否已经启用了自动收集
+  if (!game.autoCollectEnabled) return;
+  
+  // 其他检查保持不变
+  if (!autoCollectCount || game.lock) return;
+
+  const gameOverScreen = document.getElementById('game-over');
+  const levelFinishScreen = document.getElementById('level-finish');
+  
+  if ((gameOverScreen && gameOverScreen.style.display === 'flex') ||
+      (levelFinishScreen && levelFinishScreen.style.display === 'flex')) {
+    return;
+  }
+
+  let triple = findDisplayAreaTriple() || findAnyTriple();
+  if (triple) {
+    startAutoCollect();
+  }
+}
+// 在确认框之后添加新的风险提示框
+function createRiskModal() {
+  const modal = document.createElement('div');
+  modal.id = 'risk-modal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content" style="background: #fff3f3; border-color: #dc2626;">
+      <p id="risk-msg" style="color: #991b1b;"></p>
+      <div class="modal-buttons">
+        <button id="risk-confirm" style="background: #fee2e2; border-color: #991b1b; color: #991b1b;">我知道了</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // 添加点击事件监听
+  document.getElementById('risk-confirm').addEventListener('click', hideRiskModal);
+}
+
+// 显示风险提示框
+function showRiskModal(msg, type = 'risk') {
+  const modal = document.getElementById('risk-modal');
+  if (!modal) {
+    createRiskModal();
+  }
+  
+  const modalContent = modal.querySelector('.modal-content');
+  // 根据不同类型设置不同的样式
+  switch(type) {
+    case 'risk':
+      modalContent.style.background = '#fff3f3';
+      modalContent.style.borderColor = '#dc2626';
+      break;
+    case 'info':
+      modalContent.style.background = '#f0f9ff';
+      modalContent.style.borderColor = '#3b82f6';
+      break;
+    case 'warning':
+      modalContent.style.background = '#fefce8';
+      modalContent.style.borderColor = '#ca8a04';
+      break;
+  }
+  
+  document.getElementById('risk-msg').innerHTML = msg;
+  modal.style.display = 'flex';
+  
+  // 添加震动效果
+  if (navigator.vibrate && type === 'risk') {
+    navigator.vibrate(100);
+  }
+}
+// 隐藏风险提示框
+function hideRiskModal() {
+  const modal = document.getElementById('risk-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+</script>
+</body>
+</html>
