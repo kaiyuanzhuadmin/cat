@@ -3153,24 +3153,20 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("此设备不支持摇一摇功能。");
     }
 
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            playBgm(false);
-        } else {
-            if (audioContext && audioContext.state === 'suspended') {
-                audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
-            }
-            const levelFinishScreen = document.getElementById('level-finish');
-            const gameOverScreen = document.getElementById('game-over');
-            const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
-            if (game.bgmOn && !isGameEndScreenVisible) {
-                playBgm(true);
-            }
-            if (!isGameEndScreenVisible && document.getElementById('start-screen').style.display === 'none') {
-                renderAll();
-            }
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        playBgm(false);
+    } else {
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
         }
-    });
+        // 解决 nap 状态残留
+        if (game && game.board) {
+            game.board.forEach(card => { card.isNapping = false; });
+        }
+        renderAll();
+    }
+});
 
     const feedbackDiv = document.createElement('div');
     feedbackDiv.style.cssText = 'color: red; font-size: 12px; margin-top: 5px;';
