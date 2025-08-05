@@ -2962,8 +2962,8 @@ function showEventMessage(icon, text) {
 }
 
 function eventCatNap() {
-    const CATNAP_MIN_DURATION = 12000;
-    const CATNAP_MAX_DURATION = 14000;
+    const CATNAP_MIN_DURATION = 2000;
+    const CATNAP_MAX_DURATION = 4000;
     const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
     if (clickableCards.length < 3) return;
     showEventMessage('💤', '猫咪在打盹...<br>有些卡牌暂时拿不到了！');
