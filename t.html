@@ -8,7 +8,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
-  <!-- Preload of critical assets for immediate use -->
+  <!-- 资源预加载部分保持不变 -->
   <link rel="preload" href="mao3.webp" as="image">
   <link rel="preload" href="mao1.webp" as="image">
   <link rel="preload" href="font/iconfont.css" as="style">
@@ -17,54 +17,134 @@
   <link rel="preload" href="mao.mp4" as="video">
   <link rel="preload" href="cat1.webp" as="image">
   <link rel="preload" href="js/index.js" as="script">
-  <link rel="preload" href="run.gif" as="image"> <!-- Preload the new GIF -->
-  
-  <!-- Critical audio/video assets for specific game moments, prioritized for loading screen -->
-  <link rel="preload" href="kaa.mp3" as="audio"> <!-- Critical for click sound -->
-  <link rel="preload" href="Sukidakara.mp3" as="audio"> <!-- Critical for BGM -->
-  <link rel="preload" href="mao2.mp4" as="video"> <!-- Critical for Level 2 outro -->
-  <link rel="preload" href="mao2.webp" as="image"> <!-- Fallback image for Level 2 outro -->
+  <link rel="preload" href="run.gif" as="image">
+  <link rel="preload" href="kaa.mp3" as="audio">
+  <link rel="preload" href="Sukidakara.mp3" as="audio">
+  <link rel="preload" href="mao2.mp4" as="video">
+  <link rel="preload" href="mao2.webp" as="image">
 
   <style>
-@media screen and (orientation: landscape) {
-  #game-container {
-    max-width: 100vw;
-    margin: 0;
-    border-radius: 0;
-    box-shadow: none;
-  }
+/* 添加屏幕过渡动画 */
+@keyframes rotateToPortrait {
+  0% { transform: rotateY(90deg) scale(0.8); opacity: 0; }
+  50% { transform: rotateY(0deg) scale(1.05); opacity: 1; }
+  100% { transform: rotateY(0deg) scale(1); opacity: 1; }
+}
 
-  #main-area {
-    flex-direction: row;
-    justify-content: space-around;
-    align-items: flex-start;
-    padding: 20px 10px;
-  }
+.rotate-transition {
+  animation: rotateToPortrait 0.7s ease-in-out forwards;
+}
 
+@media (orientation: landscape) {
   #display-area,
   #card-stack-area {
-    width: 48vw;
-    min-height: 60vh;
-    margin: 0;
+    max-width: 90vw;  /* 增加最大宽度 */
+    width: 90vw;
   }
+
+  #display-area {
+    min-height: 140px; /* 可根据需要增加高度以更突出显示区域 */
+  }
+
+  #card-stack-area {
+    height: 75vh;  /* 更高一点，使得比例更协调 */
+  }
+}
+#risk-modal .modal-content {
+  animation: risk-modal-in 0.3s ease-out;
+  min-width: 280px;
+  max-width: 90%;
+  width: auto;
+  transition: all 0.3s ease;
 }
 
-@keyframes rotateTransition {
-  0% {
-    transform: rotate(0deg) scale(1);
-  }
-  50% {
-    transform: rotate(10deg) scale(1.05);
-  }
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
+#risk-modal .modal-content[data-type="info"] {
+  background: #f0f9ff;
+  border-color: #3b82f6;
 }
 
-.card-rotate-animate {
-  animation: rotateTransition 0.6s ease-in-out;
+#risk-modal .modal-content[data-type="risk"] {
+  background: #fff3f3;
+  border-color: #dc2626;
 }
-    /* Keyframe animations */
+
+#risk-modal .modal-content[data-type="warning"] {
+  background: #fefce8;
+  border-color: #ca8a04;
+}
+
+#risk-modal button {
+  padding: 8px 20px;
+  font-size: 1rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: 'ZCOOL KuaiLe', cursive;
+  background: white;
+}
+
+#risk-modal button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+#risk-modal p {
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+/* 添加不同类型按钮的样式 */
+#risk-modal[data-type="info"] button {
+  border-color: #3b82f6;
+  color: #1d4ed8;
+}
+
+#risk-modal[data-type="risk"] button {
+  border-color: #dc2626;
+  color: #991b1b;
+}
+
+#risk-modal[data-type="warning"] button {
+  border-color: #ca8a04;
+  color: #854d0e;
+}
+
+    @keyframes card-vanish {
+      0% {
+        transform: scale(1) rotate(0deg);
+        opacity: 1;
+      }
+      50% {
+        transform: scale(1.1) rotate(5deg);
+        opacity: 0.8;
+      }
+      100% {
+        transform: scale(0.1) rotate(15deg) translateY(50px);
+        opacity: 0;
+      }
+    }
+    .temp-card.vanishing {
+      position: relative; /* 确保 z-index 生效 */
+      z-index: 10;
+      animation: card-vanish 0.5s ease-out forwards;
+    }
+
+    /* 原有的 card-disappear 动画不再使用，可以安全移除或保留 */
+    @keyframes card-disappear {
+        from {
+            opacity: 1;
+            transform: scale(1) rotate(0deg);
+        }
+        to {
+            opacity: 0;
+            transform: scale(0.4) rotate(20deg);
+        }
+    }
+    .temp-card.disappearing {
+        animation: card-disappear 0.3s ease-out forwards;
+    }
+
+    /* 其他样式保持不变 */
     @keyframes card-float-out {
       0% {
         opacity: 0;
@@ -91,22 +171,8 @@
         100% {
             transform: rotateX(90deg);
             opacity: 0;
-            visibility: hidden; /* Hide completely after animation */
+            visibility: hidden;
         }
-    }
-
-    @keyframes card-disappear {
-        from {
-            opacity: 1;
-            transform: scale(1) rotate(0deg);
-        }
-        to {
-            opacity: 0;
-            transform: scale(0.4) rotate(20deg);
-        }
-    }
-    .temp-card.disappearing {
-        animation: card-disappear 0.3s ease-out forwards;
     }
 
     @keyframes slot-flash {
@@ -160,14 +226,14 @@
       position: absolute;
       font-size: 1.5rem;
       font-weight: bold;
-      color: #4CAF50; /* Green for positive score */
+      color: #4CAF50;
       text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
-      pointer-events: none; /* Make it non-interactive */
+      pointer-events: none;
       animation: score-pop 1s ease-out forwards;
-      z-index: 2000; /* Ensure it's above other elements */
+      z-index: 2000;
     }
 
-    /* 吸入动画 */
+    /* 吸入动画 (源文件效果) */
 @keyframes swirlIn {
   0% {
     transform: scale(1);
@@ -176,16 +242,13 @@
   100% {
     transform: scale(0.2);
     opacity: 0.5;
+    /* 动画终点是父容器的中心 */
     left: 50%;
     top: 50%;
   }
 }
 
-.card.swirl-in {
-  animation: swirlIn 0.5s ease-in-out forwards;
-}
-
-/* 喷出动画 */
+/* 喷出动画 (源文件效果，虽然洗牌没用上，但最好保留) */
 @keyframes swirlOut {
   0% {
     transform: scale(0.2) rotate(720deg);
@@ -201,7 +264,7 @@
   }
 }
 
-/* 卡片类名 */
+/* 应用动画的类名 */
 .card.swirl-in {
   animation: swirlIn 0.6s ease-in forwards;
   z-index: 10;
@@ -219,11 +282,11 @@
     }
     .heart-animation {
       position: absolute;
-      font-size: 30px; /* User requested 30px */
-      color: #ff69b4; /* Pink color for heart */
+      font-size: 30px;
+      color: #ff69b4;
       pointer-events: none;
-      animation: fade-in-out-heart 2.5s ease-out infinite alternate; /* Changed to infinite alternate */
-      z-index: 1000; /* Ensure it's above cards but below cat wiggler if needed */
+      animation: fade-in-out-heart 2.5s ease-out infinite alternate;
+      z-index: 1000;
       text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
     }
     
@@ -241,7 +304,7 @@
         position: absolute;
         width: 8px;
         height: 16px;
-        background: #f00; /* Will be randomized by JS */
+        background: #f00;
         top: -20px;
         opacity: 0;
         animation: fall linear forwards;
@@ -293,7 +356,6 @@
       }
     }
 
-    /* Global body styles */
     body {
       margin: 0;
       min-height: 100vh;
@@ -301,7 +363,6 @@
       font-family: 'ZCOOL KuaiLe', 'HanyiSentyLotus', 'FangSong', cursive, sans-serif;
       color: #3e2723;
       position: relative;
-      /* MODIFIED: Disable text selection globally */
       user-select: none;
       -webkit-user-select: none;
       -moz-user-select: none;
@@ -333,7 +394,6 @@
       overflow: hidden;
     }
 
-    /* Game Container */
     #game-container {
       max-width: 650px;
       margin: 30px auto;
@@ -509,7 +569,7 @@
     #cat-path {
         position: absolute;
         width: 100%;
-        height: 20px; /* Adjusted height to accommodate GIF */
+        height: 20px;
         left: 0;
         z-index: 1060;
         pointer-events: none;
@@ -526,22 +586,21 @@
 
     #walking-cat {
         position: absolute;
-        width: 95px; /* Adjusted width for GIF */
-        height: 71px; /* Adjusted height for GIF */
+        width: 95px;
+        height: 71px;
         display: flex;
         z-index: 10;
         align-items: center;
         justify-content: center;
-        top: -30px; /* Adjusted top for GIF */
+        top: -30px;
         animation: cat-walk 15s linear infinite;
-        /* Use a CSS variable for width in animation for easier adjustment */
-        --cat-width: 95px; /* Should match the width set above */
+        --cat-width: 95px;
     }
 
     #walking-cat img {
         width: 100%;
         height: 100%;
-        object-fit: contain; /* Ensures the GIF is fully visible within its container */
+        object-fit: contain;
     }
 
     .path-decoration {
@@ -779,7 +838,6 @@
       opacity: 0.05;
     }
 
-    /* MODIFIED: Flying Card Animation for dynamic duration */
     .flying-card {
       background: #fffdf7;
       border-radius: 10px;
@@ -791,23 +849,13 @@
       justify-content: center;
       user-select: none;
       z-index: 10000;
-      /* transition properties are now set by JS for dynamic duration */
       transition-property: top, left, transform;
       transition-timing-function: ease-out;
       overflow: hidden;
       color: #5d4037;
     }
-.card,
-.card-rotate-animate,
-.card-floating-in,
-.score-animation,
-.flying-card,
-.heart-animation,
-.card.swirl-in,
-.card.swirl-out {
-  will-change: transform, opacity;
-}
 
+    /* ... 其他所有CSS样式保持不变 ... */
     #tools-bar {
       margin: 20px auto 0 auto;
       display: flex;
@@ -938,7 +986,7 @@
         margin-bottom: 10px;
     }
 
-    #start-screen, #game-over {
+    #start-screen, #game-over, #level-finish {
       position: absolute;
       left: 0; right: 0; top: 0; bottom: 0;
       z-index: 1100;
@@ -952,20 +1000,10 @@
       text-align: center;
     }
     #level-finish {
-      position: absolute;
-      left: 0; right: 0; top: 0; bottom: 0;
-      z-index: 1100;
-      background: rgba(255,255,255,0.98);
-      display: flex;
-      align-items: center;
-      justify-content: flex-start; /* **关键修改：让内容从顶部开始堆叠** */
-      flex-direction: column;
-      font-size: 1.1rem;
-      border-radius: 25px;
-      text-align: center;
+      justify-content: flex-start;
     }
     #level-finish > * {
-      margin-top: 30%; /* 让第一个子元素从容器顶部开始下移30% */
+      margin-top: 30%;
     }
     #start-screen {
       padding-top: 10vh;
@@ -1074,9 +1112,8 @@
       height: 100%;
       display: flex;
       flex-direction: column;
-      align-items: center; /* 水平居中保持不变 */
-      /* 移除 justify-content: center，改用距离顶部40% */
-      margin-top: -30%; /* 距离顶部-30%（相对于父元素高度） */
+      align-items: center;
+      margin-top: -30%;
       animation: wave 2s infinite;
     }
     .cloud-layer {
@@ -1171,7 +1208,7 @@
     }
 
     #footer {
-      margin: 20px auto 0 auto;
+      margin: 20px auto 20px auto;22:31 2025/8/3
       width: 100%;
       text-align: center;
       font-size: 1rem;
@@ -1352,17 +1389,7 @@
         overflow: hidden;
     }
 
-    #level2-outro-screen video {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform: translate(-50%, -50%);
-        height: 100%;
-        width: auto;
-        object-fit: cover;
-        border-radius: 0;
-        box-shadow: none;
-    }
+    #level2-outro-screen video,
     #level2-outro-screen img {
         position: absolute;
         top: 50%;
@@ -1444,6 +1471,7 @@
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+<!-- HTML 结构保持不变 -->
 <div id="game-container">
   <div id="loading-screen">
     <div class="loading-content">
@@ -1469,7 +1497,6 @@
         </div>
     <div id="curtain"></div>
     <div id="cat-path">
-        <!-- Replaced 🐈 with an <img> tag for run.gif -->
         <div id="walking-cat"><img src="run.gif" alt="Walking Cat"></div>
         <span class="path-decoration" style="left: 20%;">💌</span>
         <span class="path-decoration" style="left: 40%;">🌿</span>
@@ -1492,10 +1519,11 @@
     </div>
     <div id="tools-bar">
       <button id="undo-btn" disabled title="撤销(需兑换码)">↩️ 撤销 (<span id="undo-count">0</span>)</button>
-      <button id="hint-btn" disabled title="提示(需兑换码)">💡 提示 (<span id="hint-count">0</span>)</button>
-      <button id="shuffle-btn" disabled title="洗牌(需兑换码)">🔀 洗牌 (<span id="shuffle-count">0</span>)</button>
-      <button id="revive-btn" disabled title="复活(需兑换码)">💖 复活 (<span id="revive-count">0</span>)</button> <!-- Added Revive Button -->
-      <button id="restart-btn" title="重新开始当前关卡">🔄 重新开始</button>
+      <button id="hint-btn" disabled title="提示(需兑换码)"> 提示💡 (<span id="hint-count">0</span>)</button>
+      <button id="shuffle-btn" disabled title="洗牌(需兑换码)"> 洗牌🔀 (<span id="shuffle-count">0</span>)</button>
+      <button id="revive-btn" disabled title="复活(需兑换码)">💖 复活 (<span id="revive-count">0</span>)</button>
+      <button id="restart-btn" title="重新开始当前关卡"> 🔄重新开始</button>
+      <button id="auto-collect-btn" title="自动收集" disabled> 自动🤖 (<span id="auto-collect-count">0</span>)</button>
     </div>
     <div id="code-bar">
       <input type="text" id="code-input" placeholder="兑换码" maxlength="12">
@@ -1504,7 +1532,7 @@
     <div id="message-bar"></div>
   </div>
   <div id="footer">
-    喵了个喵 &copy; 2025 | Designed by 开元
+    <p>喵了个喵 &copy; 2025 | Designed by 开元</p>
   </div>
 
   <div id="event-overlay">
@@ -1516,10 +1544,10 @@
 
   <div id="start-screen">
     <video id="start-screen-video" autoplay loop muted playsinline>
-  <source src="mao.webm" type="video/webm">
-  <source src="mao.mp4" type="video/mp4">
-  <img src="mao.webp" alt="背景图">
-</video>
+      <source src="mao.webm" type="video/webm">
+      <source src="mao.mp4" type="video/mp4">
+      <img src="mao.webp" alt="背景图">
+    </video>
     <h1><span>喵</span><span>了</span><span>个</span><span>喵</span><span> 🐾</span></h1>
     <p> </p> <p>
       <button class="start-btn" id="start-btn">开始游戏</button>
@@ -1530,10 +1558,8 @@
   </div>
 
   <div id="level2-outro-screen" style="display:none;">
-    <video id="outro-video" autoplay muted playsinline
-        preload="auto"
-    >
-        <source src="mao2.mp4" type="video/mp4" />
+    <video id="outro-video" playsinline muted>
+        <source src="mao2.mp4" type="video/mp4">
         您的浏览器不支持视频播放。
     </video>
     <img id="outro-image" src="mao2.webp" alt="Level 2 Outro Image" style="display:none;">
@@ -1584,7 +1610,7 @@
     <div id="game-over-content">
         <div id="game-over-text"></div>
         <button id="retry-btn2">重试</button>
-        <button id="revive-btn-gameover" style="margin-left:10px; display:none;">💖 复活</button> <!-- Added Revive Button to Game Over Screen -->
+        <button id="revive-btn-gameover" style="margin-left:10px; display:none;">💖 复活</button>
         <button id="close-game-btn-gameover" style="margin-left:10px;">关闭游戏</button>
     </div>
   </div>
@@ -1607,39 +1633,33 @@
 <script src="js/jquery-3.4.1.min.js"></script>
 <script src="js/index.js"></script>
 <script>
-// =================================================================================
-// START OF MODIFICATION: Reduced card variety and optimized layout parameters.
-// =================================================================================
-// Game configuration constants
+// 游戏配置和逻辑部分保持不变
 const CARD_ICONS = [
-  "🐈", "💐", "👒", "🏵️", "🧸", "🔮", "🎡", "🪭",
-  "🌈", "🍂", "🪷" // Reduced the number of icons to make the game easier
+  "🐈", "💐", "👒", "🏵️", "🧸", "🔮", "🎡", "🐈‍⬛", "🪭",
+  "🐖", "🧶", "🌻", "💎", "🌈", "🍂", "🪷"
 ];
 const LEVELS = [
   // Level 1 now has more cards to ensure a visible heart shape can be formed.
-  {num: 1, visible: 15, total: 51, stack: 1, rows: 3, cols: 5, overlap: 17, targetScore: 25, totalDisplaySets: 17},
-  {num: 2, visible: 15, total: 120, stack: 2, rows: 3, cols: 5, overlap: 17, targetScore: 100, totalDisplaySets: 26}
+  {num: 1, visible: 15, total: 36, stack: 1, rows: 3, cols: 5, overlap: 20, targetScore: 25, totalDisplaySets: 12},
+  {num: 2, visible: 15, total: 123, stack: 2, rows: 3, cols: 5, overlap: 20, targetScore: 100, totalDisplaySets: 30}
 ];
-// =================================================================================
-// END OF MODIFICATION
-// =================================================================================
 const TEMP_LIMIT = 7;
 const DISPLAY_CARD_MATCH_SCORE = 5;
 const INITIAL_DISPLAY_SETS_VISIBLE = 2;
-const FLYING_SPEED_PPS = 800; // Pixels per second for card animation
+const FLYING_SPEED_PPS = 1000;
 
 const REDEMPTION_CODES = {
-  "kaiyuan": { undo: 20, hint: 20, shuffle: 20 },
+  "kaiyuan": { undo: 20, hint: 20, shuffle: 20, autoCollect: 20 },
   "兑换码": { undo: 5, hint: 5, shuffle: 5 },
-  "喵了个喵": { undo: 50, hint: 50, shuffle: 50 },
+  "喵了个喵": { undo: 50, hint: 50, shuffle: 50, autoCollect: 40 },
   "不知道": { undo: 3, hint: 1, shuffle: 1 },
   "开元": { undo: 10, hint: 10, shuffle: 10 },
   "通关": { type: "skip_level" },
   "xianshi": { type: "curtain_off" },
-  "shuaige": { revive: 3 } // Added new redemption code for revive
+  "shuaige": { revive: 3 }
 };
 
-// DOM Elements
+// DOM 元素获取部分保持不变
 const bgm = document.getElementById('bgm');
 const confirmModal = document.getElementById('confirm-modal');
 const confirmMsg = document.getElementById('confirm-msg');
@@ -1658,8 +1678,8 @@ const closeGameBtnGameOver = document.getElementById('close-game-btn-gameover');
 const undoBtn = document.getElementById('undo-btn');
 const hintBtn = document.getElementById('hint-btn');
 const shuffleBtn = document.getElementById('shuffle-btn');
-const reviveBtn = document.getElementById('revive-btn'); // Added revive button
-const reviveBtnGameOver = document.getElementById('revive-btn-gameover'); // Added revive button for game over screen
+const reviveBtn = document.getElementById('revive-btn');
+const reviveBtnGameOver = document.getElementById('revive-btn-gameover');
 const restartCurrentLevelBtn = document.getElementById('restart-btn');
 const codeInput = document.getElementById('code-input');
 const codeBtn = document.getElementById('code-btn');
@@ -1686,13 +1706,19 @@ const eventOverlay = document.getElementById('event-overlay');
 const eventMessageBox = document.getElementById('event-message-box');
 const eventIconEl = eventMessageBox.querySelector('.event-icon');
 const eventTextEl = eventMessageBox.querySelector('.event-text');
+const autoCollectBtn = document.getElementById('auto-collect-btn');
+const autoCollectCountEl = document.getElementById('auto-collect-count');
 
+// 游戏状态和工具函数保持不变
+let autoCollectCount = 0;
+let autoCollectActive = false;
+let autoCollectTimer = null;
 let confirmCallback = null;
 let outroVideoTimeout = null;
 let decorationInterval = null;
 let randomEventTimer = null;
 let curtainTimer = null;
-let isLandscape = window.matchMedia("(orientation: landscape)").matches;
+let isLandscape = false; 
 let hasShownLandscapeMessage = false;
 let lastShakeTime = 0;
 
@@ -1700,18 +1726,6 @@ let audioContext;
 let clickSoundBuffer;
 let clickAudioFailed = false;
 
-/* 核心函数 */
-function handleOrientation(e) {
-    document.body.classList.toggle('landscape', isLandscape);
-    isLandscape = e.matches;      // true = 横屏
-    updateToolButtons();          // 只更新按钮状态即可
-    // 可选：横竖切换时，重新布局
-    handleRotationRefresh();      
-}
-
-/* 监听一次就够 */
-window.matchMedia("(orientation: landscape)").addEventListener('change', handleOrientation);
-// Game State Object
 let game = {
   level: 1,
   levelStartTime: 0,
@@ -1720,7 +1734,7 @@ let game = {
   temp: [],
   matched: [],
   usedIcons: [],
-  toolUses: {undo: 0, hint: 0, shuffle: 0, revive: 0}, // Added revive to toolUses
+  toolUses: {undo: 0, hint: 0, shuffle: 0, revive: 0},
   score: 0,
   targetScore: 0,
   displayCards: [],
@@ -1730,28 +1744,16 @@ let game = {
   bgmOn: true,
   isNewLevel: false,
   lock: false,
-  flyingCardCount: 0, // Counter for cards in animation
+  flyingCardCount: 0,
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
   layout: { areaWidth: 0, areaHeight: 0 },
+  autoCollectEnabled: false, 
   isCurtainEnabled: true
 };
 
-// Utility Functions
-function randArr(arr) {
-  return arr.slice().sort(() => Math.random() - 0.5);
-}
-
-function shuffle(arr) {
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-}
-
-function deepClone(obj) {
-  return JSON.parse(JSON.stringify(obj));
-}
-
+function randArr(arr) { return arr.slice().sort(() => Math.random() - 0.5); }
+function shuffle(arr) { for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; } }
+function deepClone(obj) { return JSON.parse(JSON.stringify(obj)); }
 function randBetween(a, b) { return a + Math.random() * (b - a); }
 
 async function initAudio() {
@@ -1884,6 +1886,9 @@ function calculateResponsiveSizes() {
 
     /* 若浏览器不认 aspect-ratio 或被外层约束扭曲，这里强制修正高度 */
     const expectedH = areaW * STACK_RATIO;
+    // 若为横屏，可适当放大高度
+    const isLandscape = window.matchMedia("(orientation: landscape)").matches;
+    const adjustedH = isLandscape ? expectedH * 1.2 : expectedH;
     if (Math.abs(areaH - expectedH) > 1) {          // 误差 1px 以内忽略
         cardStackArea.style.height = `${expectedH}px`;
     }
@@ -1907,17 +1912,16 @@ function calculateResponsiveSizes() {
 // START OF MODIFICATION: Refined heart shape layout logic for centering and consistency.
 // =================================================================================
 /**
- * Generates a multi-layered, heart-shaped card layout that is responsive and fits the container.
- * This function creates a "pit" of randomly placed cards at the bottom for difficulty,
- * then layers the remaining cards in a heart shape on top.
- * @param {Array} cardsToPlace - The array of card objects to be placed.
- * @param {Object} levelConfig - The configuration for the current level.
- * @returns {Array} A new board array with calculated positions for the heart shape.
+ * (源文件算法) 生成一个多层的、居中的心形卡片布局。
+ * 该函数会在底部创建一个随机的“坑”，然后将剩余的卡片以心形排列在上面。
+ * @param {Array} cardsToPlace - 要放置的卡片对象数组。
+ * @param {Object} levelConfig - 当前关卡的配置。
+ * @returns {Array} 包含心形布局位置的新board数组。
  */
 function repositionCardsAndLayout(cardsToPlace, levelConfig) {
     const areaW = cardStackArea.offsetWidth;
     const areaH = cardStackArea.offsetHeight;
-    calculateResponsiveSizes(); // Determine card sizes based on area width
+    calculateResponsiveSizes(); // 根据区域宽度确定卡片尺寸
     const cardW = game.cardDimensions.width;
     const cardH = game.cardDimensions.height;
 
@@ -1926,7 +1930,7 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
     shuffle(mutableCardsToPlace);
     let zCounter = 0;
 
-    // --- 1. Place a "pit" of cards at the bottom for difficulty ---
+    // --- 1. 在底部放置一个“坑”以增加难度 ---
     const pitRatio = game.level === 1 ? 0.25 : 0.4;
     const pitCardCount = Math.floor(mutableCardsToPlace.length * pitRatio);
     const pitCards = mutableCardsToPlace.splice(0, pitCardCount);
@@ -1939,13 +1943,12 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
             x: x,
             y: y,
             z: zCounter++,
-            stack: 0 // Pit layer is stack 0
+            stack: 0 // “坑”的层级为0
         });
     }
 
-    // --- 2. Generate the heart shape points ---
+    // --- 2. 生成心形的点 ---
     const heartPoints = [];
-    // A larger step creates a sparser, more consistent top layer.
     const heartPointStep = 0.25; 
     for (let t = 0; t < 2 * Math.PI; t += heartPointStep) { 
         let x = 16 * Math.pow(Math.sin(t), 3);
@@ -1953,7 +1956,7 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
         heartPoints.push({ x, y });
     }
 
-    // --- 3. Normalize and scale the heart to fit the area ---
+    // --- 3. 标准化并缩放爱心以适应区域 ---
     let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
     heartPoints.forEach(p => {
         minX = Math.min(minX, p.x);
@@ -1965,10 +1968,10 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
     const heartWidth = maxX - minX;
     const heartHeight = maxY - minY;
     
-    // The scale must account for the card's own dimensions extending beyond the points.
+    // 缩放比例必须考虑到卡片自身的尺寸
     const scale = Math.min((areaW - cardW) / heartWidth, (areaH - cardH) / heartHeight);
 
-    // --- 4. Place the remaining cards along the multi-layered heart shape ---
+    // --- 4. 将剩余卡片沿多层心形放置 ---
     const heartCards = mutableCardsToPlace;
     const numLayers = game.level === 1 ? 3 : 4;
     let cardIndex = 0;
@@ -1976,10 +1979,8 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
     for (let layer = 0; layer < numLayers; layer++) {
         if (cardIndex >= heartCards.length) break;
 
-        // Increased layer separation for a "looser" feel.
         const layerScale = 1 - layer * 0.16; 
         
-        // The offset for each layer needs to be recalculated to keep it centered as it scales down.
         const layerScaledWidth = heartWidth * scale * layerScale;
         const layerScaledHeight = heartHeight * scale * layerScale;
         const layerOffsetX = (areaW - layerScaledWidth - cardW) / 2 - (minX * scale * layerScale);
@@ -1999,18 +2000,15 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
                 x: x,
                 y: y,
                 z: zCounter++,
-                stack: 1 + layer // Heart layers start from stack 1
+                stack: 1 + layer // 心形层从1开始
             });
         }
     }
 
-    // Sort the final board by z-index to ensure correct rendering order.
+    // 按z-index排序以确保正确的渲染顺序
     finalBoard.sort((a, b) => (a.z || 0) - (b.z || 0));
     return finalBoard;
 }
-// =================================================================================
-// END OF MODIFICATION
-// =================================================================================
 
 function genLevel(levelIdx){
   const lv = LEVELS[levelIdx - 1];
@@ -2102,41 +2100,26 @@ function isCardClickable(card, board) {
 // MODIFIED: clickCard function with robust state checking
 function clickCard(id) {
   let cardData = game.board.find(c => c.id === id);
-  // 1. Initial checks: If card is already matched, flying, napping, or not clickable, ignore click.
-  if (!cardData || cardData.matched || cardData.isFlying || !isCardClickable(cardData, game.board)) {
-  return;
-}
-
-// 若是 nap 状态的卡片，唤醒它后返回，不执行消除逻辑
-if (cardData.isNapping) {
-  cardData.isNapping = false; // 移除 nap 状态
-  const cardEl = document.querySelector(`.card[data-id='${cardData.id}']`);
-  if (cardEl) {
-    cardEl.classList.remove('napping');
+    if (autoCollectActive) {
+    const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
   }
-  renderBoard();
-  showMessage('卡片苏醒了 🐱💨', '#3e5a2b');
-  return;
-}
-
-
-  // 2. Pre-flight checks for game over condition (Removed the premature game over check here)
-  // The game over check for temp area full will now happen in checkWin() after card placement.
-
-  // 3. If the move is valid, proceed: Update game state immediately.
+  if (game.lock) return; // 游戏锁定时不允许点击
+  if (!cardData || cardData.matched || cardData.isFlying || cardData.isNapping || !isCardClickable(cardData, game.board)) {
+  if (game.temp.filter(c => !c.matched).length >= TEMP_LIMIT) {
+    showMessage('暂存区已满，无法再放入卡片');
+    return;
+    }
+  }
   playClickSound();
   saveStep();
   
-  // Mark the card as matched immediately in the game board data
-  // This prevents other concurrent processes (like auto-clear) from interacting with it.
   cardData.matched = true; 
-  cardData.isFlying = true; // Mark as flying
-  game.flyingCardCount++; // Increment counter for cards in animation
+  cardData.isFlying = true;
+  game.flyingCardCount++;
 
   const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
   if (!clickedCardEl) {
-    // If the element is somehow already gone, revert state and then return.
-    cardData.matched = false; // Revert matched state if element not found
+    cardData.matched = false;
     cardData.isFlying = false;
     game.flyingCardCount--;
     return;
@@ -2144,9 +2127,8 @@ if (cardData.isNapping) {
 
   const startRect = clickedCardEl.getBoundingClientRect();
   
-  // Create a temporary flying card element
   const flyingCard = document.createElement('div');
-  flyingCard.className = 'flying-card';
+  flyingCard.className = 'flying-card swirl-in';
   flyingCard.innerHTML = cardData.icon;
   document.body.appendChild(flyingCard);
   flyingCard.style.left = `${startRect.left}px`;
@@ -2157,24 +2139,19 @@ if (cardData.isNapping) {
   flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
   flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
 
-  // Hide the original card element on the board
   clickedCardEl.style.visibility = 'hidden';
   
-  // Calculate end position in temp area
-  // Temporarily add the card to game.temp for position calculation, but don't commit it yet.
   const tempForPositionCalculation = [...game.temp, { icon: cardData.icon, id: cardData.id }];
   tempForPositionCalculation.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
   const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
   const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
   
   if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
-      console.error("Invalid end slot index for flying card. Aborting animation.");
       if(flyingCard.parentNode) document.body.removeChild(flyingCard);
-      // Revert state if animation cannot proceed
       cardData.matched = false;
       cardData.isFlying = false;
       game.flyingCardCount--;
-      clickedCardEl.style.visibility = 'visible'; // Show original card if animation aborted
+      clickedCardEl.style.visibility = 'visible';
       return;
   }
   
@@ -2198,19 +2175,16 @@ if (cardData.isNapping) {
   });
 
   setTimeout(() => {
-    // Animation complete, remove flying card
     if (flyingCard.parentNode) document.body.removeChild(flyingCard);
     
-    game.flyingCardCount--; // Decrement counter as animation finishes
+    game.flyingCardCount--;
     
-    // Now, commit the card to game.temp
-    // cardData is already marked as matched=true from before the animation
-    delete cardData.isFlying; // Remove the flying flag
-    game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false }); // Add to temp as not yet matched in temp
+    delete cardData.isFlying;
+    game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
     game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
     
-    renderTemp(); // Re-render temp area to show the new card
-    renderBoard(); // Re-render board to ensure original card is gone and update disabled states
+    renderTemp();
+    renderBoard();
     renderProgressAndScore();
     updateWigglingCatVisibility();
 
@@ -2218,51 +2192,59 @@ if (cardData.isNapping) {
     game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
     let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
 
-    if (matchedIcon) {
-      triggerMatchFeedback();
-      const matchedElements = [];
-      let cleanupDone = false;
+        if (matchedIcon) {
+    triggerMatchFeedback();
+    if (autoCollectActive) {
+      autoCollectCount--;
+      updateAutoCollectStatus();
+      if (autoCollectCount <= 0) stopAutoCollect();
+    }
+    // 记录要消除的卡片索引
+    const toVanishIndexes = [];
+    game.temp.forEach((card, i) => {
+        if (card.icon === matchedIcon && !card.matched) {
+            card.matched = true;
+            toVanishIndexes.push(i);
+        }
+    });
 
-      const performCleanup = () => {
-          if (!cleanupDone) {
-              cleanupDone = true;
-              game.temp = game.temp.filter(c => !c.matched);
-              renderTemp();
-              renderBoard(); // Re-render board after temp cleanup to update disabled states
-              checkWin(); // Call checkWin after potential match cleanup
-          }
-      };
+    let animationsToComplete = toVanishIndexes.length;
+    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
 
-      game.temp.forEach((c, index) => {
-          if (c.icon === matchedIcon) {
-              c.matched = true;
-              const slot = tempSlots[index];
-              if (slot) {
-                  const cardEl = slot.querySelector('.temp-card');
-                  if (cardEl) {
-                      cardEl.classList.add('disappearing');
-                      matchedElements.push(cardEl);
-                  }
-              }
-          }
-      });
+    const finishCleanup = () => {
+        game.temp = game.temp.filter(c => !c.matched);  // 彻底移除
+        renderTemp();
+        renderBoard();
+        checkWin();
+    };
 
-      matchedElements.forEach(cardEl => {
-          const slot = cardEl.closest('.temp-slot');
-          if (slot) {
-              slot.classList.add('clearing');
-              slot.addEventListener('animationend', () => slot.classList.remove('clearing'), { once: true });
-          }
-      });
+    if (animationsToComplete === 0) {
+        finishCleanup();
+    } else {
+        // 绑定动画结束事件
+        toVanishIndexes.forEach(idx => {
+            const slot = tempSlots[idx];
+            if (slot) {
+                const cardEl = slot.querySelector('.temp-card');
+                if (cardEl) {
+                    cardEl.classList.add('vanishing');
+                    cardEl.addEventListener('animationend', () => {
+                        animationsToComplete--;
+                        if (animationsToComplete === 0) finishCleanup();
+                    }, { once: true });
+                } else {
+                    animationsToComplete--;
+                    if (animationsToComplete === 0) finishCleanup();
+                }
+            }
+        });
+        // 超时兜底，防止动画事件丢失
+        setTimeout(() => {
+            if (animationsToComplete > 0) finishCleanup();
+        }, 700);
+    }
 
-      if (matchedElements.length > 0) {
-          const lastMatchedEl = matchedElements[matchedElements.length - 1];
-          lastMatchedEl.addEventListener('animationend', performCleanup, { once: true });
-      } else {
-          performCleanup();
-      }
-      setTimeout(performCleanup, 500);
-
+      // 处理计分展示区的逻辑保持不变
       game.displayCards.forEach(displaySet => {
           if (!displaySet.matched && displaySet.cards[0].icon === matchedIcon) {
               displaySet.matched = true;
@@ -2293,7 +2275,10 @@ if (cardData.isNapping) {
           }
       });
     } else {
-      checkWin(); // Call checkWin if no match was made
+      checkWin(); // 如果没有匹配，也需要检查游戏状态
+    }
+    if (game.autoCollectEnabled) {
+      tryResumeAutoCollect();
     }
   }, animationDuration);
 }
@@ -2313,12 +2298,13 @@ function checkWin() {
     // Check for game over condition (temp area full and no match)
     // This check is now correctly placed after a card has been added to temp
     // and after any potential matches have been processed.
-    if (game.temp.length === TEMP_LIMIT && !allCardsMatched) { 
+    if (game.temp.filter(c => !c.matched).length >= TEMP_LIMIT && !allCardsMatched) {
         gameOver('暂存区已超限，游戏失败！');
         return;
     }
 
     if (allCardsMatched && scoreMet) {
+        stopAutoCollect(); // 关卡结束时彻底停止自动收集
         stopRandomEvents();
         stopCurtainRandomToggle();
         stopDecorationUpdates();
@@ -2339,8 +2325,10 @@ function checkWin() {
             confirmNo.style.display = originalNoDisplay;
         });
     } else if (allCardsMatched && !scoreMet) {
+        stopAutoCollect(); // 关卡结束时彻底停止自动收集
         gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
     }
+  updateAutoCollectStatus();
 }
 
 function saveStep(){
@@ -2370,6 +2358,7 @@ function undoStep(){
     showMessage('无法撤销更多', '#888');
   }
 }
+
 function animateCardsInBatches(cards, batchSize = 20, delay = 100) {
   let index = 0;
 
@@ -2401,20 +2390,68 @@ function animateCardsInBatches(cards, batchSize = 20, delay = 100) {
 
   animateBatch();
 }
-function shuffleStep() {
-  saveStep(); // 保存当前状态
+// 辅助函数：分批次为卡片添加 "swirl-in" 动画
+function animateShuffleInBatches(cards, onAnimationEnd) {
+    let index = 0;
+    const batchSize = 20; // 每批处理20个卡片
+    const delay = 100;    // 每批之间的延迟
+
+    function animateBatch() {
+        const batch = cards.slice(index, index + batchSize);
+        batch.forEach(card => {
+            card.classList.add('swirl-in');
+            // 为每个卡片添加一次性的动画结束监听器
+            card.addEventListener('animationend', onAnimationEnd, { once: true });
+        });
+        index += batchSize;
+        if (index < cards.length) {
+            setTimeout(animateBatch, delay);
+        }
+    }
+    animateBatch();
+}
+
+// 新的 shuffleStep 函数，调用上面的辅助函数
+function shuffleStep(){
+  saveStep();
   game.lock = true;
 
-  const allCards = Array.from(document.querySelectorAll('.card'));
-
-  // 只动画可见卡片
+  const allCards = Array.from(document.querySelectorAll('#card-stack-area .card:not(.matched)'));
+  // 仅对当前可见的卡片应用动画
   const visibleCards = allCards.filter(card => card.offsetParent !== null);
 
-  // 清除旧动画类（如果需要重复动画）
-  visibleCards.forEach(card => card.classList.remove('swirl-in'));
+  if (visibleCards.length === 0) {
+      game.lock = false;
+      return;
+  }
 
-  // 分批执行动画
-  animateCardsInBatches(visibleCards, 20, 100);
+  // 使用计数器确保所有动画都完成后再执行清理
+  let animationsToComplete = visibleCards.length;
+
+  const cleanupAfterShuffle = () => {
+      // 重新计算卡片布局
+      game.board = repositionCardsAndLayout(game.board, LEVELS[game.level - 1]);
+      
+      // 重新渲染所有内容，新生成的卡片将不带 swirl-in 类
+      renderAll();
+
+      showMessage('已洗牌');
+      game.lock = false;
+      updateWigglingCatVisibility();
+  };
+  
+  const handleAnimationEnd = () => {
+      animationsToComplete--;
+      if (animationsToComplete === 0) {
+          cleanupAfterShuffle();
+      }
+  };
+  
+  // 清理可能残留的旧动画类
+  visibleCards.forEach(card => card.classList.remove('swirl-in'));
+  
+  // 开始分批执行动画
+  animateShuffleInBatches(visibleCards, handleAnimationEnd);
 }
 
 function hintStep(){
@@ -2466,7 +2503,7 @@ function hintStep(){
     showMessage('当前无可三消', "#888");
   }
 }
-
+reviveBtnGameOver.addEventListener('click', reviveGame);
 function gameOver(msg){
   stopRandomEvents();
   stopCurtainRandomToggle();
@@ -2495,6 +2532,7 @@ function gameOver(msg){
   } else {
       reviveBtnGameOver.style.display = 'none';
   }
+updateAutoCollectStatus();
 }
 
 function reviveGame() {
@@ -2506,7 +2544,7 @@ function reviveGame() {
     showConfirm('确定要使用1次复活卡吗？这将回到游戏界面并解除打盹卡片。', () => {
         game.toolUses.revive--;
 
-        // 撤销最后一步（只pop一次，并还原到前一个状态）
+        // 撤销最后一步（只pop一次）
         if (game.stepStack.length > 0) {
             game.stepStack.pop();
         }
@@ -2531,7 +2569,7 @@ function reviveGame() {
             card.isNapping = false;
         });
 
-        document.getElementById('game-over').style.display = 'none'; // 隐藏game-over
+        document.getElementById('game-over').style.display = 'none';
         game.lock = false;
         renderAll();
         showMessage('复活成功！撤销最后一步并唤醒全部卡片。', '#3e5a2b');
@@ -2540,16 +2578,13 @@ function reviveGame() {
         startDecorationUpdates();
     });
 }
-
         
-function startGame(level){
+function startGame(level) {
   game.lock = true;
   footer.style.display = 'block';
   game.level = level;
   game.levelStartTime = Date.now();
-  game.flyingCardCount = 0; // Reset flying card counter
-  // MODIFIED: Ensure any existing flying cards are removed at the start of a new game/level
-  document.querySelectorAll('.flying-card').forEach(card => card.remove());
+  game.flyingCardCount = 0;
 
   let lvData = genLevel(level);
   game.cards = lvData.cards;
@@ -2557,12 +2592,14 @@ function startGame(level){
   game.usedIcons = lvData.usedIcons;
   game.temp = [];
   game.matched = [];
-  game.toolUses.undo = 0; // Reset undo count for new game/level
-  game.toolUses.hint = 0; // Reset hint count for new game/level
-  game.toolUses.shuffle = 0; // Reset shuffle count for new game/level
+  game.toolUses.undo = 0;
+  game.toolUses.hint = 0;
+  game.toolUses.shuffle = 0;
   game.stepStack = [];
   game.isNewLevel = true;
+  game.autoCollectEnabled = false; 
   renderAll();
+
   const cardStackArea = document.getElementById('card-stack-area');
   const oldLid = document.getElementById('card-stack-lid');
   if (oldLid) oldLid.remove();
@@ -2594,7 +2631,8 @@ function startGame(level){
         card.style.animationDelay = '';
     });
     game.lock = false;
-  }, 3000);
+}, 3000);
+
   if (game.bgmOn) playBgm(true);
   positionCatWalker();
   updateWigglingCatVisibility();
@@ -2657,6 +2695,10 @@ function renderBoard(){
     el.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
   });
   game.isNewLevel = false;
+  updateAutoCollectStatus();
+  if (autoCollectActive && !autoCollectTimer) {
+    autoCollectStep(); // 只在没有定时器时启动
+  }
 }
 
 function renderTemp(){
@@ -2714,6 +2756,7 @@ function renderTemp(){
   } else {
     if (persistentHeart) persistentHeart.style.display = 'none';
   }
+  updateAutoCollectStatus();
 }
 
 function renderDisplay() {
@@ -2760,17 +2803,27 @@ function showMessage(msg, color){
   if(msg) setTimeout(()=>{bar.textContent='';}, 2300);
 }
 
+function hasTripleMatch() {
+  let tempIcons = game.temp.filter(c => !c.matched).map(c => c.icon);
+  let clickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+  let clickableBoardIcons = clickableBoardCards.map(c => c.icon);
+  let allAvailableIcons = [...tempIcons, ...clickableBoardIcons];
+  let iconCounts = {};
+  allAvailableIcons.forEach(icon => iconCounts[icon] = (iconCounts[icon] || 0) + 1);
+  return Object.values(iconCounts).some(cnt => cnt >= 3);
+}
+
 function updateToolButtons() {
   document.getElementById('undo-count').textContent = game.toolUses.undo;
   document.getElementById('hint-count').textContent = game.toolUses.hint;
   document.getElementById('shuffle-count').textContent = game.toolUses.shuffle;
-  document.getElementById('revive-count').textContent = game.toolUses.revive; // Update revive count
+  document.getElementById('revive-count').textContent = game.toolUses.revive;
 
   undoBtn.disabled = isLandscape || game.toolUses.undo <= 0;
   undoBtn.title = isLandscape ? "横屏模式下不可用" : "撤销(需兑换码)";
-  hintBtn.disabled = game.toolUses.hint <= 0;
+  hintBtn.disabled = game.toolUses.hint <= 0 || !hasTripleMatch(); // 新增三消检测
   shuffleBtn.disabled = game.toolUses.shuffle <= 0;
-  reviveBtn.disabled = game.toolUses.revive <= 0; // Disable revive button if count is 0
+  reviveBtn.disabled = game.toolUses.revive <= 0;
 }
 
 function renderAll(){
@@ -2783,6 +2836,10 @@ function renderAll(){
   updateWigglingCatVisibility();
   positionCurtain();
   toggleCurtain(false);
+  updateAutoCollectStatus();
+  if (autoCollectActive && !autoCollectTimer) {
+    autoCollectStep(); // 只在没有定时器时启动
+  }
 }
 
 function showLevelFinish(msg){
@@ -2797,7 +2854,7 @@ function showLevelFinish(msg){
   }
   level2OutroScreen.style.display = 'none';
   skipOutroBtn.style.display = 'none';
-  // game.lock = false; // 移除这行，保持游戏锁定状态
+
   const levelFinishScreen = document.getElementById('level-finish');
   levelFinishScreen.style.display='flex';
   levelFinishTextElement.innerHTML = msg;
@@ -2847,6 +2904,7 @@ function showLevelFinish(msg){
 }
 
 function initializeGame(){
+  createRiskModal(); // 创建风险提示框
   musicToggleBtn.innerHTML = game.bgmOn ? '🎼' : '🔇';
   updateToolButtons();
 }
@@ -2917,13 +2975,15 @@ function eventCatNap() {
     renderBoard();
     game.lock = false;
     const nappingDuration = randBetween(CATNAP_MIN_DURATION, CATNAP_MAX_DURATION);
-    setTimeout(() => {
-        nappingCards.forEach(card => {
-            const boardCard = game.board.find(c => c.id === card.id);
-            if (boardCard) boardCard.isNapping = false;
-        });
-        renderBoard();
-    }, nappingDuration); // Use the random duration here
+setTimeout(() => {
+    nappingCards.forEach(card => {
+        const boardCard = game.board.find(c => c.id === card.id);
+        if (boardCard) boardCard.isNapping = false;
+    });
+    renderBoard();
+    checkWin(); // ✅ 添加此行
+    tryResumeAutoCollect(); // ✅ 添加此行
+}, nappingDuration);
 }
 
 function eventCuriousPaw() {
@@ -3090,6 +3150,30 @@ function stopCurtainRandomToggle() {
 // =================================================================================
 // START OF MODIFICATION: Handle screen rotation by refreshing the layout.
 // =================================================================================
+// (源文件逻辑)
+/* 核心函数 */
+function handleOrientation(e) {
+ // 检测从横屏切回竖屏
+  if (e.matches === false && isLandscape === true) {
+    const container = document.getElementById('game-container');
+    container.classList.add('rotate-transition');
+
+    // 等待动画完成后刷新布局
+    setTimeout(() => {
+      handleRotationRefresh();
+      container.classList.remove('rotate-transition');
+    }, 700);
+  }
+    document.body.classList.toggle('landscape', isLandscape);
+    isLandscape = e.matches;      // true = 横屏
+    updateToolButtons();          // 只更新按钮状态即可
+    // 可选：横竖切换时，重新布局
+    handleRotationRefresh();      
+}
+
+/* 监听一次就够 */
+window.matchMedia("(orientation: landscape)").addEventListener('change', handleOrientation);
+
 function handleRotationRefresh() {
     if (game.lock) return;
     // 旋转后重新计算 layout
@@ -3115,17 +3199,42 @@ function handleRotationRefresh() {
         // Unlock the game
         game.lock = false;
     }, 250); // 250ms delay to ensure browser has completed the rotation
-  const cards = document.querySelectorAll('#card-stack-area .card');
-  cards.forEach(card => {
-  card.classList.add('card-rotate-animate');
-  setTimeout(() => card.classList.remove('card-rotate-animate'), 700); // 清除类名以便下次旋转可重播动画
-});
-} // ===== END OF handleRotationRefresh =====
+  }
 
+// 最后，找到 DOMContentLoaded 事件监听器，并将里面的 window.addEventListener('resize', ...) 这一行删除或注释掉，
+// 因为屏幕方向的改变已经由上面的 handleOrientation 统一处理了。
+// window.addEventListener('resize', debounce(handleResize, 200)); // <--- 删除这一行
 // =================================================================================
 // END OF MODIFICATION
 // =================================================================================
+function updateAutoCollectStatus() {
+  if (autoCollectCountEl) {
+    autoCollectCountEl.textContent = autoCollectCount;
+  }
+  
+  const hasTriple = hasTripleMatch();
+  const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
+  const isNearLimit = unMatchedTempCards >= TEMP_LIMIT - 1;
+  
+  // 更新按钮状态和提示文本
+  autoCollectBtn.disabled = 
+    autoCollectCount <= 0 || 
+    autoCollectActive || 
+    !hasTriple || 
+    (isNearLimit && !findSafeTripleMatch());
 
+  // 根据不同状态显示不同的提示
+  if (!game.autoCollectEnabled) {
+    autoCollectBtn.title = "点击启用自动收集功能";
+    autoCollectBtn.innerHTML = `自动🤖  (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+  } else {
+    autoCollectBtn.title = autoCollectCount <= 0 ? 
+      "需要兑换码获取使用次数" : 
+      "自动收集已启用";
+    autoCollectBtn.innerHTML = `自动中 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+  }
+}
+updateAutoCollectStatus();
 function handleDeviceMotion(event) {
     if (game.lock || game.toolUses.shuffle <= 0) {
         return;
@@ -3163,24 +3272,20 @@ document.addEventListener('DOMContentLoaded', function() {
         console.log("此设备不支持摇一摇功能。");
     }
 
-    document.addEventListener('visibilitychange', () => {
-        if (document.hidden) {
-            playBgm(false);
-        } else {
-            if (audioContext && audioContext.state === 'suspended') {
-                audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
-            }
-            const levelFinishScreen = document.getElementById('level-finish');
-            const gameOverScreen = document.getElementById('game-over');
-            const isGameEndScreenVisible = levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex';
-            if (game.bgmOn && !isGameEndScreenVisible) {
-                playBgm(true);
-            }
-            if (!isGameEndScreenVisible && document.getElementById('start-screen').style.display === 'none') {
-                renderAll();
-            }
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        playBgm(false);
+    } else {
+        if (audioContext && audioContext.state === 'suspended') {
+            audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
         }
-    });
+        // 解决 nap 状态残留
+        if (game && game.board) {
+            game.board.forEach(card => { card.isNapping = false; });
+        }
+        renderAll();
+    }
+});
 
     const feedbackDiv = document.createElement('div');
     feedbackDiv.style.cssText = 'color: red; font-size: 12px; margin-top: 5px;';
@@ -3220,11 +3325,7 @@ document.addEventListener('DOMContentLoaded', function() {
     codeInput.addEventListener('keyup', e => { if (e.key === 'Enter' && !codeBtn.disabled) codeBtn.click(); });
 
     // We still call handleResize once to set initial positions, but don't listen for resize events anymore.
-    window.addEventListener('resize', debounce(() => {
-        if (game.lock) return;
-        positionCatWalker();
-        positionCurtain();
-    }, 200)); 
+    
 
     // MODIFIED: Added event delegation for both touch and mouse events
     cardStackArea.addEventListener('click', function(e) {
@@ -3303,11 +3404,25 @@ codeBtn.onclick = function(){
         showMessage(`兑换成功！幕布已在本关卡关闭！`, "#3e5a2b");
     }
     else {
-      game.toolUses.undo += (rewards.undo || 0);
-      game.toolUses.hint += (rewards.hint || 0);
-      game.toolUses.shuffle += (rewards.shuffle || 0);
-      game.toolUses.revive += (rewards.revive || 0); // Added revive reward
-      showMessage(`兑换成功！获得撤销x${rewards.undo || 0}, 提示x${rewards.hint || 0}, 洗牌x${rewards.shuffle || 0}, 复活卡x${rewards.revive || 0}`, "#3e5a2b");
+        game.toolUses.undo += (rewards.undo || 0);
+        game.toolUses.hint += (rewards.hint || 0);
+        game.toolUses.shuffle += (rewards.shuffle || 0);
+        game.toolUses.revive += (rewards.revive || 0);
+        if (rewards.autoCollect) {
+        autoCollectCount += rewards.autoCollect;
+        updateAutoCollectStatus();
+        showMessage(`自动收集次数+${rewards.autoCollect}`, "#3e5a2b");
+     }
+  // === 只显示有效奖励 ===
+  let rewardArr = [];
+  if (rewards.undo > 0) rewardArr.push(`撤销x${rewards.undo}`);
+  if (rewards.hint > 0) rewardArr.push(`提示x${rewards.hint}`);
+  if (rewards.shuffle > 0) rewardArr.push(`洗牌x${rewards.shuffle}`);
+  if (rewards.revive > 0) rewardArr.push(`复活卡x${rewards.revive}`);
+  if (rewards.autoCollect > 0) rewardArr.push(`自动收集x${rewards.autoCollect}`);
+  if (rewardArr.length > 0) {
+    showMessage('兑换成功！获得' + rewardArr.join('，'), "#3e5a2b");
+  }
     }
     updateToolButtons();
   } else {
@@ -3556,6 +3671,354 @@ function debounce(func, delay) {
     clearTimeout(timeout);
     timeout = setTimeout(() => func.apply(context, args), delay);
   };
+}
+// 自动收集主循环
+function startAutoCollect() {
+  if (autoCollectCount <= 0 || autoCollectActive) return;
+  
+  // 第一次点击时启用自动收集
+  game.autoCollectEnabled = true;
+  
+  // 显示启用提示
+  showMessage('已启用自动收集功能', '#3e5a2b');
+  
+  autoCollectActive = true;
+  updateAutoCollectStatus();
+  autoCollectStep();
+}
+
+function stopAutoCollect() {
+  autoCollectActive = false;
+  // 注意这里不重置 game.autoCollectEnabled，
+  // 因为我们希望在同一关卡中保持启用状态
+  updateAutoCollectStatus();
+  if (autoCollectTimer) {
+    clearTimeout(autoCollectTimer);
+    autoCollectTimer = null;
+  }
+}
+
+function autoCollectStep() {
+  // 1. 基础条件拦截
+  if (!game.autoCollectEnabled || autoCollectCount <= 0 || game.lock) {
+    stopAutoCollect();
+    return;
+  }
+  // 如已经到结束/失败界面，也停止
+  if (document.getElementById('level-finish').style.display === 'flex' ||
+      document.getElementById('game-over').style.display === 'flex') {
+    stopAutoCollect();
+    return;
+  }
+
+  // 2. 临界风险：剩余1格且没有任何安全三消机会
+  const unMatched = game.temp.filter(c => !c.matched).length;
+  if (unMatched === TEMP_LIMIT - 1) {
+    // 检查全局是否存在任意能安全凑三消的点击
+    const safeExists = game.board.some(c =>
+      !c.matched &&
+      isCardClickable(c, game.board) &&
+      !willAddCardFail(c) &&
+      willAddCardFail(c) === false &&  // 先不致死
+      // 并且点击后能触发一轮三消
+      (() => {
+        // 模拟点击
+        const simTemp = game.temp.filter(t=>!t.matched).map(t=>t.icon).concat(c.icon);
+        const cnt = simTemp.reduce((m,icon)=> (m[icon]=(m[icon]||0)+1, m), {});
+        return Object.values(cnt).some(v=>v>=3);
+      })()
+    );
+
+    if (!safeExists) {
+      stopAutoCollect();
+      showRiskModal(`
+        <div style="text-align:center">
+          <div style="font-size:1.2em; margin-bottom:10px;">⚠️ 自动收集已停止</div>
+          <div>最后一格已占满，且无安全三消机会</div>
+          <div style="font-size:0.9em; color:#666; margin-top:8px;">请洗牌或手动操作</div>
+        </div>
+      `, 'warning');
+      return;
+    }
+  }
+
+  // 3. 封装一个“试点击”方法
+  function attemptClick(cardId) {
+    clickCard(cardId);
+    // 下一步
+    autoCollectTimer = setTimeout(autoCollectStep, 600);
+  }
+
+  // 4. 优先：display 区三消
+  let triple = findDisplayAreaTriple();
+  if (triple) {
+    // 过滤致死
+    const safeTriples = triple.filter(id => {
+      const card = game.board.find(c=>c.id===id);
+      return card && !willAddCardFail(card);
+    });
+    if (safeTriples.length) {
+      return attemptClick(safeTriples[0]);
+    }
+    // display区三消如果都不安全，则过渡到整体查找
+  }
+
+  // 5. 其次：任意三消
+  let anyTriple = findAnyTriple();
+  if (anyTriple) {
+    const safeAny = anyTriple.filter(id=> {
+      const card = game.board.find(c=>c.id===id);
+      return card && !willAddCardFail(card);
+    });
+    if (safeAny.length) {
+      return attemptClick(safeAny[0]);
+    }
+  }
+
+  // 6. 最后：任意安全点击
+  const candidates = game.board
+    .filter(c => !c.matched && isCardClickable(c, game.board) && !willAddCardFail(c));
+  if (candidates.length) {
+    return attemptClick(candidates[0].id);
+  }
+
+  // 7. 无任何安全点击，停止并弹风 险
+  stopAutoCollect();
+  showRiskModal(`
+    <div style="text-align:center">
+      <div style="font-size:1.2em; margin-bottom:10px;">⚠️ 已无安全操作</div>
+      <div>继续自动收集必定导致失败</div>
+      <div style="font-size:0.9em; color:#666; margin-top:8px;">请洗牌或手动操作</div>
+    </div>
+  `, 'risk');
+}
+
+// 新增：安全三消检查函数
+function findSafeTripleMatch() {
+  // 检查temp区已有的卡片
+  const tempCards = game.temp.filter(c => !c.matched);
+  const tempIconCounts = {};
+  tempCards.forEach(c => {
+    tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1;
+  });
+
+  // 寻找已经在temp区有2张的情况
+  const potentialMatches = Object.entries(tempIconCounts)
+    .filter(([icon, count]) => count === 2)
+    .map(([icon]) => icon);
+
+  if (potentialMatches.length > 0) {
+    // 在板上寻找对应的第三张卡
+    for (const icon of potentialMatches) {
+      const boardMatch = game.board.find(c => 
+        !c.matched && 
+        c.icon === icon && 
+        isCardClickable(c, game.board)
+      );
+      if (boardMatch) return true;
+    }
+  }
+
+  // 检查display区域的匹配
+  return game.displayCards.some(set => {
+    if (set.matched) return false;
+    const icon = set.cards[0].icon;
+    const tempCount = tempIconCounts[icon] || 0;
+    if (tempCount > 0) {
+      const boardMatches = game.board.filter(c => 
+        !c.matched && 
+        c.icon === icon && 
+        isCardClickable(c, game.board)
+      );
+      return boardMatches.length >= (3 - tempCount);
+    }
+    return false;
+  });
+}
+
+// 新增：安全点击检查函数
+function isSafeToClickCard(cardId) {
+  const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
+  if (unMatchedTempCards >= TEMP_LIMIT) return false;
+
+  // 获取当前temp区的图标分布
+  const tempIcons = {};
+  game.temp.filter(c => !c.matched).forEach(c => {
+    tempIcons[c.icon] = (tempIcons[c.icon] || 0) + 1;
+  });
+
+  // 获取要点击的卡片
+  const cardToClick = game.board.find(c => c.id === cardId);
+  if (!cardToClick) return false;
+
+  // 模拟添加这张卡后的状态
+  const updatedTempIcons = { ...tempIcons };
+  updatedTempIcons[cardToClick.icon] = (updatedTempIcons[cardToClick.icon] || 0) + 1;
+
+  // 检查是否会形成三消
+  if (Object.values(updatedTempIcons).some(count => count >= 3)) return true;
+
+  // 如果加入后会达到倒数第一格
+  if (unMatchedTempCards + 1 >= TEMP_LIMIT - 1) {
+    // 检查剩余可点击卡片中是否有机会形成三消
+    const remainingClickableCards = game.board.filter(c => 
+      !c.matched && 
+      isCardClickable(c, game.board) && 
+      c.id !== cardId
+    );
+
+    // 检查每个图标是否有形成三消的可能
+    for (const [icon, count] of Object.entries(updatedTempIcons)) {
+      const neededForTriple = 3 - count;
+      if (neededForTriple <= 0) continue;
+      const availableMatches = remainingClickableCards.filter(c => c.icon === icon).length;
+      if (availableMatches >= neededForTriple) return true;
+    }
+
+    // 如果没有找到任何可能的三消组合
+    return false;
+  }
+
+  // 如果还有足够空间，则允许点击
+  return true;
+}
+// 查找display-area优先三消（可用temp区卡片补足，返回需点击的board卡id数组）
+function findDisplayAreaTriple() {
+  if (!game.displayCards) return null;
+  for (const set of game.displayCards) {
+    if (set.matched) continue;
+    const icon = set.cards[0].icon;
+    // 暂存区未匹配的同icon卡片数量
+    const tempCount = game.temp.filter(c => !c.matched && c.icon === icon).length;
+    // board 可点击同icon卡片
+    const boardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.icon === icon);
+    const needCount = 3 - tempCount;
+    if (needCount > 0 && boardCards.length >= needCount) {
+      // 自动点击board部分补齐到三消
+      return boardCards.slice(0, needCount).map(c => c.id);
+    }
+  }
+  return null;
+}
+
+// 查找任意三消（可用temp区补足）
+function findAnyTriple() {
+  // 统计temp区未匹配的各icon数量
+  let tempCounts = {};
+  game.temp.forEach(c => {
+    if (!c.matched) tempCounts[c.icon] = (tempCounts[c.icon] || 0) + 1;
+  });
+  // 统计board可点击各icon的卡
+  let boardIcons = {};
+  game.board.forEach(c => {
+    if (!c.matched && isCardClickable(c, game.board)) {
+      boardIcons[c.icon] = boardIcons[c.icon] || [];
+      boardIcons[c.icon].push(c.id);
+    }
+  });
+  for (const [icon, ids] of Object.entries(boardIcons)) {
+    const tempCount = tempCounts[icon] || 0;
+    const needCount = 3 - tempCount;
+    if (needCount > 0 && ids.length >= needCount) {
+      return ids.slice(0, needCount);
+    }
+  }
+  return null;
+}
+
+// 按钮监听
+autoCollectBtn.onclick = function() {
+  startAutoCollect();
+};
+function tryResumeAutoCollect() {
+  // 首先检查是否已经启用了自动收集
+  if (!game.autoCollectEnabled) return;
+  
+  // 其他检查保持不变
+  if (!autoCollectCount || game.lock) return;
+
+  const gameOverScreen = document.getElementById('game-over');
+  const levelFinishScreen = document.getElementById('level-finish');
+  
+  if ((gameOverScreen && gameOverScreen.style.display === 'flex') ||
+      (levelFinishScreen && levelFinishScreen.style.display === 'flex')) {
+    return;
+  }
+
+  let triple = findDisplayAreaTriple() || findAnyTriple();
+  if (triple) {
+    startAutoCollect();
+  }
+}
+// 在确认框之后添加新的风险提示框
+function createRiskModal() {
+  const modal = document.createElement('div');
+  modal.id = 'risk-modal';
+  modal.className = 'modal-overlay';
+  modal.innerHTML = `
+    <div class="modal-content" style="background: #fff3f3; border-color: #dc2626;">
+      <p id="risk-msg" style="color: #991b1b;"></p>
+      <div class="modal-buttons">
+        <button id="risk-confirm" style="background: #fee2e2; border-color: #991b1b; color: #991b1b;">我知道了</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+  
+  // 添加点击事件监听
+  document.getElementById('risk-confirm').addEventListener('click', hideRiskModal);
+}
+
+// 显示风险提示框
+function showRiskModal(msg, type = 'risk') {
+  const modal = document.getElementById('risk-modal');
+  if (!modal) {
+    createRiskModal();
+  }
+  
+  const modalContent = modal.querySelector('.modal-content');
+  // 根据不同类型设置不同的样式
+  switch(type) {
+    case 'risk':
+      modalContent.style.background = '#fff3f3';
+      modalContent.style.borderColor = '#dc2626';
+      break;
+    case 'info':
+      modalContent.style.background = '#f0f9ff';
+      modalContent.style.borderColor = '#3b82f6';
+      break;
+    case 'warning':
+      modalContent.style.background = '#fefce8';
+      modalContent.style.borderColor = '#ca8a04';
+      break;
+  }
+  
+  document.getElementById('risk-msg').innerHTML = msg;
+  modal.style.display = 'flex';
+  
+  // 添加震动效果
+  if (navigator.vibrate && type === 'risk') {
+    navigator.vibrate(100);
+  }
+}
+// 隐藏风险提示框
+function hideRiskModal() {
+  const modal = document.getElementById('risk-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+}
+function willAddCardFail(card) {
+  // 模拟temp区加这张卡
+  let tempSim = game.temp.filter(c => !c.matched).map(c => c.icon);
+  tempSim.push(card.icon);
+  if (tempSim.length < TEMP_LIMIT) return false; // 没满不会死
+  // 判断tempSim里有没有三消
+  let counts = {};
+  tempSim.forEach(icon => counts[icon] = (counts[icon] || 0) + 1);
+  if (Object.values(counts).some(cnt => cnt >= 3)) return false; // 能三消不会死
+  // 否则就是必死
+  return true;
 }
 </script>
 </body>
