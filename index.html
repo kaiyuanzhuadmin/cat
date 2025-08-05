@@ -2305,7 +2305,8 @@ function checkWin() {
 
     if (allCardsMatched && scoreMet) {
         stopAutoCollect(); // 关卡结束时彻底停止自动收集
-              game.autoCollectEnabled = false;   // ← 新增：彻底禁用自动收集
+        game.ended = true;    // ← 标记已经结束
+        game.autoCollectEnabled = false;   // ← 新增：彻底禁用自动收集
         stopRandomEvents();
         stopCurtainRandomToggle();
         stopDecorationUpdates();
@@ -2326,6 +2327,7 @@ function checkWin() {
             confirmNo.style.display = originalNoDisplay;
         });
     } else if (allCardsMatched && !scoreMet) {
+        game.ended = true;    // ← 标记已经结束
         stopAutoCollect(); // 关卡结束时彻底停止自动收集
         gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
     }
@@ -3784,7 +3786,9 @@ function autoCollectStep() {
   if (candidates.length) {
     return attemptClick(candidates[0].id);
   }
-
+  if (game.ended) {
+  return;
+}
   // 7. 无任何安全点击，停止并弹风 险
   stopAutoCollect();
   showRiskModal(`
