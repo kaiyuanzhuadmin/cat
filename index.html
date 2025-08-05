@@ -2099,45 +2099,9 @@ function isCardClickable(card, board) {
 
 // MODIFIED: clickCard function with robust state checking
 function clickCard(id) {
-  // 添加在函数开头
-  if (autoCollectActive) {
-    const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
-  // 特殊检查：临近满格时的风险评估
-  if (unMatchedTempCards >= TEMP_LIMIT - 1) {
-    if (!findSafeTripleMatch()) {
-      stopAutoCollect();
-      showRiskModal(`
-        <div style="text-align: center;">
-          <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 自动收集暂停</div>
-          <div>暂存区即将满格，且无法保证安全三消</div>
-          <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
-            请手动操作或使用道具
-          </div>
-        </div>
-      `, 'warning');
-      return;
-    }
-  }
-  }
   let cardData = game.board.find(c => c.id === id);
     if (autoCollectActive) {
     const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
-    if (unMatchedTempCards >= TEMP_LIMIT - 1) {
-      // 在临界状态下进行额外检查
-      if (!isSafeToClickCard(id)) {
-        stopAutoCollect();
-        showRiskModal(`
-          <div style="text-align: center;">
-            <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 操作提醒</div>
-            <div>自动收集已停止</div>
-            <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
-              当前操作可能导致游戏失败，建议重新考虑
-            </div>
-          </div>
-        `);
-        return;
-      }
-    }
   }
   if (game.lock) return; // 游戏锁定时不允许点击
   if (!cardData || cardData.matched || cardData.isFlying || cardData.isNapping || !isCardClickable(cardData, game.board)) {
@@ -2341,6 +2305,7 @@ function checkWin() {
 
     if (allCardsMatched && scoreMet) {
         stopAutoCollect(); // 关卡结束时彻底停止自动收集
+              game.autoCollectEnabled = false;   // ← 新增：彻底禁用自动收集
         stopRandomEvents();
         stopCurtainRandomToggle();
         stopDecorationUpdates();
@@ -2544,6 +2509,8 @@ function gameOver(msg){
   stopRandomEvents();
   stopCurtainRandomToggle();
   stopDecorationUpdates();
+  stopAutoCollect();
+  game.autoCollectEnabled = false;
   game.lock = true;
   document.getElementById('card-stack-area').innerHTML = '';
   document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
@@ -3735,123 +3702,116 @@ function stopAutoCollect() {
 }
 
 function autoCollectStep() {
-  if (!game.autoCollectEnabled) {
+  // 1. 基础条件拦截
+  if (!game.autoCollectEnabled || autoCollectCount <= 0 || game.lock) {
     stopAutoCollect();
     return;
   }
-  if (autoCollectCount <= 0 || game.lock) {
+  // 如已经到结束/失败界面，也停止
+  if (document.getElementById('level-finish').style.display === 'flex' ||
+      document.getElementById('game-over').style.display === 'flex') {
     stopAutoCollect();
     return;
   }
-  const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
-// 新增：自动收集专用风险判定（保留最后一个空位，不自动填满）
-if (unMatchedTempCards === TEMP_LIMIT - 1) {
-  const tempIcons = game.temp.filter(c => !c.matched).map(c => c.icon);
-  const uniqueTempIcons = [...new Set(tempIcons)];
-  if (uniqueTempIcons.length === unMatchedTempCards) {
-    // 检查board上是否还有任意icon能和temp区组成三消（即有没有任意icon出现过2次，board还有同icon可点）
-    let canStillTriple = false;
-    for (const icon of uniqueTempIcons) {
-      const boardCount = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.icon === icon).length;
-      if (boardCount >= 2) { canStillTriple = true; break; }
-    }
-    if (!canStillTriple) {
-      stopAutoCollect();
-      showRiskModal(`
-        <div style="text-align: center;">
-          <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 风险提醒</div>
-          <div>暂存区仅剩最后一格，且每张卡片都不同，已无三消可能，<br>如继续操作必定失败！</div>
-          <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
-            建议洗牌或手动操作
-          </div>
-        </div>
-      `, 'warning');
-      return; // 这里直接return阻止自动收集点击任何卡片
-    }
-  }
-}
 
-// 在autoCollectStep里添加
-if (unMatchedTempCards === TEMP_LIMIT - 1) {
-  // 获取temp区未匹配卡片种类
-  const tempIcons = game.temp.filter(c => !c.matched).map(c => c.icon);
-  const uniqueTempIcons = [...new Set(tempIcons)];
-  // 只有全部都不同才会进入必死判定
-  if (uniqueTempIcons.length === unMatchedTempCards) {
-    // 检查board上是否有能让temp三消的机会
-    let canStillTriple = false;
-    for (const icon of uniqueTempIcons) {
-      const boardCount = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.icon === icon).length;
-      if (boardCount >= 2) {
-        canStillTriple = true;
-        break;
-      }
-    }
-    if (!canStillTriple) {
+  // 2. 临界风险：剩余1格且没有任何安全三消机会
+  const unMatched = game.temp.filter(c => !c.matched).length;
+  if (unMatched === TEMP_LIMIT - 1) {
+    // 检查全局是否存在任意能安全凑三消的点击
+    const safeExists = game.board.some(c =>
+      !c.matched &&
+      isCardClickable(c, game.board) &&
+      !willAddCardFail(c) &&
+      willAddCardFail(c) === false &&  // 先不致死
+      // 并且点击后能触发一轮三消
+      (() => {
+        // 模拟点击
+        const simTemp = game.temp.filter(t=>!t.matched).map(t=>t.icon).concat(c.icon);
+        const cnt = simTemp.reduce((m,icon)=> (m[icon]=(m[icon]||0)+1, m), {});
+        return Object.values(cnt).some(v=>v>=3);
+      })()
+    );
+
+    if (!safeExists) {
       stopAutoCollect();
       showRiskModal(`
-        <div style="text-align: center;">
-          <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 风险提醒</div>
-          <div>暂存区仅剩最后一格，且每张卡片都不同，已无三消可能，<br>如继续操作必定失败！</div>
-          <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
-            建议洗牌或手动操作
-          </div>
+        <div style="text-align:center">
+          <div style="font-size:1.2em; margin-bottom:10px;">⚠️ 自动收集已停止</div>
+          <div>最后一格已占满，且无安全三消机会</div>
+          <div style="font-size:0.9em; color:#666; margin-top:8px;">请洗牌或手动操作</div>
         </div>
       `, 'warning');
       return;
     }
   }
-}
-  let iconCnt = {};
-  game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
-  let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
-  if (matchedIcon) {
-    autoCollectTimer = setTimeout(autoCollectStep, 1500);
-    return;
-  }
-  let triple = findDisplayAreaTriple() || findAnyTriple();
-  if (triple && triple.length > 0) {
-    const nextCardId = triple[0];
-    clickCard(nextCardId);
+
+  // 3. 封装一个“试点击”方法
+  function attemptClick(cardId) {
+    clickCard(cardId);
+    // 下一步
     autoCollectTimer = setTimeout(autoCollectStep, 600);
-  } else {
-    autoCollectTimer = setTimeout(() => {
-    let candidates = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
-    let safeCardId = null;
-    for (const card of candidates) {
-      if (!willAddCardFail(card)) {
-        safeCardId = card.id;
-        break;
-      }
-    }
-    if (safeCardId) {
-      clickCard(safeCardId);
-      autoCollectTimer = setTimeout(autoCollectStep, 600);
-    } else {
-      // 没有任何安全可点的卡，提前风险提示
-      stopAutoCollect();
-      showRiskModal(`
-        <div style="text-align: center;">
-          <div style="font-size: 1.2em; margin-bottom: 10px;">⚠️ 风险提醒</div>
-          <div>再点击任意卡片都将导致暂存区满且无法三消，游戏会失败！<br>请手动操作或洗牌。</div>
-          <div style="font-size: 0.9em; margin-top: 10px; color: #666;">
-            自动收集已终止，预留最后一个空位
-          </div>
-        </div>
-      `, 'warning');
-    }
-    }, 800);
   }
+
+  // 4. 优先：display 区三消
+  let triple = findDisplayAreaTriple();
+  if (triple) {
+    // 过滤致死
+    const safeTriples = triple.filter(id => {
+      const card = game.board.find(c=>c.id===id);
+      return card && !willAddCardFail(card);
+    });
+    if (safeTriples.length) {
+      return attemptClick(safeTriples[0]);
+    }
+    // display区三消如果都不安全，则过渡到整体查找
+  }
+
+  // 5. 其次：任意三消
+  let anyTriple = findAnyTriple();
+  if (anyTriple) {
+    const safeAny = anyTriple.filter(id=> {
+      const card = game.board.find(c=>c.id===id);
+      return card && !willAddCardFail(card);
+    });
+    if (safeAny.length) {
+      return attemptClick(safeAny[0]);
+    }
+  }
+
+  // 6. 最后：任意安全点击
+  const candidates = game.board
+    .filter(c => !c.matched && isCardClickable(c, game.board) && !willAddCardFail(c));
+  if (candidates.length) {
+    return attemptClick(candidates[0].id);
+  }
+
+  // 7. 无任何安全点击，停止并弹风 险
+  stopAutoCollect();
+  showRiskModal(`
+    <div style="text-align:center">
+      <div style="font-size:1.2em; margin-bottom:10px;">⚠️ 已无安全操作</div>
+      <div>继续自动收集必定导致失败</div>
+      <div style="font-size:0.9em; color:#666; margin-top:8px;">请洗牌或手动操作</div>
+    </div>
+  `, 'risk');
 }
 
 // 新增：安全三消检查函数
 function findSafeTripleMatch() {
-  // 检查temp区已有的卡片
   const tempCards = game.temp.filter(c => !c.matched);
   const tempIconCounts = {};
   tempCards.forEach(c => {
     tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1;
   });
+
+  // 检查 display 区是否能与 temp 区组成三消
+  for (const set of game.displayCards) {
+    if (set.matched) continue;
+    const icon = set.cards[0].icon;
+    const tempCount = tempIconCounts[icon] || 0;
+    const boardCount = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.icon === icon).length;
+    if (tempCount + boardCount >= 3) return true;
+  }
 
   // 寻找已经在temp区有2张的情况
   const potentialMatches = Object.entries(tempIconCounts)
@@ -4043,7 +4003,7 @@ function showRiskModal(msg, type = 'risk') {
       modalContent.style.borderColor = '#ca8a04';
       break;
   }
-  
+  modalContent.setAttribute('data-type', type);
   document.getElementById('risk-msg').innerHTML = msg;
   modal.style.display = 'flex';
   
