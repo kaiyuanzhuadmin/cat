@@ -3788,8 +3788,9 @@ function autoCollectStep() {
   if (currentTempCount >= safeThreshold) {
     const safeTriple = findAnyTriple() || findDisplayAreaTriple();
     if (safeTriple && safeTriple.length > 0) {
-      //autoCollectCount--;
-      clickCard(safeTriple[0], true);
+      safeTriple.forEach((id, index) => {
+      setTimeout(() => clickCard(id, true), index * 300); // 每张卡片间隔300ms点击
+    });
       return;
     } else {
       stopAutoCollect();
