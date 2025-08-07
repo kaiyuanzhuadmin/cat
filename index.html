@@ -3969,7 +3969,7 @@ function tryResumeAutoCollect() {
   if (autoCollectActive && !autoCollectPaused) {
     if (autoCollectTimer) clearTimeout(autoCollectTimer);
     // 稍作延迟以等待游戏动画或状态更新完成
-    autoCollectTimer = setTimeout(autoCollectStep, 200);
+    autoCollectTimer = setTimeout(autoCollectStep, 400);
 	updateAutoCollectStatus(); // ← 添加这一行
   }
 }
