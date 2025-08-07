@@ -2485,6 +2485,12 @@ function shuffleStep(){
       showMessage('已洗牌');
       game.lock = false;
       updateWigglingCatVisibility();
+	  updateAutoCollectStatus();
+      tryResumeAutoCollect();
+	  if (autoCollectActive && !findDisplayAreaTriple() && !findAnyTriple()) {
+        stopAutoCollect();
+        showMessage('洗牌后无三消，自动收集已停止');
+      }
   };
   
   const handleAnimationEnd = () => {
@@ -3769,13 +3775,18 @@ function autoCollectStep() {
     stopAutoCollect();
     return;
   }
+  if (!findDisplayAreaTriple() && !findAnyTriple()) {
+    stopAutoCollect();
+    showMessage('无三消机会，自动收集停止');
+    return;
+  }
 
   const currentTempCount = game.temp.filter(c => !c.matched).length;
   const safeThreshold = TEMP_LIMIT - 2;
 
   // 如果暂存区已接近满，只允许执行能立即三消的操作
   if (currentTempCount >= safeThreshold) {
-    const safeTriple = findDisplayAreaTriple() || findAnyTriple();
+    const safeTriple = findAnyTriple() || findDisplayAreaTriple();
     if (safeTriple && safeTriple.length > 0) {
       //autoCollectCount--;
       clickCard(safeTriple[0], true);
@@ -3969,7 +3980,7 @@ function tryResumeAutoCollect() {
   if (autoCollectActive && !autoCollectPaused) {
     if (autoCollectTimer) clearTimeout(autoCollectTimer);
     // 稍作延迟以等待游戏动画或状态更新完成
-    autoCollectTimer = setTimeout(autoCollectStep, 400);
+    autoCollectTimer = setTimeout(autoCollectStep, 320);
 	updateAutoCollectStatus(); // ← 添加这一行
   }
 }
