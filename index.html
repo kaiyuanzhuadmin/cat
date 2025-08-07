@@ -667,7 +667,25 @@
         max-height: 60vh;
       }
     }
-    
+    #blinking-cat {
+      position: absolute;
+      bottom: 10px;
+      right: 10px;
+      font-size: 1.2rem;
+      z-index: 1000;
+      pointer-events: none;
+      color: #ff69b4;
+      text-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+      opacity: 0;
+      transform: scale(1);
+      transition: opacity 0.3s ease;
+    }
+
+    @keyframes blink-cat {
+      0%, 100% { opacity: 0.8; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.2); }
+    }
+
     #card-stack-lid {
         position: absolute;
         top: 0;
@@ -1507,6 +1525,7 @@
     <div id="wiggling-cat-1" class="wiggling-cat-instance">🥳</div>
     <div id="wiggling-cat-4" class="wiggling-cat-instance">🎉</div>
     <div id="wiggling-cat-7" class="wiggling-cat-instance">🎀</div>
+	<div id="blinking-cat">😺</div>
 
     <div id="temp-area">
       <div class="temp-slot"></div>
@@ -1523,7 +1542,7 @@
       <button id="shuffle-btn" disabled title="洗牌(需兑换码)"> 洗牌🔀 (<span id="shuffle-count">0</span>)</button>
       <button id="revive-btn" disabled title="复活(需兑换码)">💖 复活 (<span id="revive-count">0</span>)</button>
       <button id="restart-btn" title="重新开始当前关卡"> 🔄重新开始</button>
-      <button id="auto-collect-btn" title="自动收集" disabled> 自动🤖 (<span id="auto-collect-count">0</span>)</button>
+      <button id="auto-collect-btn" title="自动收集(需兑换码)" disabled> 自动🤖 (<span id="auto-collect-count">0</span>)</button>
     </div>
     <div id="code-bar">
       <input type="text" id="code-input" placeholder="兑换码" maxlength="12">
@@ -1712,6 +1731,7 @@ const autoCollectCountEl = document.getElementById('auto-collect-count');
 // 游戏状态和工具函数保持不变
 let autoCollectCount = 0;
 let autoCollectActive = false;
+let autoCollectPaused = false; // 标记自动收集是否被玩家手动暂停
 let autoCollectTimer = null;
 let confirmCallback = null;
 let outroVideoTimeout = null;
@@ -1721,6 +1741,8 @@ let curtainTimer = null;
 let isLandscape = false; 
 let hasShownLandscapeMessage = false;
 let lastShakeTime = 0;
+let lastManualClickTime = 0;
+let autoCollectIdleWatcher = null;
 
 let audioContext;
 let clickSoundBuffer;
@@ -1773,6 +1795,39 @@ async function initAudio() {
         console.error("Web Audio API failed for click sound (kaa.mp3). Falling back to HTML5 Audio.", e);
         clickAudioFailed = true;
     }
+}
+function toggleAutoCollect() {
+  if (autoCollectActive) {
+    // 如果正在运行，则暂停
+    autoCollectActive = false;
+    autoCollectPaused = true;
+    if (autoCollectTimer) {
+      clearTimeout(autoCollectTimer);
+      autoCollectTimer = null;
+    }
+    showMessage('自动收集已暂停');
+  } else {
+    // 如果未运行，则开始
+    if (autoCollectCount <= 0) {
+      showMessage('自动收集次数不足');
+      return;
+    }
+    autoCollectActive = true;
+    autoCollectPaused = false;
+    showMessage('自动收集已启动', '#3e5a2b');
+    autoCollectStep();
+	startAutoCollectIdleWatcher(); // ✅ 确保这一行存在
+  }
+  updateAutoCollectStatus();
+}
+function stopAutoCollect() {
+  autoCollectActive = false;
+  autoCollectPaused = false;
+  if (autoCollectTimer) {
+    clearTimeout(autoCollectTimer);
+    autoCollectTimer = null;
+  }
+  updateAutoCollectStatus();
 }
 
 function playBgm(on) {
@@ -2098,151 +2153,145 @@ function isCardClickable(card, board) {
 
 
 // MODIFIED: clickCard function with robust state checking
-function clickCard(id) {
+function clickCard(id, isAuto = false) {
+  // 如果是玩家手动点击，并且自动收集正在运行，则暂停它
+  if (!isAuto && autoCollectActive) {
+    autoCollectPaused = true;
+	lastManualClickTime = Date.now(); // 记录手动点击时间
+    if (autoCollectTimer) clearTimeout(autoCollectTimer);
+    showMessage('自动收集已暂停，手动操作中');
+    updateAutoCollectStatus();
+  }
+
   let cardData = game.board.find(c => c.id === id);
-    if (autoCollectActive) {
-    const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
-  }
-  if (game.lock) return; // 游戏锁定时不允许点击
-  if (!cardData || cardData.matched || cardData.isFlying || cardData.isNapping || !isCardClickable(cardData, game.board)) {
-  if (game.temp.filter(c => !c.matched).length >= TEMP_LIMIT) {
-    showMessage('暂存区已满，无法再放入卡片');
-    return;
+  if (game.lock || !cardData || cardData.matched || cardData.isFlying || cardData.isNapping || !isCardClickable(cardData, game.board)) {
+    if (game.temp.filter(c => !c.matched).length >= TEMP_LIMIT) {
+      showMessage('暂存区已满，无法再放入卡片');
     }
+    // 如果是无效点击，但之前是自动收集中，则尝试恢复
+    if (isAuto) tryResumeAutoCollect();
+    return;
   }
+
   playClickSound();
   saveStep();
-  
-  cardData.matched = true; 
+
+  cardData.matched = true;
   cardData.isFlying = true;
   game.flyingCardCount++;
+  game.lock = true; // 锁定游戏直到动画完成
 
   const clickedCardEl = document.querySelector(`#card-stack-area .card[data-id='${id}']`);
   if (!clickedCardEl) {
     cardData.matched = false;
     cardData.isFlying = false;
     game.flyingCardCount--;
+    game.lock = false;
+    if (isAuto) tryResumeAutoCollect();
     return;
   }
 
   const startRect = clickedCardEl.getBoundingClientRect();
-  
   const flyingCard = document.createElement('div');
-  flyingCard.className = 'flying-card swirl-in';
+  flyingCard.className = 'flying-card';
   flyingCard.innerHTML = cardData.icon;
   document.body.appendChild(flyingCard);
-  flyingCard.style.left = `${startRect.left}px`;
-  flyingCard.style.top = `${startRect.top}px`;
-  flyingCard.style.width = `${startRect.width}px`;
-  flyingCard.style.height = `${startRect.height}px`;
-  flyingCard.style.fontSize = `${game.cardDimensions.fontSize}px`;
-  flyingCard.style.borderRadius = `${game.cardDimensions.borderRadius}px`;
-  flyingCard.style.borderWidth = `${game.cardDimensions.borderWidth}px`;
-
+  Object.assign(flyingCard.style, {
+      left: `${startRect.left}px`,
+      top: `${startRect.top}px`,
+      width: `${startRect.width}px`,
+      height: `${startRect.height}px`,
+      fontSize: `${game.cardDimensions.fontSize}px`,
+      borderRadius: `${game.cardDimensions.borderRadius}px`,
+      borderWidth: `${game.cardDimensions.borderWidth}px`
+  });
   clickedCardEl.style.visibility = 'hidden';
-  
-  const tempForPositionCalculation = [...game.temp, { icon: cardData.icon, id: cardData.id }];
+  const tempForPositionCalculation = [...game.temp.filter(c => !c.matched), { icon: cardData.icon, id: cardData.id }];
   tempForPositionCalculation.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
   const endSlotIndex = tempForPositionCalculation.findIndex(c => c.id === id);
   const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-  
   if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
-      if(flyingCard.parentNode) document.body.removeChild(flyingCard);
-      cardData.matched = false;
-      cardData.isFlying = false;
-      game.flyingCardCount--;
-      clickedCardEl.style.visibility = 'visible';
-      return;
+    if (flyingCard.parentNode) flyingCard.remove();
+    cardData.matched = false;
+    cardData.isFlying = false;
+    game.flyingCardCount--;
+    clickedCardEl.style.visibility = 'visible';
+    game.lock = false;
+    if (isAuto) tryResumeAutoCollect();
+    return;
   }
-  
   const endRect = tempSlots[endSlotIndex].getBoundingClientRect();
   const tempSlotStyle = window.getComputedStyle(tempSlots[endSlotIndex]);
-  const flyingCardFinalWidth = parseFloat(tempSlotStyle.width) * 0.9;
-  
-  const dx = (endRect.left + endRect.width / 2) - (startRect.left + startRect.width / 2);
-  const dy = (endRect.top + endRect.height / 2) - (startRect.top + startRect.height / 2);
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  const animationDuration = Math.max(200, (distance / FLYING_SPEED_PPS) * 1000);
-
-  flyingCard.style.transitionDuration = `${animationDuration}ms`;
-
+  const flyingCardFinalWidth = parseFloat(tempSlotStyle.width);
+  const flyingCardFinalHeight = parseFloat(tempSlotStyle.height);
+  const distance = Math.hypot(endRect.left - startRect.left, endRect.top - startRect.top);
+  const animationDuration = Math.max(200, Math.min(500, (distance / FLYING_SPEED_PPS) * 1000));
+  flyingCard.style.transition = `all ${animationDuration}ms ease-out`;
   requestAnimationFrame(() => {
     const destLeft = endRect.left + (endRect.width - flyingCardFinalWidth) / 2;
-    const destTop = endRect.top + (endRect.height - flyingCardFinalWidth / (startRect.width / startRect.height)) / 2;
+    const destTop = endRect.top + (endRect.height - flyingCardFinalHeight) / 2;
     flyingCard.style.left = `${destLeft}px`;
     flyingCard.style.top = `${destTop}px`;
     flyingCard.style.transform = `scale(${flyingCardFinalWidth / startRect.width})`;
   });
 
+  // 动画结束后处理
   setTimeout(() => {
-    if (flyingCard.parentNode) document.body.removeChild(flyingCard);
-    
+    if (flyingCard.parentNode) flyingCard.remove();
     game.flyingCardCount--;
-    
     delete cardData.isFlying;
+
     game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
     game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
-    
+
     renderTemp();
     renderBoard();
-    renderProgressAndScore();
-    updateWigglingCatVisibility();
+    updateAutoCollectStatus(); // 更新按钮状态
 
     let iconCnt = {};
     game.temp.forEach(c => { if (!c.matched) iconCnt[c.icon] = (iconCnt[c.icon] || 0) + 1; });
     let matchedIcon = Object.keys(iconCnt).find(k => iconCnt[k] === 3);
 
-        if (matchedIcon) {
-    triggerMatchFeedback();
-    if (autoCollectActive) {
-      autoCollectCount--;
-      updateAutoCollectStatus();
-      if (autoCollectCount <= 0) stopAutoCollect();
-    }
-    // 记录要消除的卡片索引
-    const toVanishIndexes = [];
-    game.temp.forEach((card, i) => {
+    if (matchedIcon) {
+      triggerMatchFeedback();
+      const toVanishIndexes = [];
+      game.temp.forEach((card, i) => {
         if (card.icon === matchedIcon && !card.matched) {
-            card.matched = true;
-            toVanishIndexes.push(i);
+          card.matched = true;
+          toVanishIndexes.push(i);
         }
-    });
-
-    let animationsToComplete = toVanishIndexes.length;
-    const tempSlots = document.querySelectorAll('#temp-area .temp-slot');
-
-    const finishCleanup = () => {
-        game.temp = game.temp.filter(c => !c.matched);  // 彻底移除
+      });
+	  if (isAuto && autoCollectCount > 0) {
+	    autoCollectCount--;
+	    updateAutoCollectStatus();
+	  }
+      let animationsToComplete = toVanishIndexes.length;
+      const finishCleanup = () => {
+        game.temp = game.temp.filter(c => !c.matched);
         renderTemp();
         renderBoard();
+        game.lock = false;
         checkWin();
-    };
-
-    if (animationsToComplete === 0) {
+        tryResumeAutoCollect();
+      };
+      if (animationsToComplete === 0) {
         finishCleanup();
-    } else {
-        // 绑定动画结束事件
+      } else {
         toVanishIndexes.forEach(idx => {
-            const slot = tempSlots[idx];
-            if (slot) {
-                const cardEl = slot.querySelector('.temp-card');
-                if (cardEl) {
-                    cardEl.classList.add('vanishing');
-                    cardEl.addEventListener('animationend', () => {
-                        animationsToComplete--;
-                        if (animationsToComplete === 0) finishCleanup();
-                    }, { once: true });
-                } else {
-                    animationsToComplete--;
-                    if (animationsToComplete === 0) finishCleanup();
-                }
-            }
+          const cardEl = tempSlots[idx]?.querySelector('.temp-card');
+          if (cardEl) {
+            cardEl.classList.add('vanishing');
+            cardEl.addEventListener('animationend', () => {
+              animationsToComplete--;
+              if (animationsToComplete === 0) finishCleanup();
+            }, { once: true });
+          } else {
+            animationsToComplete--;
+          }
         });
-        // 超时兜底，防止动画事件丢失
-        setTimeout(() => {
-            if (animationsToComplete > 0) finishCleanup();
-        }, 700);
-    }
+        if (animationsToComplete === 0) finishCleanup();
+        setTimeout(() => { if (animationsToComplete > 0) finishCleanup(); }, 700);
+      }
 
       // 处理计分展示区的逻辑保持不变
       game.displayCards.forEach(displaySet => {
@@ -2275,9 +2324,8 @@ function clickCard(id) {
           }
       });
     } else {
-      checkWin(); // 如果没有匹配，也需要检查游戏状态
-    }
-    if (game.autoCollectEnabled) {
+      game.lock = false;
+      checkWin();
       tryResumeAutoCollect();
     }
   }, animationDuration);
@@ -2288,16 +2336,12 @@ function checkWin() {
     const levelFinishScreen = document.getElementById('level-finish');
     const gameOverScreen = document.getElementById('game-over');
     if (levelFinishScreen.style.display === 'flex' || gameOverScreen.style.display === 'flex') {
-        // A game end screen is already active, do not proceed with win/lose checks
         return;
     }
 
     const allCardsMatched = game.board.every(c => c.matched);
     const scoreMet = game.score >= game.targetScore;
-    
-    // Check for game over condition (temp area full and no match)
-    // This check is now correctly placed after a card has been added to temp
-    // and after any potential matches have been processed.
+
     if (game.temp.filter(c => !c.matched).length >= TEMP_LIMIT && !allCardsMatched) {
         gameOver('暂存区已超限，游戏失败！');
         return;
@@ -2331,7 +2375,7 @@ function checkWin() {
         stopAutoCollect(); // 关卡结束时彻底停止自动收集
         gameOver(`卡牌已全部消除，但分数未达标！<br>当前分数: ${game.score} / 目标分数: ${game.targetScore}`);
     }
-  updateAutoCollectStatus();
+  //updateAutoCollectStatus();
 }
 
 function saveStep(){
@@ -2511,8 +2555,8 @@ function gameOver(msg){
   stopRandomEvents();
   stopCurtainRandomToggle();
   stopDecorationUpdates();
-  stopAutoCollect();
-  game.autoCollectEnabled = false;
+  stopAutoCollect(); // 确保停止
+  stopAutoCollectIdleWatcher();
   game.lock = true;
   document.getElementById('card-stack-area').innerHTML = '';
   document.querySelectorAll('#temp-area .temp-slot').forEach(slot => { slot.innerHTML = ''; });
@@ -2522,22 +2566,16 @@ function gameOver(msg){
   targetScoreElement.textContent = '0';
   document.getElementById('message-bar').textContent = '';
   hideWigglingCats();
-
-  // MODIFIED: Remove any lingering flying cards when game over is triggered
   document.querySelectorAll('.flying-card').forEach(card => card.remove());
-  game.flyingCardCount = 0; // Reset flying card count explicitly
-  
+  game.flyingCardCount = 0;
   const gameOverScreen = document.getElementById('game-over');
   gameOverScreen.style.display = 'flex';
   gameOverScreen.querySelector('#game-over-text').innerHTML = msg;
-  
-  // Show revive button if available
   if (game.toolUses.revive > 0) {
       reviveBtnGameOver.style.display = 'inline-block';
   } else {
       reviveBtnGameOver.style.display = 'none';
   }
-updateAutoCollectStatus();
 }
 
 function reviveGame() {
@@ -2851,6 +2889,7 @@ function showLevelFinish(msg){
   stopRandomEvents();
   stopCurtainRandomToggle();
   stopDecorationUpdates();
+  stopAutoCollectIdleWatcher();
   playBgm(false);
   if (outroVideoTimeout) clearTimeout(outroVideoTimeout);
   if (outroVideo) {
@@ -2978,17 +3017,21 @@ function eventCatNap() {
     nappingCards.push(...otherCards.slice(0, Math.floor(Math.random() * 2) + 2));
     nappingCards.forEach(card => card.isNapping = true);
     renderBoard();
+	autoCollectPaused = true;
+    if (autoCollectTimer) clearTimeout(autoCollectTimer);
+    updateAutoCollectStatus(); // ← 添加这一行
     game.lock = false;
-    const nappingDuration = randBetween(CATNAP_MIN_DURATION, CATNAP_MAX_DURATION);
-setTimeout(() => {
+  const nappingDuration = randBetween(CATNAP_MIN_DURATION, CATNAP_MAX_DURATION);
+  setTimeout(() => {
     nappingCards.forEach(card => {
-        const boardCard = game.board.find(c => c.id === card.id);
-        if (boardCard) boardCard.isNapping = false;
+      const boardCard = game.board.find(c => c.id === card.id);
+      if (boardCard) boardCard.isNapping = false;
     });
     renderBoard();
-    checkWin(); // ✅ 添加此行
-    tryResumeAutoCollect(); // ✅ 添加此行
-}, nappingDuration);
+    checkWin();
+	autoCollectPaused = false;         // ✅ 恢复标志
+    tryResumeAutoCollect();
+  }, nappingDuration);
 }
 
 function eventCuriousPaw() {
@@ -3213,33 +3256,40 @@ function handleRotationRefresh() {
 // END OF MODIFICATION
 // =================================================================================
 function updateAutoCollectStatus() {
-  if (autoCollectCountEl) {
-    autoCollectCountEl.textContent = autoCollectCount;
-  }
-  
-  const hasTriple = hasTripleMatch();
-  const unMatchedTempCards = game.temp.filter(c => !c.matched).length;
-  const isNearLimit = unMatchedTempCards >= TEMP_LIMIT - 1;
-  
-  // 更新按钮状态和提示文本
-  autoCollectBtn.disabled = 
-    autoCollectCount <= 0 || 
-    autoCollectActive || 
-    !hasTriple || 
-    (isNearLimit && !findSafeTripleMatch());
+  if (!autoCollectBtn) return;
+  autoCollectCountEl.textContent = autoCollectCount;
 
-  // 根据不同状态显示不同的提示
-  if (!game.autoCollectEnabled) {
-    autoCollectBtn.title = "点击启用自动收集功能";
-    autoCollectBtn.innerHTML = `自动🤖  (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+  if (autoCollectActive && !autoCollectPaused) {
+    autoCollectBtn.innerHTML = `暂停🤖 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+    autoCollectBtn.disabled = false;
+    autoCollectBtn.title = '点击暂停自动收集';
+  } else if (autoCollectPaused) {
+    autoCollectBtn.innerHTML = `继续🤖 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+    autoCollectBtn.disabled = false;
+    autoCollectBtn.title = '点击继续自动收集';
   } else {
-    autoCollectBtn.title = autoCollectCount <= 0 ? 
-      "需要兑换码获取使用次数" : 
-      "自动收集已启用";
-    autoCollectBtn.innerHTML = `自动中 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+    autoCollectBtn.innerHTML = `自动🤖 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+    autoCollectBtn.title = '点击开始自动收集';
+    autoCollectBtn.disabled = autoCollectCount <= 0 || !(findDisplayAreaTriple() || findAnyTriple());
   }
 }
+
 updateAutoCollectStatus();
+function findDisplayAreaTriple() {
+  if (!game.displayCards) return null;
+  for (const set of game.displayCards) {
+    if (set.matched) continue;
+    const icon = set.cards[0].icon;
+    const tempCount = game.temp.filter(c => !c.matched && c.icon === icon).length;
+    const boardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.icon === icon);
+    const needCount = 3 - tempCount;
+    if (needCount > 0 && boardCards.length >= needCount) {
+      return boardCards.slice(0, needCount).map(c => c.id);
+    }
+  }
+  return null;
+}
+
 function handleDeviceMotion(event) {
     if (game.lock || game.toolUses.shuffle <= 0) {
         return;
@@ -3395,6 +3445,8 @@ codeBtn.onclick = function(){
   let val = codeInput.value.trim().toLowerCase();
   if (REDEMPTION_CODES[val]) {
     const rewards = REDEMPTION_CODES[val];
+    let rewardMsgs = [];
+
     if (rewards.type === "skip_level") {
       game.board.forEach(card => card.matched = true);
       game.score = game.targetScore;
@@ -3407,29 +3459,22 @@ codeBtn.onclick = function(){
         toggleCurtain(true);
         stopCurtainRandomToggle();
         showMessage(`兑换成功！幕布已在本关卡关闭！`, "#3e5a2b");
-    }
-    else {
-        game.toolUses.undo += (rewards.undo || 0);
-        game.toolUses.hint += (rewards.hint || 0);
-        game.toolUses.shuffle += (rewards.shuffle || 0);
-        game.toolUses.revive += (rewards.revive || 0);
+    } else {
+        if (rewards.undo) { game.toolUses.undo += rewards.undo; rewardMsgs.push(`撤销x${rewards.undo}`); }
+        if (rewards.hint) { game.toolUses.hint += rewards.hint; rewardMsgs.push(`提示x${rewards.hint}`); }
+        if (rewards.shuffle) { game.toolUses.shuffle += rewards.shuffle; rewardMsgs.push(`洗牌x${rewards.shuffle}`); }
+        if (rewards.revive) { game.toolUses.revive += rewards.revive; rewardMsgs.push(`复活卡x${rewards.revive}`); }
         if (rewards.autoCollect) {
-        autoCollectCount += rewards.autoCollect;
-        updateAutoCollectStatus();
-        showMessage(`自动收集次数+${rewards.autoCollect}`, "#3e5a2b");
-     }
-  // === 只显示有效奖励 ===
-  let rewardArr = [];
-  if (rewards.undo > 0) rewardArr.push(`撤销x${rewards.undo}`);
-  if (rewards.hint > 0) rewardArr.push(`提示x${rewards.hint}`);
-  if (rewards.shuffle > 0) rewardArr.push(`洗牌x${rewards.shuffle}`);
-  if (rewards.revive > 0) rewardArr.push(`复活卡x${rewards.revive}`);
-  if (rewards.autoCollect > 0) rewardArr.push(`自动收集x${rewards.autoCollect}`);
-  if (rewardArr.length > 0) {
-    showMessage('兑换成功！获得' + rewardArr.join('，'), "#3e5a2b");
-  }
+            autoCollectCount += rewards.autoCollect;
+            rewardMsgs.push(`自动收集x${rewards.autoCollect}`);
+        }
+        
+        if (rewardMsgs.length > 0) {
+            showMessage('兑换成功！获得 ' + rewardMsgs.join('，'), "#3e5a2b");
+        }
     }
     updateToolButtons();
+    updateAutoCollectStatus();
   } else {
     showMessage('兑换码错误', "#c0392b");
   }
@@ -3686,118 +3731,90 @@ function startAutoCollect() {
   
   // 显示启用提示
   showMessage('已启用自动收集功能', '#3e5a2b');
-  
   autoCollectActive = true;
   updateAutoCollectStatus();
   autoCollectStep();
+  startAutoCollectIdleWatcher();
 }
-
-function stopAutoCollect() {
-  autoCollectActive = false;
-  // 注意这里不重置 game.autoCollectEnabled，
-  // 因为我们希望在同一关卡中保持启用状态
-  updateAutoCollectStatus();
-  if (autoCollectTimer) {
-    clearTimeout(autoCollectTimer);
-    autoCollectTimer = null;
+function startAutoCollectIdleWatcher() {
+  if (autoCollectIdleWatcher) return; // 防止重复启动
+  autoCollectIdleWatcher = setInterval(() => {
+    if (autoCollectPaused && autoCollectActive) {
+      const now = Date.now();
+      if (now - lastManualClickTime > 2000) {
+        autoCollectPaused = false;
+        showMessage('自动收集已恢复');
+		showBlinkingCat(); // ← 添加这一行
+        autoCollectStep();
+        updateAutoCollectStatus();
+      }
+    }
+  }, 1000);
+}
+function stopAutoCollectIdleWatcher() {
+  if (autoCollectIdleWatcher) {
+    clearInterval(autoCollectIdleWatcher);
+    autoCollectIdleWatcher = null;
   }
 }
 
 function autoCollectStep() {
-  // 1. 基础条件拦截
-  if (!game.autoCollectEnabled || autoCollectCount <= 0 || game.lock) {
-    stopAutoCollect();
-    return;
-  }
-  // 如已经到结束/失败界面，也停止
-  if (document.getElementById('level-finish').style.display === 'flex' ||
-      document.getElementById('game-over').style.display === 'flex') {
+  if (autoCollectTimer) clearTimeout(autoCollectTimer);
+  updateAutoCollectStatus();
+
+  if (!autoCollectActive || autoCollectPaused || game.lock || game.flyingCardCount > 0) return;
+
+  if (autoCollectCount <= 0) {
+    showMessage('自动收集次数用尽');
     stopAutoCollect();
     return;
   }
 
-  // 2. 临界风险：剩余1格且没有任何安全三消机会
-  const unMatched = game.temp.filter(c => !c.matched).length;
-  if (unMatched === TEMP_LIMIT - 1) {
-    // 检查全局是否存在任意能安全凑三消的点击
-    const safeExists = game.board.some(c =>
-      !c.matched &&
-      isCardClickable(c, game.board) &&
-      !willAddCardFail(c) &&
-      willAddCardFail(c) === false &&  // 先不致死
-      // 并且点击后能触发一轮三消
-      (() => {
-        // 模拟点击
-        const simTemp = game.temp.filter(t=>!t.matched).map(t=>t.icon).concat(c.icon);
-        const cnt = simTemp.reduce((m,icon)=> (m[icon]=(m[icon]||0)+1, m), {});
-        return Object.values(cnt).some(v=>v>=3);
-      })()
-    );
+  const currentTempCount = game.temp.filter(c => !c.matched).length;
+  const safeThreshold = TEMP_LIMIT - 2;
 
-    if (!safeExists) {
+  // 如果暂存区已接近满，只允许执行能立即三消的操作
+  if (currentTempCount >= safeThreshold) {
+    const safeTriple = findDisplayAreaTriple() || findAnyTriple();
+    if (safeTriple && safeTriple.length > 0) {
+      //autoCollectCount--;
+      clickCard(safeTriple[0], true);
+      return;
+    } else {
       stopAutoCollect();
-      showRiskModal(`
-        <div style="text-align:center">
-          <div style="font-size:1.2em; margin-bottom:10px;">⚠️ 自动收集已停止</div>
-          <div>最后一格已占满，且无安全三消机会</div>
-          <div style="font-size:0.9em; color:#666; margin-top:8px;">请洗牌或手动操作</div>
-        </div>
-      `, 'warning');
+      showMessage('已预留两个空位，无安全三消，自动收集停止');
       return;
     }
   }
 
-  // 3. 封装一个“试点击”方法
-  function attemptClick(cardId) {
-    clickCard(cardId);
-    // 下一步
-    autoCollectTimer = setTimeout(autoCollectStep, 600);
-  }
-
-  // 4. 优先：display 区三消
-  let triple = findDisplayAreaTriple();
-  if (triple) {
-    // 过滤致死
-    const safeTriples = triple.filter(id => {
-      const card = game.board.find(c=>c.id===id);
+  // 正常情况下，优先执行三消
+  const cardsToClickIds = findDisplayAreaTriple() || findAnyTriple();
+  if (cardsToClickIds && cardsToClickIds.length > 0) {
+    const safeCardsToClickIds = cardsToClickIds.filter(id => {
+      const card = game.board.find(c => c.id === id);
       return card && !willAddCardFail(card);
     });
-    if (safeTriples.length) {
-      return attemptClick(safeTriples[0]);
-    }
-    // display区三消如果都不安全，则过渡到整体查找
-  }
 
-  // 5. 其次：任意三消
-  let anyTriple = findAnyTriple();
-  if (anyTriple) {
-    const safeAny = anyTriple.filter(id=> {
-      const card = game.board.find(c=>c.id===id);
-      return card && !willAddCardFail(card);
-    });
-    if (safeAny.length) {
-      return attemptClick(safeAny[0]);
+    if (safeCardsToClickIds.length > 0) {
+      //autoCollectCount--;
+      clickCard(safeCardsToClickIds[0], true);
+      return;
     }
   }
 
-  // 6. 最后：任意安全点击
-  const candidates = game.board
-    .filter(c => !c.matched && isCardClickable(c, game.board) && !willAddCardFail(c));
-  if (candidates.length) {
-    return attemptClick(candidates[0].id);
+  // 如果没有三消机会，尝试点击任意安全卡片
+  const clickableCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+  const safeNextMove = clickableCards.find(card => !willAddCardFail(card));
+
+  if (safeNextMove) {
+    //autoCollectCount--;
+    clickCard(safeNextMove.id, true);
+    return;
   }
-  if (game.ended) {
-  return;
-}
-  // 7. 无任何安全点击，停止并弹风 险
+
+  // 没有安全操作，停止自动收集
   stopAutoCollect();
-  showRiskModal(`
-    <div style="text-align:center">
-      <div style="font-size:1.2em; margin-bottom:10px;">⚠️ 已无安全操作</div>
-      <div>继续自动收集必定导致失败</div>
-      <div style="font-size:0.9em; color:#666; margin-top:8px;">请洗牌或手动操作</div>
-    </div>
-  `, 'risk');
+  showMessage('已无安全操作，自动收集停止');
 }
 
 // 新增：安全三消检查函数
@@ -3873,7 +3890,7 @@ function isSafeToClickCard(cardId) {
   // 检查是否会形成三消
   if (Object.values(updatedTempIcons).some(count => count >= 3)) return true;
 
-  // 如果加入后会达到倒数第一格
+  // 如果加入后会达到倒数1个格
   if (unMatchedTempCards + 1 >= TEMP_LIMIT - 1) {
     // 检查剩余可点击卡片中是否有机会形成三消
     const remainingClickableCards = game.board.filter(c => 
@@ -3898,19 +3915,25 @@ function isSafeToClickCard(cardId) {
   return true;
 }
 // 查找display-area优先三消（可用temp区卡片补足，返回需点击的board卡id数组）
-function findDisplayAreaTriple() {
-  if (!game.displayCards) return null;
-  for (const set of game.displayCards) {
-    if (set.matched) continue;
-    const icon = set.cards[0].icon;
-    // 暂存区未匹配的同icon卡片数量
-    const tempCount = game.temp.filter(c => !c.matched && c.icon === icon).length;
-    // board 可点击同icon卡片
-    const boardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.icon === icon);
+function findAnyTriple() {
+  let tempCounts = {};
+  game.temp.forEach(c => {
+    if (!c.matched) tempCounts[c.icon] = (tempCounts[c.icon] || 0) + 1;
+  });
+
+  let boardIcons = {};
+  game.board.forEach(c => {
+    if (!c.matched && isCardClickable(c, game.board)) {
+      if (!boardIcons[c.icon]) boardIcons[c.icon] = [];
+      boardIcons[c.icon].push(c.id);
+    }
+  });
+
+  for (const [icon, ids] of Object.entries(boardIcons)) {
+    const tempCount = tempCounts[icon] || 0;
     const needCount = 3 - tempCount;
-    if (needCount > 0 && boardCards.length >= needCount) {
-      // 自动点击board部分补齐到三消
-      return boardCards.slice(0, needCount).map(c => c.id);
+    if (needCount > 0 && ids.length >= needCount) {
+      return ids.slice(0, needCount);
     }
   }
   return null;
@@ -3918,16 +3941,14 @@ function findDisplayAreaTriple() {
 
 // 查找任意三消（可用temp区补足）
 function findAnyTriple() {
-  // 统计temp区未匹配的各icon数量
   let tempCounts = {};
   game.temp.forEach(c => {
     if (!c.matched) tempCounts[c.icon] = (tempCounts[c.icon] || 0) + 1;
   });
-  // 统计board可点击各icon的卡
   let boardIcons = {};
   game.board.forEach(c => {
     if (!c.matched && isCardClickable(c, game.board)) {
-      boardIcons[c.icon] = boardIcons[c.icon] || [];
+      if (!boardIcons[c.icon]) boardIcons[c.icon] = [];
       boardIcons[c.icon].push(c.id);
     }
   });
@@ -3942,29 +3963,17 @@ function findAnyTriple() {
 }
 
 // 按钮监听
-autoCollectBtn.onclick = function() {
-  startAutoCollect();
-};
+autoCollectBtn.onclick = toggleAutoCollect;
 function tryResumeAutoCollect() {
-  // 首先检查是否已经启用了自动收集
-  if (!game.autoCollectEnabled) return;
-  
-  // 其他检查保持不变
-  if (!autoCollectCount || game.lock) return;
-
-  const gameOverScreen = document.getElementById('game-over');
-  const levelFinishScreen = document.getElementById('level-finish');
-  
-  if ((gameOverScreen && gameOverScreen.style.display === 'flex') ||
-      (levelFinishScreen && levelFinishScreen.style.display === 'flex')) {
-    return;
-  }
-
-  let triple = findDisplayAreaTriple() || findAnyTriple();
-  if (triple) {
-    startAutoCollect();
+  // 只有在功能开启且未被玩家手动暂停时才尝试恢复
+  if (autoCollectActive && !autoCollectPaused) {
+    if (autoCollectTimer) clearTimeout(autoCollectTimer);
+    // 稍作延迟以等待游戏动画或状态更新完成
+    autoCollectTimer = setTimeout(autoCollectStep, 200);
+	updateAutoCollectStatus(); // ← 添加这一行
   }
 }
+
 // 在确认框之后添加新的风险提示框
 function createRiskModal() {
   const modal = document.createElement('div');
@@ -4024,17 +4033,32 @@ function hideRiskModal() {
   }
 }
 function willAddCardFail(card) {
-  // 模拟temp区加这张卡
   let tempSim = game.temp.filter(c => !c.matched).map(c => c.icon);
   tempSim.push(card.icon);
-  if (tempSim.length < TEMP_LIMIT) return false; // 没满不会死
-  // 判断tempSim里有没有三消
+  if (tempSim.length < TEMP_LIMIT) return false;
   let counts = {};
   tempSim.forEach(icon => counts[icon] = (counts[icon] || 0) + 1);
-  if (Object.values(counts).some(cnt => cnt >= 3)) return false; // 能三消不会死
-  // 否则就是必死
+  if (Object.values(counts).some(cnt => cnt >= 3)) return false;
   return true;
 }
+function showBlinkingCat() {
+  const cat = document.getElementById('blinking-cat');
+  if (!cat) return;
+
+  cat.textContent = '😺';
+  cat.style.animation = 'blink-cat 2s ease-in-out';
+  cat.style.opacity = '1';
+
+  setTimeout(() => {
+    cat.style.opacity = '0';
+    cat.style.animation = '';
+    cat.textContent = '';
+  }, 2000);
+}
+
+
+
+
 </script>
 </body>
 </html>
