@@ -374,7 +374,7 @@
       left: 0;
       width: 100%;
       height: 100%;
-      background: #f7f0e8 url('cat1.webp') no-repeat center center;
+      background: var(--bg-base) url('cat1.webp') no-repeat center center;
       background-size: cover;
       z-index: -2;
     }
@@ -397,6 +397,7 @@
       max-width: 650px;
       margin: 30px auto;
       background: rgba(255, 255, 255, 0.7);
+      background: var(--panel-bg);
       border-radius: 25px;
       box-shadow: 0 5px 25px rgba(100, 60, 40, 0.3);
       padding: 0 0 20px 0;
@@ -405,7 +406,7 @@
       display: flex;
       flex-direction: column;
       align-items: center;
-      border: 3px solid #8B4513;
+      border: 3px solid var(--panel-border);
     }
     @media (max-width: 700px) {
       #game-container {
@@ -436,7 +437,7 @@
       display: flex;
       justify-content: space-between;
       align-items: center;
-      background: linear-gradient(to bottom, rgba(255,255,255,0.8), rgba(255,255,255,0));
+      background: var(--panel-bg);
       border-top-left-radius: 22px;
       border-top-right-radius: 22px;
       box-shadow: 0 2px 10px rgba(0,0,0,0.1);
@@ -444,11 +445,13 @@
     #progress-info {
       font-size: 1.55rem;
       font-weight: bold;
-      color: #5d4037;
-      text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
       display: flex;
       gap: 15px;
       align-items: center;
+    }
+    #progress-info, .score-display, .target-display {
+      color: var(--text-primary);
+      text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
     }
     #music-toggle {
       background: none;
@@ -464,9 +467,7 @@
     }
     .score-display, .target-display {
         font-size: 1.2rem;
-        color: #8B4513;
         font-weight: bold;
-        text-shadow: 0.5px 0.5px 0 rgba(255,255,255,0.7);
     }
 
     #main-area {
@@ -726,10 +727,10 @@
     }
 
     .card {
-      background: #fffdf7;
+      background: var(--card-bg);
       border-radius: 10px;
       box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
-      border: 3px solid #d4a762;
+      border: 3px solid var(--card-border);
       position: absolute;
       display: flex;
       align-items: center;
@@ -739,7 +740,7 @@
       transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.2s, border-color 0.15s;
       z-index: 1;
       overflow: hidden;
-      color: #5d4037;
+      color: var(--text-primary);
     }
     .hint-animation {
       animation: show-card-property 2s forwards;
@@ -885,11 +886,12 @@
     }
     #tools-bar button {
       padding: 9px 18px;
-      background: #f7e9d7;
+      background: var(--btn-bg);
       border: 2px solid #b8860b;
       border-radius: 10px;
+      border-color: var(--btn-border);
       font-size: 1.05rem;
-      color: #6e352f;
+      color: var(--text-accent);
       font-weight: bold;
       cursor: pointer;
       transition: background 0.15s, transform 0.1s;
@@ -900,7 +902,7 @@
       font-family: 'ZCOOL KuaiLe', cursive;
     }
     #tools-bar button:hover {
-      background: #e9d9c6;
+      background: var(--btn-hover-bg);
       transform: translateY(-1px);
     }
     #tools-bar button:disabled {
@@ -1483,6 +1485,49 @@
           font-size: 1em;
       }
     }
+:root {
+  /* 通用 */
+  --bg-base: #f7f0e8;
+  --panel-bg: rgba(240,230,210,0.6);
+  --panel-border: #b8860b;
+  --card-bg: #fffdf7;
+  --card-border: #d4a762;
+  --text-primary: #3e2723;
+  --text-accent: #6e352f;
+  --btn-bg: #f7e9d7;
+  --btn-border: #b8860b;
+  --btn-hover-bg: #e9d9c6;
+}
+
+.theme-starry-night {
+  /* 调浅后的夜空底色 */
+  --bg-base: #26354f;               /* 原 #1b263b → 调亮 */
+  /* 把 panel 面板透明度调到 0.4 */
+  --panel-bg: rgba(38, 53, 79, 0.4); /* 原 rgba(27,38,59,0.7) → 0.4 */
+  /* 星光边框/文字颜色保持不变或略调亮 */
+  --panel-border: #f2d974;
+  --card-bg: #2f436a;               /* 略调亮卡片背景 */
+  --card-border: #f2d974;
+  --text-primary: #fefae0;
+  --text-accent: #f2d974;
+  --btn-bg: #345681;                /* 调浅按钮背景 */
+  --btn-border: #f2d974;
+  --btn-hover-bg: #3f628f;          /* 略调亮 Hover 效果 */
+}
+
+.theme-renaissance { /* 第二关：文艺复兴细节控 */
+  --bg-base: #e4dac8;               /* 米黄石膏色 */
+  --panel-bg: rgba(228,218,200,0.8);/* 温润米色面板 */
+  --panel-border: #8b5e3c;          /* 古铜深棕 */
+  --card-bg: #fbf6ee;               /* 柔和象牙白 */
+  --card-border: #8b5e3c;           /* 铜棕边框 */
+  --text-primary: #3a2f23;          /* 古典深褐 */
+  --text-accent: #6d584a;           /* 暗褐点缀 */
+  --btn-bg: #f0e6d2;                /* 淡沙色按钮 */
+  --btn-border: #8b5e3c;
+  --btn-hover-bg: #e2d5ba;
+}
+
   </style>
   <link rel="stylesheet" href="font/iconfont.css">
   <link rel="stylesheet" href="css/style.css">
@@ -2659,7 +2704,7 @@ function startGame(level) {
   game.isNewLevel = true;
   game.autoCollectEnabled = false; 
   renderAll();
-
+  applyTheme(game.level);
   const cardStackArea = document.getElementById('card-stack-area');
   const oldLid = document.getElementById('card-stack-lid');
   if (oldLid) oldLid.remove();
@@ -4200,7 +4245,12 @@ function scheduleAutoCollectAfterIdle() {
     if (autoCollectActive && !autoCollectPaused) autoCollectStep();
   });
 }
-
+function applyTheme(level) {
+  const container = document.getElementById('game-container');
+  container.classList.remove('theme-starry-night', 'theme-renaissance');
+  if (level === 1)      container.classList.add('theme-starry-night');
+  else if (level === 2) container.classList.add('theme-renaissance');
+}
 </script>
 </body>
 </html>
