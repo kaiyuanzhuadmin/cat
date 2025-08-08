@@ -729,8 +729,8 @@
     .card {
       background: var(--card-bg);
       border-radius: 10px;
-      box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
-      border: 3px solid var(--card-border);
+      box-shadow: var(--card-shadow, 0 4px 10px rgba(0,0,0,0.1));
+      border: var(--card-border);
       position: absolute;
       display: flex;
       align-items: center;
@@ -741,6 +741,10 @@
       z-index: 1;
       overflow: hidden;
       color: var(--text-primary);
+    }
+	.card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 8px 18px rgba(0,0,0,0.15), 0 0 5px rgba(180, 150, 180, 0.35);
     }
     .hint-animation {
       animation: show-card-property 2s forwards;
@@ -839,9 +843,9 @@
     .temp-card {
       width: 100%;
       height: 100%;
-      background: #fffdf7;
+      background: var(--card-bg);
       border-radius: 9px;
-      border: 2.5px solid #a0522d;
+      border: 2px solid var(--card-border);
       display: flex;
       align-items: center;
       justify-content: center;
@@ -850,17 +854,16 @@
       position: absolute;
       transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
       box-sizing: border-box;
-      color: #5d4037;
+      color: var(--text-primary);;
     }
     .temp-card.matched {
       opacity: 0.05;
     }
 
     .flying-card {
-      background: #fffdf7;
-      border-radius: 10px;
+      background: var(--card-bg);
       box-shadow: 0 4px 15px rgba(0,0,0,0.1), inset 0 0 0 1px rgba(255,255,255,0.5);
-      border: 3px solid #d4a762;
+      border: var(--card-border);
       position: fixed;
       display: flex;
       align-items: center;
@@ -870,7 +873,7 @@
       transition-property: top, left, transform;
       transition-timing-function: ease-out;
       overflow: hidden;
-      color: #5d4037;
+      color: var(--text-primary);
     }
 
     /* ... 其他所有CSS样式保持不变 ... */
@@ -1500,33 +1503,262 @@
 }
 
 .theme-starry-night {
-  /* 调浅后的夜空底色 */
-  --bg-base: #26354f;               /* 原 #1b263b → 调亮 */
-  /* 把 panel 面板透明度调到 0.4 */
-  --panel-bg: rgba(38, 53, 79, 0.4); /* 原 rgba(27,38,59,0.7) → 0.4 */
-  /* 星光边框/文字颜色保持不变或略调亮 */
-  --panel-border: #f2d974;
-  --card-bg: #2f436a;               /* 略调亮卡片背景 */
-  --card-border: #f2d974;
-  --text-primary: #fefae0;
-  --text-accent: #f2d974;
-  --btn-bg: #345681;                /* 调浅按钮背景 */
-  --btn-border: #f2d974;
-  --btn-hover-bg: #3f628f;          /* 略调亮 Hover 效果 */
+  /* 背景采用星夜画布质感色调：深蓝和点缀黄 */
+  --bg-base: radial-gradient(circle at 30% 30%, #1f2a3b, #0e1830); /* 旋涡底色 */
+  
+  /* 半透明面板，如画布上的光晕星球 */
+  --panel-bg: rgba(32, 48, 77, 0.65);
+  --panel-border: #f4d35e; /* 明亮星光边框 */
+
+  /* 卡片设为油画质感深蓝，搭配柔黄的光影投影 */
+  --card-bg: #273e60; 
+  --card-border: transparent; /* 取消实体边框，使用阴影替代 */
+  --card-shadow: 0 6px 14px rgba(244, 211, 94, 0.35);
+
+  /* 文本色为柔白与星光黄形成对比 */
+  --text-primary: #fffaf3;
+  --text-accent: #f4d35e;
+
+  /* 按钮为亮蓝底，hover呈现淡黄亮晕 */
+  --btn-bg: #3a5f9b;
+  --btn-border: transparent;
+  --btn-hover-bg: #4b6fa9;
+
+  /* 额外点缀：可在卡片 hover 时加入轻微旋涡动画或晕染效果 */
 }
 
-.theme-renaissance { /* 第二关：文艺复兴细节控 */
-  --bg-base: #e4dac8;               /* 米黄石膏色 */
-  --panel-bg: rgba(228,218,200,0.8);/* 温润米色面板 */
-  --panel-border: #8b5e3c;          /* 古铜深棕 */
-  --card-bg: #fbf6ee;               /* 柔和象牙白 */
-  --card-border: #8b5e3c;           /* 铜棕边框 */
-  --text-primary: #3a2f23;          /* 古典深褐 */
-  --text-accent: #6d584a;           /* 暗褐点缀 */
-  --btn-bg: #f0e6d2;                /* 淡沙色按钮 */
-  --btn-border: #8b5e3c;
-  --btn-hover-bg: #e2d5ba;
+.theme-renaissance {
+  --bg-base: linear-gradient(135deg, #fdf7f3, #f9f3eb);          /* 米白背景 */
+  --panel-bg: rgba(250, 240, 230, 0.6);                          /* 面板半透 */
+  --panel-border: #d4b8a8;                                       /* 米棕边框 */
+  --card-shadow: 0 6px 14px rgba(250, 180, 190, 0.35);         /* 粉红渐层 */
+  --card-shadow: 0 6px 14px rgba(250, 180, 190, 0.35);           /* 粉光晕 */
+  --text-primary: #5f4b57;
+  --text-accent: #c98596;
+  --btn-bg: #f8e8ea;
+  --btn-hover-bg: #f0d8dc;
+  --grad-aurora: linear-gradient(135deg, #fbf5ef, #f6ede9, #f0e6d6);
 }
+
+
+/* 如果你希望 display-area 和 temp-area 的渐变边框也更“紫”一些，保留原结构，仅由变量托底即可 */
+.theme-renaissance #display-area,
+.theme-renaissance #temp-area {
+  /* 保持原有写法，变量已生效 */
+}
+
+/* 关卡完成层本就引用了 --grad-aurora，无需改结构 */
+.theme-renaissance #level-finish {
+  /* 背景仍使用 var(--grad-aurora) */
+}
+/* 容器：雾面玻璃 + 渐变边框（覆盖原 dashed） */
+.theme-renaissance #temp-area {
+  background:
+    linear-gradient(0deg, rgba(255,255,255,.45), rgba(255,255,255,.25)) padding-box,
+    var(--grad-aurora) border-box;
+  border: 1.5px solid transparent;     /* 用背景模拟彩色边框 */
+  border-radius: 16px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(10px) saturate(1.05);
+}
+
+/* 槽位：丝绸微光 + 渐变边框 */
+.theme-renaissance #temp-area .temp-slot {
+  background:
+    linear-gradient(0deg, rgba(255,255,255,.60), rgba(255,255,255,.35)) padding-box,
+    linear-gradient(120deg, #f6e6e9, #d9efe6) border-box;
+  border: 1px solid transparent;       /* 覆盖 dashed，为光滑边框 */
+  box-shadow: inset 0 1px 4px rgba(0,0,0,0.05);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.theme-renaissance #temp-area .temp-slot:hover {
+  transform: translateY(-1px);
+  box-shadow: inset 0 1px 6px rgba(0,0,0,0.07), 0 6px 12px rgba(90,74,83,.12);
+}
+
+/* 清空闪光（复用你已有的 .clearing 动画名） */
+.theme-renaissance .temp-slot.clearing {
+  animation: slot-flash 0.45s ease-out;
+}
+
+/* 牌：温暖纸张 + 柔影 */
+.theme-renaissance #temp-area .temp-card {
+  background: var(--card-bg)
+  border: 2px solid var(--card-border);
+  color: var(--text-primary);
+  box-shadow: 0 4px 12px rgba(160,82,45,.25);
+}
+
+/* 三消后消退（沿用你的 .vanishing） */
+.theme-renaissance .temp-card.vanishing {
+  animation: card-vanish 0.55s ease-out forwards;
+}
+/* 容器：柔彩画布 + 渐变边框（覆盖原 dashed） */
+.theme-renaissance #card-stack-area {
+  background:
+    linear-gradient(180deg, rgba(236,228,241,0.58), rgba(236,228,241,0.38)) padding-box;
+  border: 1px solid transparent;
+  border-radius: 18px;
+  box-shadow: 0 8px 18px rgba(90,74,83,0.18);
+  backdrop-filter: blur(8px) saturate(1.05);
+}
+
+/* 盖子：丝绸渐变 + 光泽边框 */
+.theme-renaissance #card-stack-lid {
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.35)) padding-box,
+    linear-gradient(135deg, #f6e6e9, #d9efe6, #fff3e6) border-box;
+  border: 2px solid transparent;
+  color: var(--text-primary);
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
+}
+/* 卡片整体：柔雾渐层 + 抽象纸感纹理 */
+.theme-renaissance .card {
+  background:
+    linear-gradient(180deg, #fdfcf9, #f7f1e8),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(-45deg, rgba(240, 220, 230, 0.06) 0 3px, transparent 3px 6px);
+  box-shadow: 0 4px 10px rgba(190, 160, 180, 0.18);
+  border-radius: 10px;
+  border: none;
+  transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
+}
+.theme-renaissance .card:hover {
+  transform: translateY(-4px) scale(1.02);
+  box-shadow: 0 10px 20px rgba(190, 160, 180, 0.2);
+}
+.theme-renaissance .card.matched {
+  opacity: 0.08;
+  transform: scale(0.95);
+}
+.theme-renaissance .temp-card,
+.theme-renaissance .flying-card {
+  background:
+    linear-gradient(180deg, #fdfcf9, #f7f1e8),
+    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 6px),
+    repeating-linear-gradient(-45deg, rgba(240, 220, 230, 0.06) 0 3px, transparent 3px 6px);
+  box-shadow: 0 4px 10px rgba(190, 160, 180, 0.18);
+  border-radius: 10px;
+  border: none;
+}
+
+/* 悬停浮起：无边框，仅轻柔浮动与光晕 */
+.theme-renaissance .card:not(.disabled):not(.matched):hover {
+  transform: translateY(-6px) scale(1.04) rotate(1.5deg);
+  box-shadow: 0 12px 24px rgba(90, 74, 83, 0.2), 0 0 12px rgba(255, 228, 202, 0.3);
+}
+
+/* 选中态：金粉光晕、微抬升，不恢复边框 */
+.theme-renaissance .card.selected {
+  box-shadow: 0 0 0 4px rgba(210, 160, 120, 0.35), 0 12px 24px rgba(90, 74, 83, 0.22);
+  transform: scale(1.02) rotate(-2.5deg);
+}
+
+/* 打盹态遮罩优化：柔雾罩层 */
+.theme-renaissance .card.napping::before {
+  background: rgba(90, 74, 83, 0.18) !important;
+}
+
+.theme-renaissance .card.napping::after {
+  filter: drop-shadow(0 2px 4px rgba(0,0,0,.15));
+}
+/* 背景：极光渐变 + 轻微色相流动 */
+@keyframes lfHue {
+  0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(18deg); }
+}
+.theme-renaissance #level-finish {
+  background:
+    radial-gradient(120% 100% at 50% 10%, rgba(255,255,255,.35), transparent 60%),
+    var(--grad-aurora);
+  border: 2px solid transparent;
+  background-clip: padding-box, border-box;
+  animation: lfHue 10s linear infinite;
+  color: var(--text-primary);
+  box-shadow: 0 14px 28px rgba(90,74,83,.22), 0 2px 6px rgba(90,74,83,.12);
+}
+
+/* 叠加一层薄纱，不覆盖你已有的 ::before 图片层 */
+.theme-renaissance #level-finish::after {
+  content: "";
+  position: absolute; inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(circle at 20% 30%, rgba(255,255,255,.22), transparent 40%),
+    radial-gradient(circle at 80% 20%, rgba(255,255,255,.16), transparent 45%),
+    repeating-linear-gradient(45deg, rgba(255,255,255,.05) 0 2px, transparent 2px 6px);
+  mix-blend-mode: screen;
+}
+
+/* 标题：流光文字（不改变你的结构，直接美化 #level-finish-text） */
+@keyframes textShimmer {
+  0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; }
+}
+.theme-renaissance #level-finish-text {
+  font-weight: 700;
+  letter-spacing: .4px;
+  background: linear-gradient(90deg, #5f4b57, #c98596, #5f4b57);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+  background-size: 200% 100%;
+  animation: textShimmer 3s ease-in-out infinite;
+  text-shadow: none;
+}
+
+/* 按钮：丝缎渐变 + 轻浮动 */
+.theme-renaissance #level-finish button {
+  background:
+    linear-gradient(0deg, rgba(255,255,255,.7), rgba(255,255,255,.45)) padding-box,
+    linear-gradient(120deg, #f6e6e9, #d9cbe8, #d9efe6) border-box;
+  border: 1px solid transparent;
+  color: var(--text-primary);
+  box-shadow: 0 6px 14px rgba(90,74,83,.18);
+  transition: transform var(--t-fast) var(--ease), box-shadow var(--t-fast) var(--ease);
+}
+.theme-renaissance #level-finish button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 18px rgba(90,74,83,.22);
+}
+
+/* 礼花：更细腻的彩片（保留你的生成逻辑，仅美化外观） */
+.theme-renaissance .confetti-piece {
+  width: 7px; height: 14px; border-radius: 2px;
+  box-shadow: 0 0 8px rgba(255,255,255,.35);
+  opacity: .95;
+}
+/* 可选：display-area 也走玻璃与渐变边框，保持整体一致 */
+.theme-renaissance #display-area {
+  background:
+    linear-gradient(0deg, rgba(255,255,255,.45), rgba(255,255,255,.25)) padding-box,
+    var(--grad-aurora) border-box;
+  border: 1.5px solid transparent;
+  border-radius: 15px;
+  box-shadow: var(--shadow-soft);
+  backdrop-filter: blur(8px) saturate(1.03);
+}
+.theme-renaissance #display-area .display-group {
+  background: rgba(255,255,255,.55);
+  border: 1px solid rgba(177,154,132,.35);
+}
+.theme-renaissance #display-area .display-card {
+  background:
+    radial-gradient(120% 100% at 10% 0%, rgba(255,255,255,.7), transparent 60%),
+    linear-gradient(180deg, #fffdf7, #f7efe7);
+  border: 2px solid var(--card-border);
+  color: var(--text-primary);
+  box-shadow: 0 4px 10px rgba(0,0,0,.12);
+}
+@media (prefers-reduced-motion: reduce) {
+  .theme-renaissance #level-finish,
+  .theme-renaissance #level-finish-text,
+  .theme-renaissance .confetti-piece {
+    animation: none !important;
+  }
+  .theme-renaissance #card-stack-area .card,
+  .theme-renaissance #temp-area,
+  .theme-renaissance #temp-area .temp-slot {
+    transition: none !important;
+  }
+}
+
 
   </style>
   <link rel="stylesheet" href="font/iconfont.css">
@@ -2240,6 +2472,9 @@ function clickCard(id, isAuto = false) {
   const flyingCard = document.createElement('div');
   flyingCard.className = 'flying-card';
   flyingCard.innerHTML = cardData.icon;
+  const gameContainer = document.getElementById('game-container');
+  const themeClass = Array.from(gameContainer.classList).find(cls => cls.startsWith('theme-'));
+  if (themeClass) flyingCard.classList.add(themeClass);
   document.body.appendChild(flyingCard);
   Object.assign(flyingCard.style, {
       left: `${startRect.left}px`,
@@ -2969,7 +3204,19 @@ function showLevelFinish(msg){
   const confettiContainer = document.createElement('div');
   confettiContainer.className = 'confetti-container';
   levelFinishScreen.appendChild(confettiContainer);
-  const colors = ['#f44336', '#e91e63', '#9c27b0', '#673ab7', '#3f51b5', '#2196f3', '#03a9f4', '#00bcd4', '#009688', '#4caf50', '#8bc34a', '#cddc39', '#ffeb3b', '#ffc107', '#ff9800'];
+  // Monet pastel palette for confetti
+  const colors = [
+  '#D8EAF5', // mist blue
+  '#CBE9E2', // seafoam
+  '#F6D7E6', // petal pink
+  '#F4E2BD', // warm sand
+  '#D5E3C8', // soft green
+  '#E9D5F2', // lilac haze
+  '#FBE8D3', // apricot veil
+  '#C7DBF0', // sky wash
+  '#E4F1E6'  // light jade
+  ];
+
   for (let i = 0; i < 150; i++) {
       const piece = document.createElement('div');
       piece.className = 'confetti-piece';
