@@ -1541,7 +1541,7 @@
       <button id="shuffle-btn" disabled title="洗牌(需兑换码)"> 洗牌🔀 (<span id="shuffle-count">0</span>)</button>
       <button id="revive-btn" disabled title="复活(需兑换码)">💖 复活 (<span id="revive-count">0</span>)</button>
       <button id="restart-btn" title="重新开始当前关卡"> 🔄重新开始</button>
-      <button id="auto-collect-btn" title="自动收集(需兑换码)" disabled> 自动🤖 (<span id="auto-collect-count">0</span>)</button>
+      <button id="auto-collect-btn" title="自动收集(需兑换码)" disabled> 自动🪽 (<span id="auto-collect-count">0</span>)</button>
     </div>
     <div id="code-bar">
       <input type="text" id="code-input" placeholder="兑换码" maxlength="12">
@@ -3288,15 +3288,15 @@ function updateAutoCollectStatus() {
   autoCollectCountEl.textContent = autoCollectCount;
 
   if (autoCollectActive && !autoCollectPaused) {
-    autoCollectBtn.innerHTML = `暂停🤖 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+    autoCollectBtn.innerHTML = `暂停🪽 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
     autoCollectBtn.disabled = false;
     autoCollectBtn.title = '点击暂停自动收集';
   } else if (autoCollectPaused) {
-    autoCollectBtn.innerHTML = `继续🤖 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+    autoCollectBtn.innerHTML = `继续🪽 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
     autoCollectBtn.disabled = false;
     autoCollectBtn.title = '点击继续自动收集';
   } else {
-    autoCollectBtn.innerHTML = `自动🤖 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
+    autoCollectBtn.innerHTML = `自动🪽 (<span id="auto-collect-count">${autoCollectCount}</span>)`;
     autoCollectBtn.title = '点击开始自动收集';
     autoCollectBtn.disabled = autoCollectCount <= 0 || !(findDisplayAreaTriple() || findAnyTriple());
   }
