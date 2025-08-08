@@ -8,7 +8,6 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap" rel="stylesheet">
-  <!-- 资源预加载部分保持不变 -->
   <link rel="preload" href="mao3.webp" as="image">
   <link rel="preload" href="mao1.webp" as="image">
   <link rel="preload" href="font/iconfont.css" as="style">
@@ -1770,6 +1769,7 @@ let game = {
   cardDimensions: { width: 0, height: 0, fontSize: 0, borderRadius: 0, borderWidth: 0 },
   layout: { areaWidth: 0, areaHeight: 0 },
   autoCollectEnabled: false, 
+  noShuffleCodePromptShown: false, // 新增：本关已显示过“兑换码获取洗牌次数”的提示
   isCurtainEnabled: true
 };
 
@@ -2645,7 +2645,7 @@ function startGame(level) {
   game.level = level;
   game.levelStartTime = Date.now();
   game.flyingCardCount = 0;
-
+  game.noShuffleCodePromptShown = false;
   let lvData = genLevel(level);
   game.cards = lvData.cards;
   game.board = lvData.board;
@@ -3827,12 +3827,18 @@ function autoCollectStep() {
       shuffleStep(); // 内部已处理动画与解锁，并会调用 tryResumeAutoCollect
       scheduleAutoCollectAfterIdle();
       } else {
-      // 使用项目内现有的风格化风险提示框，引导输入兑换码
-      showRiskModal(
-        '当前无可三消，且洗牌次数为 0。<br>请输入兑换码获取洗牌次数，例如：<b>haogege</b>，<b>或者去问他</b>。',
-        'warning'
-      );
-      setTimeout(() => { try { codeInput && codeInput.focus(); } catch(e){} }, 80);
+      // 只在本关第一次出现该情形时提示
+      if (!game.noShuffleCodePromptShown) {
+        game.noShuffleCodePromptShown = true;
+        showRiskModal(
+          '当前无可三消，且洗牌次数为 0。<br>请输入兑换码获取洗牌次数，例如：<b>haogege</b>，<b>或者去问他</b>。',
+          'warning'
+        );
+        setTimeout(() => { try { codeInput && codeInput.focus(); } catch(e){} }, 80);
+      }
+      stopAutoCollect();
+      updateAutoCollectStatus();
+      return;
     }
   }
 
