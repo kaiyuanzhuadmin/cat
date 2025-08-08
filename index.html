@@ -1668,10 +1668,10 @@ const INITIAL_DISPLAY_SETS_VISIBLE = 2;
 const FLYING_SPEED_PPS = 1000;
 
 const REDEMPTION_CODES = {
-  "kaiyuan": { undo: 20, hint: 20, shuffle: 20, autoCollect: 20 },
+  "haogege": { undo: 20, hint: 20, shuffle: 20, autoCollect: 20 },
   "兑换码": { undo: 5, hint: 5, shuffle: 5 },
-  "喵了个喵": { undo: 50, hint: 50, shuffle: 50, autoCollect: 40 },
-  "不知道": { undo: 3, hint: 1, shuffle: 1 },
+  "或者去问他": { undo: 50, hint: 50, shuffle: 50, autoCollect: 40 },
+  "kaiyuan": { autoCollect: 20 },
   "开元": { undo: 10, hint: 10, shuffle: 10 },
   "通关": { type: "skip_level" },
   "xianshi": { type: "curtain_off" },
@@ -3829,7 +3829,7 @@ function autoCollectStep() {
       } else {
       // 使用项目内现有的风格化风险提示框，引导输入兑换码
       showRiskModal(
-        '当前无可三消，且洗牌次数为 0。<br>请输入兑换码获取洗牌次数，例如：<b>kaiyuan</b>、<b>喵了个喵</b>。',
+        '当前无可三消，且洗牌次数为 0。<br>请输入兑换码获取洗牌次数，例如：<b>haogege</b>，<b>或者去问他</b>。',
         'warning'
       );
       setTimeout(() => { try { codeInput && codeInput.focus(); } catch(e){} }, 80);
