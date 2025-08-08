@@ -2240,7 +2240,8 @@ function clickCard(id, isAuto = false) {
     if (flyingCard.parentNode) flyingCard.remove();
     game.flyingCardCount--;
     delete cardData.isFlying;
-
+    // ↓↓↓ 新增：飞牌计数变化后尝试刷新屏障队列
+    AnimBarrier.tryFlush();
     game.temp.push({ icon: cardData.icon, id: cardData.id, matched: false });
     game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id);
 
@@ -2273,6 +2274,8 @@ function clickCard(id, isAuto = false) {
         game.lock = false;
         checkWin();
         tryResumeAutoCollect();
+        // ↓↓↓ 新增：解锁后尝试刷新屏障队列
+        AnimBarrier.tryFlush();
       };
       if (animationsToComplete === 0) {
         finishCleanup();
@@ -2327,6 +2330,8 @@ function clickCard(id, isAuto = false) {
       game.lock = false;
       checkWin();
       tryResumeAutoCollect();
+      // ↓↓↓ 新增：解锁后尝试刷新屏障队列
+      AnimBarrier.tryFlush();
     }
   }, animationDuration);
 }
@@ -2462,13 +2467,16 @@ function animateShuffleInBatches(cards, onAnimationEnd) {
 function shuffleStep(){
   saveStep();
   game.lock = true;
-
+  // 打开“洗牌屏障”，直到全部动画完成并 cleanup
+  AnimBarrier.begin('shuffle');
   const allCards = Array.from(document.querySelectorAll('#card-stack-area .card:not(.matched)'));
   // 仅对当前可见的卡片应用动画
   const visibleCards = allCards.filter(card => card.offsetParent !== null);
 
   if (visibleCards.length === 0) {
       game.lock = false;
+      AnimBarrier.end('shuffle'); // 没有动画也要释放屏障
+      AnimBarrier.tryFlush();
       return;
   }
 
@@ -2485,12 +2493,16 @@ function shuffleStep(){
       showMessage('已洗牌');
       game.lock = false;
       updateWigglingCatVisibility();
-	  updateAutoCollectStatus();
+      updateAutoCollectStatus();
+      updateWigglingCatVisibility();
+      updateAutoCollectStatus();
       tryResumeAutoCollect();
-	  if (autoCollectActive && !findDisplayAreaTriple() && !findAnyTriple()) {
+        if (autoCollectActive && !findDisplayAreaTriple() && !findAnyTriple()) {
         stopAutoCollect();
         showMessage('洗牌后无三消，自动收集已停止');
       }
+      AnimBarrier.end('shuffle');
+      AnimBarrier.tryFlush();
   };
   
   const handleAnimationEnd = () => {
@@ -2502,7 +2514,6 @@ function shuffleStep(){
   
   // 清理可能残留的旧动画类
   visibleCards.forEach(card => card.classList.remove('swirl-in'));
-  
   // 开始分批执行动画
   animateShuffleInBatches(visibleCards, handleAnimationEnd);
 }
@@ -3013,6 +3024,8 @@ function eventCatNap() {
     const CATNAP_MAX_DURATION = 4000;
     const clickableCards = game.board.filter(c => isCardClickable(c, game.board));
     if (clickableCards.length < 3) return;
+    // 打“猫咪事件”屏障
+    AnimBarrier.begin('catNap');
     showEventMessage('💤', '猫咪在打盹...<br>有些卡牌暂时拿不到了！');
     game.lock = true;
     const nappingCards = [];
@@ -3023,10 +3036,11 @@ function eventCatNap() {
     nappingCards.push(...otherCards.slice(0, Math.floor(Math.random() * 2) + 2));
     nappingCards.forEach(card => card.isNapping = true);
     renderBoard();
-	autoCollectPaused = true;
+    autoCollectPaused = true;
     if (autoCollectTimer) clearTimeout(autoCollectTimer);
     updateAutoCollectStatus(); // ← 添加这一行
-    game.lock = false;
+  game.lock = false;
+  AnimBarrier.tryFlush();
   const nappingDuration = randBetween(CATNAP_MIN_DURATION, CATNAP_MAX_DURATION);
   setTimeout(() => {
     nappingCards.forEach(card => {
@@ -3035,8 +3049,11 @@ function eventCatNap() {
     });
     renderBoard();
     checkWin();
-	autoCollectPaused = false;         // ✅ 恢复标志
+    autoCollectPaused = false;
     tryResumeAutoCollect();
+    // 结束屏障并尝试触发续跑
+    AnimBarrier.end('catNap');
+    AnimBarrier.tryFlush();
   }, nappingDuration);
 }
 
@@ -3051,7 +3068,7 @@ function eventCuriousPaw() {
     const actualSwapCount = Math.min(swapCount, clickableCards.length, unclickableCards.length);
 
     if (actualSwapCount === 0) return;
-
+    AnimBarrier.begin('curiousPaw');
     showEventMessage('🐾', `好奇的爪子...<br>${actualSwapCount}对可见与不可见卡牌的图标被交换了！`);
     game.lock = true;
 
@@ -3081,12 +3098,17 @@ function eventCuriousPaw() {
         clickableCards.splice(clickableIndex, 1);
         unclickableCards.splice(unclickableIndex, 1);
     }
-
     swappedElements.forEach(el => el.classList.add('hinted-shake'));
-
     setTimeout(() => {
-        renderBoard(); // Re-render the board to show the icon changes
-        game.lock = false;
+      renderBoard();
+      game.lock = false;
+
+    // 结束屏障并尝试触发续跑
+      AnimBarrier.end('curiousPaw');
+      AnimBarrier.tryFlush();
+
+    // 如果自动收集可运行，空闲后会自然续跑
+      tryResumeAutoCollect();
     }, 800);
 }
 
@@ -3297,24 +3319,21 @@ function findDisplayAreaTriple() {
 }
 
 function handleDeviceMotion(event) {
-    if (game.lock || game.toolUses.shuffle <= 0) {
-        return;
+  if (game.lock || game.toolUses.shuffle <= 0) return;
+  const currentTime = new Date().getTime();
+  if ((currentTime - lastShakeTime) > 1500) {
+    const acc = event.accelerationIncludingGravity;
+    const threshold = 18;
+    if (Math.abs(acc.x) > threshold || Math.abs(acc.y) > threshold) {
+      lastShakeTime = currentTime;
+      shuffleStep();
+      game.toolUses.shuffle--;
+      updateToolButtons();
+      showMessage('你摇动了手机，自动使用了一次洗牌！', '#3e5a2b');
+
+      if (autoCollectActive && !autoCollectPaused) scheduleAutoCollectAfterIdle(); // ← 新增
     }
-    const currentTime = new Date().getTime();
-    if ((currentTime - lastShakeTime) > 1500) {
-        const acceleration = event.accelerationIncludingGravity;
-        const shakeThreshold = 18;
-        if (
-            Math.abs(acceleration.x) > shakeThreshold ||
-            Math.abs(acceleration.y) > shakeThreshold
-        ) {
-            lastShakeTime = currentTime;
-            shuffleStep();
-            game.toolUses.shuffle--;
-            updateToolButtons();
-            showMessage('你摇动了手机，自动使用了一次洗牌！', '#3e5a2b');
-        }
-    }
+  }
 }
 
 // Event Listeners
@@ -3435,6 +3454,7 @@ shuffleBtn.onclick = function(){
     shuffleStep();
     game.toolUses.shuffle--;
     updateToolButtons();
+    if (autoCollectActive && !autoCollectPaused) scheduleAutoCollectAfterIdle(); // ← 新增
   }
 };
 reviveBtn.onclick = reviveGame; // Added event listener for revive button in tools bar
@@ -3768,116 +3788,176 @@ function autoCollectStep() {
   if (autoCollectTimer) clearTimeout(autoCollectTimer);
   updateAutoCollectStatus();
 
-  if (!autoCollectActive || autoCollectPaused || game.lock || game.flyingCardCount > 0) return;
-
+  if (!autoCollectActive || autoCollectPaused) return;
+  if (game.lock || game.flyingCardCount > 0 || AnimBarrier.count > 0) {
+    scheduleAutoCollectAfterIdle();
+    return;
+  }
   if (autoCollectCount <= 0) {
     showMessage('自动收集次数用尽');
     stopAutoCollect();
-    return;
-  }
-  if (!findDisplayAreaTriple() && !findAnyTriple()) {
-    stopAutoCollect();
-    showMessage('无三消机会，自动收集停止');
     return;
   }
 
   const currentTempCount = game.temp.filter(c => !c.matched).length;
   const safeThreshold = TEMP_LIMIT - 2;
 
-  // 如果暂存区已接近满，只允许执行能立即三消的操作
+  // 工具函数：统计 temp 与可点击牌
+  const tempCounts = (() => {
+    const map = {};
+    game.temp.forEach(c => { if (!c.matched) map[c.icon] = (map[c.icon] || 0) + 1; });
+    return map;
+  })();
+  const clickableBoardCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
+  const boardIconMap = (() => {
+    const map = {};
+    clickableBoardCards.forEach(c => {
+      (map[c.icon] = map[c.icon] || []).push(c);
+    });
+    return map;
+  })();
+  const spaceLeft = TEMP_LIMIT - currentTempCount;
+
+  // 辅助：无可三消时尝试自动洗牌；若无次数则提示输入兑换码
+  function attemptAutoShuffleOrPrompt() {
+    if (game.toolUses.shuffle > 0) {
+      game.toolUses.shuffle--;
+      updateToolButtons();
+      showMessage('无三消，自动洗牌一次', '#3e5a2b');
+      shuffleStep(); // 内部已处理动画与解锁，并会调用 tryResumeAutoCollect
+      scheduleAutoCollectAfterIdle();
+      } else {
+      // 使用项目内现有的风格化风险提示框，引导输入兑换码
+      showRiskModal(
+        '当前无可三消，且洗牌次数为 0。<br>请输入兑换码获取洗牌次数，例如：<b>kaiyuan</b>、<b>喵了个喵</b>。',
+        'warning'
+      );
+      setTimeout(() => { try { codeInput && codeInput.focus(); } catch(e){} }, 80);
+    }
+  }
+
+  // 智能可行性检查：是否存在“在容量限制内能完成的三消路径”
+  const hasCapacityFeasibleTriple = (() => {
+    const icons = new Set([
+      ...Object.keys(tempCounts),
+      ...Object.keys(boardIconMap)
+    ]);
+    for (const icon of icons) {
+      const t = tempCounts[icon] || 0;
+      const b = (boardIconMap[icon] || []).length;
+      const need = Math.max(0, 3 - t);
+      if (need > 0 && b >= need && need <= spaceLeft) return true;
+    }
+    return false;
+  })();
+
+  // 若在容量限制内完全无法组成任何三消：直接自动洗牌或提示兑换
+  if (!hasCapacityFeasibleTriple) {
+    attemptAutoShuffleOrPrompt();
+    return;
+  }
+
+  // 1️⃣ 优先级最高：立即三消（temp 已有 2 张 → 只需点 1 张），且不超容量
+  const tryImmediateTriple = () => {
+    for (const [icon, count] of Object.entries(tempCounts)) {
+      if (count === 2 && spaceLeft >= 1) {
+        const board = boardIconMap[icon] || [];
+        if (board.length > 0) {
+          const id = board[0].id;
+          setTimeout(() => clickCard(id, true), 0);
+          return true;
+        }
+      }
+    }
+    return false;
+  };
+  if (tryImmediateTriple()) return;
+
+  // 2️⃣ 其次：展示区的三消（展示区图标 + temp + 可点击牌），且不超容量
+  const tryDisplayTriple = () => {
+    for (const set of game.displayCards) {
+      if (set.matched) continue;
+      const icon = set.cards[0].icon;
+      const t = (tempCounts[icon] || 0);
+      const need = 3 - t;
+      if (need <= 0) continue;
+      const picks = (boardIconMap[icon] || []).slice(0, need);
+      if (picks.length === need && need <= spaceLeft) {
+        picks.forEach((c, i) => setTimeout(() => clickCard(c.id, true), i * 300));
+        return true;
+      }
+    }
+    return false;
+  };
+  if (tryDisplayTriple()) return;
+
+  // 3️⃣ 最后：其他任意三消组合（temp + board），且不超容量
+  const tryGenericTriple = () => {
+    const icons = new Set([
+      ...Object.keys(tempCounts),
+      ...Object.keys(boardIconMap)
+    ]);
+    for (const icon of icons) {
+      const t = tempCounts[icon] || 0;
+      const need = 3 - t;
+      if (need <= 0) continue;
+      const picks = (boardIconMap[icon] || []).slice(0, need);
+      if (picks.length === need && need <= spaceLeft) {
+        picks.forEach((c, i) => setTimeout(() => clickCard(c.id, true), i * 300));
+        return true;
+      }
+    }
+    return false;
+  };
+  if (tryGenericTriple()) return;
+
+  // ⏩ 三消均失败：自动洗牌或提示兑换
+  attemptAutoShuffleOrPrompt();
+  return;
+
+  // 下面逻辑通常不会走到（上面 return），保留以兼容需要时的兜底
+
+  // NEW ⏩（优先级低于所有三消）：空位充足时的“安全试点击”
+  // - 条件：spaceLeft ≥ 3
+  // - 目的：在不逼近容量上限的前提下加速推进局面
+  if (spaceLeft >= 3) {
+    const safeProbe = clickableBoardCards.find(card => !willAddCardFail(card));
+    if (safeProbe) {
+      clickCard(safeProbe.id, true);
+      return;
+    }
+  }
+
+  // 4️⃣ 保留原逻辑：如果接近满，只允许执行能立即三消的操作；否则停止以保留两个空位
   if (currentTempCount >= safeThreshold) {
-    const safeTriple = findAnyTriple() || findDisplayAreaTriple();
-    if (safeTriple && safeTriple.length > 0) {
-      safeTriple.forEach((id, index) => {
-      setTimeout(() => clickCard(id, true), index * 300); // 每张卡片间隔300ms点击
-    });
-      return;
-    } else {
-      stopAutoCollect();
-      showMessage('已预留两个空位，无安全三消，自动收集停止');
-      return;
+    const reIcons = new Set([
+      ...Object.keys(tempCounts),
+      ...Object.keys(boardIconMap)
+    ]);
+    for (const icon of reIcons) {
+      const t = tempCounts[icon] || 0;
+      const need = 3 - t;
+      if (need <= 0) continue;
+      const picks = (boardIconMap[icon] || []).slice(0, need);
+      if (picks.length === need && need <= spaceLeft) {
+        picks.forEach((c, i) => setTimeout(() => clickCard(c.id, true), i * 300));
+        return;
+      }
     }
+    // 若仍无三消，最后再尝试洗牌或提示
+    attemptAutoShuffleOrPrompt();
+    return;
   }
 
-  // 正常情况下，优先执行三消
-  const cardsToClickIds = findDisplayAreaTriple() || findAnyTriple();
-  if (cardsToClickIds && cardsToClickIds.length > 0) {
-    const safeCardsToClickIds = cardsToClickIds.filter(id => {
-      const card = game.board.find(c => c.id === id);
-      return card && !willAddCardFail(card);
-    });
-
-    if (safeCardsToClickIds.length > 0) {
-      //autoCollectCount--;
-      clickCard(safeCardsToClickIds[0], true);
-      return;
-    }
-  }
-
-  // 如果没有三消机会，尝试点击任意安全卡片
-  const clickableCards = game.board.filter(c => !c.matched && isCardClickable(c, game.board));
-  const safeNextMove = clickableCards.find(card => !willAddCardFail(card));
-
+  // 5️⃣ 其他逻辑保留：若仍无三消，尝试“安全的任意点击”（不会导致失败）
+  const safeNextMove = clickableBoardCards.find(card => !willAddCardFail(card));
   if (safeNextMove) {
-    //autoCollectCount--;
     clickCard(safeNextMove.id, true);
     return;
   }
 
-  // 没有安全操作，停止自动收集
-  stopAutoCollect();
-  showMessage('已无安全操作，自动收集停止');
-}
-
-// 新增：安全三消检查函数
-function findSafeTripleMatch() {
-  const tempCards = game.temp.filter(c => !c.matched);
-  const tempIconCounts = {};
-  tempCards.forEach(c => {
-    tempIconCounts[c.icon] = (tempIconCounts[c.icon] || 0) + 1;
-  });
-
-  // 检查 display 区是否能与 temp 区组成三消
-  for (const set of game.displayCards) {
-    if (set.matched) continue;
-    const icon = set.cards[0].icon;
-    const tempCount = tempIconCounts[icon] || 0;
-    const boardCount = game.board.filter(c => !c.matched && isCardClickable(c, game.board) && c.icon === icon).length;
-    if (tempCount + boardCount >= 3) return true;
-  }
-
-  // 寻找已经在temp区有2张的情况
-  const potentialMatches = Object.entries(tempIconCounts)
-    .filter(([icon, count]) => count === 2)
-    .map(([icon]) => icon);
-
-  if (potentialMatches.length > 0) {
-    // 在板上寻找对应的第三张卡
-    for (const icon of potentialMatches) {
-      const boardMatch = game.board.find(c => 
-        !c.matched && 
-        c.icon === icon && 
-        isCardClickable(c, game.board)
-      );
-      if (boardMatch) return true;
-    }
-  }
-
-  // 检查display区域的匹配
-  return game.displayCards.some(set => {
-    if (set.matched) return false;
-    const icon = set.cards[0].icon;
-    const tempCount = tempIconCounts[icon] || 0;
-    if (tempCount > 0) {
-      const boardMatches = game.board.filter(c => 
-        !c.matched && 
-        c.icon === icon && 
-        isCardClickable(c, game.board)
-      );
-      return boardMatches.length >= (3 - tempCount);
-    }
-    return false;
-  });
+  // 🛑 无任何安全操作：再尝试洗牌或提示
+  attemptAutoShuffleOrPrompt();
 }
 
 // 新增：安全点击检查函数
@@ -3977,15 +4057,13 @@ function findAnyTriple() {
 // 按钮监听
 autoCollectBtn.onclick = toggleAutoCollect;
 function tryResumeAutoCollect() {
-  // 只有在功能开启且未被玩家手动暂停时才尝试恢复
   if (autoCollectActive && !autoCollectPaused) {
     if (autoCollectTimer) clearTimeout(autoCollectTimer);
-    // 稍作延迟以等待游戏动画或状态更新完成
-    autoCollectTimer = setTimeout(autoCollectStep, 320);
-	updateAutoCollectStatus(); // ← 添加这一行
+    // 改为屏障空闲后续跑，避免被动画状态抢跑
+    scheduleAutoCollectAfterIdle();
+    updateAutoCollectStatus();
   }
 }
-
 // 在确认框之后添加新的风险提示框
 function createRiskModal() {
   const modal = document.createElement('div');
@@ -4067,9 +4145,55 @@ function showBlinkingCat() {
     cat.textContent = '';
   }, 2000);
 }
+// 统一管理“忙闲状态”，当所有动画/锁/飞牌都空闲时，统一触发续跑回调
+const AnimBarrier = {
+  count: 0,
+  tags: new Map(),
+  queue: [],
+  scheduled: false,
 
+  begin(tag = 'unknown') {
+    this.count++;
+    this.tags.set(tag, (this.tags.get(tag) || 0) + 1);
+  },
 
+  end(tag = 'unknown') {
+    const now = (this.tags.get(tag) || 0) - 1;
+    if (now <= 0) this.tags.delete(tag); else this.tags.set(tag, now);
+    this.count = Math.max(0, this.count - 1);
+    this.tryFlush();
+  },
 
+  onIdle(cb) {
+    if (this.isIdle()) cb();
+    else this.queue.push(cb);
+  },
+
+  isIdle() {
+    // 将 lock / flying 一并视作屏障
+    const busy = this.count > 0 || game.flyingCardCount > 0 || game.lock;
+    return !busy;
+  },
+
+  tryFlush() {
+    if (!this.isIdle()) return;
+    if (this.scheduled) return;
+    this.scheduled = true;
+    setTimeout(() => {
+      this.scheduled = false;
+      if (!this.isIdle()) return;
+      const cbs = this.queue.splice(0);
+      cbs.forEach(cb => { try { cb(); } catch(e){ console.error(e); } });
+    }, 0);
+  }
+};
+
+// 统一的“空闲后再续跑自动收集”
+function scheduleAutoCollectAfterIdle() {
+  AnimBarrier.onIdle(() => {
+    if (autoCollectActive && !autoCollectPaused) autoCollectStep();
+  });
+}
 
 </script>
 </body>
