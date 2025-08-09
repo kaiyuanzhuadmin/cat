@@ -1912,14 +1912,39 @@ body.bg-default::before {
 }
 
 /* 盖子：丝绸渐变 + 光泽边框 */
+/* 文艺复兴主题 - 卡片盖子 */
 .theme-renaissance #card-stack-lid {
-  background:
-    linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.35)) padding-box,
-    linear-gradient(135deg, #f6e6e9, #d9efe6, #fff3e6) border-box;
-  border: 2px solid transparent;
-  color: var(--text-primary);
-  text-shadow: 0 1px 0 rgba(255,255,255,.4);
+  /*
+    更新为淡紫色到白色的渐变背景。
+    径向渐变模拟柔和的光晕，线性渐变则创造出从淡紫色到白色的平滑过渡。
+  */
+  background: radial-gradient(circle at 50% 80%, rgba(224, 204, 255, 0.6) 0%, rgba(224, 204, 255, 0) 50%),
+              linear-gradient(180deg, #e6e6fa 0%, #ffffff 100%);
+  
+  /* 边框改为更简洁的实色，颜色与主题匹配 */
+  border: var(--panel-border, 1px solid rgba(0, 0, 0, 0.1));
+  
+  /* 保持并优化了玻璃拟态效果，使其更具梦幻感 */
+  backdrop-filter: var(--panel-backdrop-filter, blur(10px) saturate(1.5));
+  -webkit-backdrop-filter: var(--panel-backdrop-filter, blur(10px) saturate(1.5));
+  
+  /* 添加内部阴影，模拟微光 */
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1);
+  
+  /* 文本颜色调整为深色，以确保在浅色背景上的可读性 */
+  color: #58417c;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  
+  /* 增加过渡效果，使交互更平滑 */
+  transition: all 0.3s ease;
 }
+
+/* 添加一个微妙的悬停效果，提升用户体验 */
+.theme-renaissance #card-stack-lid:hover {
+  transform: translateY(-5px); /* 向上移动一点 */
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2), 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
 /* 卡片整体：柔雾渐层 + 抽象纸感纹理 */
 .theme-renaissance .card {
   box-shadow: var(--card-shadow);
