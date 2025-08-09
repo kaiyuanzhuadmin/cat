@@ -1521,6 +1521,28 @@ body.bg-level-2::before {
 body.bg-default::before {
   background-image: url('cat1.webp');
 }
+/*
+  Theme: Dali Rose (Enhanced)
+  Author: Gemini
+  Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose". 
+               This version incorporates advanced CSS techniques inferred from a
+               renaissance-themed stylesheet, adding depth, texture, and more
+               dynamic interactions while preserving the original color story.
+*/
+
+/*
+  Theme: Dali Rose (Enhanced)
+  Author: Gemini
+  Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose". 
+               This version incorporates advanced CSS techniques inferred from a
+               renaissance-themed stylesheet, adding depth, texture, and more
+               dynamic interactions while preserving the original color story.
+  主题：达利玫瑰（增强版）
+  作者：Gemini
+  描述：一个增强版主题，灵感来源于萨尔瓦多·达利的《沉思的玫瑰》。
+        此版本借鉴了文艺复兴风格主题中的高级CSS技巧，在保留原有色彩故事的同时，
+        增加了深度、纹理和更丰富的动态交互效果。
+*/
 .theme-dali-rose {
   /* -- Color & Style Variables -- */
   /* -- 颜色与样式变量 -- */
@@ -1531,18 +1553,18 @@ body.bg-default::before {
   --color-sky-deep: #a5c9e4;
   --color-sand: #e4d7c6;
 
-  /* Rose colors for the cards */
-  /* 玫瑰色：用于卡片 */
-  --color-rose-bright: #d14a61;
-  --color-rose-deep: #b83b50;
-  --color-rose-highlight: rgba(255, 255, 255, 0.15);
-  --color-rose-glow: rgba(224, 80, 110, 0.55);
+  /* 玫瑰色：用于卡片 - 颜色已减淡 */
+  --color-rose-bright: #e7aab6; /* Lighter shade of rose */
+  --color-rose-deep: #d88997; /* Lighter deep rose */
+  --color-rose-highlight: rgba(255, 255, 255, 0.25); /* Slightly more prominent highlight */
+  --color-rose-glow: rgba(230, 150, 165, 0.65); /* Softer, more ethereal glow */
 
   /* UI and Text colors */
   /* UI及文本颜色 */
   --color-text-primary: #4a4e69;
   --color-text-accent: #6a5676;
-  --color-shadow: rgba(74, 78, 105, 0.2);
+  --color-shadow-main: rgba(74, 78, 105, 0.2);
+  --color-shadow-rose: rgba(120, 50, 60, 0.3);
   --color-panel-border: rgba(255, 255, 255, 0.4);
 
   /* -- Main Background -- */
@@ -1552,22 +1574,24 @@ body.bg-default::before {
   /* -- Panel Styles (for frosted glass effect) -- */
   /* -- 面板样式 (用于毛玻璃效果) -- */
   --panel-bg: rgba(255, 255, 255, 0.35);
-  --panel-border: var(--color-panel-border);
-  --panel-shadow: 0 8px 24px var(--color-shadow);
+  --panel-border: 1.5px solid var(--color-panel-border);
+  --panel-shadow: 0 8px 24px var(--color-shadow-main);
+  --panel-backdrop-filter: blur(12px) saturate(1.2);
 
   /* -- Card Styles -- */
   /* -- 卡片样式 -- */
   --card-bg: linear-gradient(160deg, var(--color-rose-bright), var(--color-rose-deep));
   --card-border: 1px solid rgba(255, 255, 255, 0.2);
-  --card-shadow: 0 6px 16px rgba(120, 50, 60, 0.3);
+  --card-shadow: 0 6px 16px var(--color-shadow-rose);
   --card-hover-shadow: 0 10px 22px rgba(120, 50, 60, 0.4);
   --card-selected-shadow: 0 0 0 4px var(--color-rose-glow);
 
   /* -- Button Styles -- */
   /* -- 按钮样式 -- */
   --btn-bg: rgba(255, 255, 255, 0.5);
-  --btn-border: var(--color-panel-border);
+  --btn-border: 1.5px solid var(--color-panel-border);
   --btn-hover-bg: rgba(255, 255, 255, 0.7);
+  --btn-shadow: 0 2px 8px rgba(74, 78, 105, 0.1);
 }
 
 /* -- Apply Theme to Game Elements -- */
@@ -1589,30 +1613,44 @@ body.bg-default::before {
 .theme-dali-rose #display-area,
 .theme-dali-rose #temp-area {
   background: var(--panel-bg);
-  border: 1.5px solid var(--panel-border);
+  border: var(--panel-border);
   box-shadow: var(--panel-shadow);
-  backdrop-filter: blur(12px) saturate(1.2);
+  backdrop-filter: var(--panel-backdrop-filter);
+  -webkit-backdrop-filter: var(--panel-backdrop-filter);
   border-radius: 18px;
+}
+
+/* NEW: Card stack lid styling */
+/* 新增: 卡片堆叠区盖子样式 */
+.theme-dali-rose #card-stack-lid {
+  background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.35));
+  border: var(--panel-border);
+  color: var(--color-text-primary);
+  text-shadow: 0 1px 0 rgba(255,255,255,.4);
+  backdrop-filter: var(--panel-backdrop-filter);
+  -webkit-backdrop-filter: var(--panel-backdrop-filter);
 }
 
 /* Rose-colored cards */
 /* 玫瑰色卡片 */
 .theme-dali-rose .card,
 .theme-dali-rose .temp-card,
-.theme-dali-rose .flying-card {
+.theme-dali-rose .flying-card,
+.theme-dali-rose .display-card /* Apply to display cards too */ {
   background: var(--card-bg);
   border: var(--card-border);
   box-shadow: var(--card-shadow);
   color: white; /* Text on cards should be light */
   text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
-  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s;
 }
 
 /* Add a subtle shine to the cards */
 /* 为卡片添加微妙的光泽 */
 .theme-dali-rose .card::before,
 .theme-dali-rose .temp-card::before,
-.theme-dali-rose .flying-card::before {
+.theme-dali-rose .flying-card::before,
+.theme-dali-rose .display-card::before {
   content: '';
   position: absolute;
   top: 0;
@@ -1645,11 +1683,35 @@ body.bg-default::before {
   opacity: 0.1;
   transform: scale(0.9);
 }
+/* Disabled card overlay specifically for Dali Rose theme - Enhanced Visibility */
+.theme-dali-rose .card.disabled::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(175, 140, 200, 0.5) !important; /* 更深、与主题协调的半透明暗色 */
+  border-radius: inherit; /* 继承父级卡片的圆角 */
+  transition: background 0.5s ease;
+}
 
+.theme-dali-rose .card.disabled > *:not(.disabled::before) {
+    opacity: 0.3 !important; /* 使卡片内容更暗，对比更强 */
+}
 /* Napping card overlay */
 /* 打盹卡片的遮罩 */
 .theme-dali-rose .card.napping::before {
-  background: rgba(74, 78, 105, 0.3) !important;
+  background: rgba(74, 78, 105, 0.4) !important;
+}
+
+/* NEW: Display area styling */
+/* 新增: 顶部展示区样式 */
+.theme-dali-rose #display-area .display-group {
+  background: rgba(255, 255, 255, 0.25);
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 12px;
+  padding: 4px;
 }
 
 /* Temp area slot styling */
@@ -1664,9 +1726,9 @@ body.bg-default::before {
 /* 工具栏按钮 */
 .theme-dali-rose #tools-bar button {
   background: var(--btn-bg);
-  border: 1.5px solid var(--btn-border);
+  border: var(--btn-border);
   color: var(--color-text-accent);
-  box-shadow: 0 2px 8px rgba(74, 78, 105, 0.1);
+  box-shadow: var(--btn-shadow);
 }
 
 .theme-dali-rose #tools-bar button:hover {
@@ -1692,6 +1754,25 @@ body.bg-default::before {
     background: rgba(255, 230, 235, 0.8);
 }
 
+/* NEW: Game Over Screen Styling */
+/* 新增: 游戏结束界面样式 */
+.theme-dali-rose #game-over {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: var(--panel-backdrop-filter);
+  -webkit-backdrop-filter: var(--panel-backdrop-filter);
+  border: 2px solid var(--color-panel-border);
+  color: var(--color-text-primary);
+}
+.theme-dali-rose #game-over button {
+  background: var(--btn-bg);
+  border: var(--btn-border);
+  color: var(--color-text-accent);
+}
+.theme-dali-rose #game-over button:hover {
+  background: var(--btn-hover-bg);
+  transform: translateY(-2px);
+}
+
 /* Level Finish Screen */
 /* 关卡完成界面 */
 .theme-dali-rose #level-finish {
@@ -1701,6 +1782,13 @@ body.bg-default::before {
   color: var(--color-text-primary);
 }
 
+/* Shimmering text effect for level finish title */
+/* 关卡完成标题的流光效果 */
+@keyframes dali-text-shimmer {
+  0%, 100% { background-position: 200% 50%; }
+  50% { background-position: 0% 50%; }
+}
+
 .theme-dali-rose #level-finish-text {
   font-weight: 700;
   background: linear-gradient(90deg, var(--color-text-accent), var(--color-rose-deep), var(--color-text-accent));
@@ -1708,26 +1796,29 @@ body.bg-default::before {
   background-clip: text;
   color: transparent;
   background-size: 200% 100%;
-  animation: textShimmer 4s ease-in-out infinite;
+  animation: dali-text-shimmer 4s ease-in-out infinite;
   text-shadow: none;
-}
-
-@keyframes textShimmer {
-  0%, 100% { background-position: 200% 50%; }
-  50% { background-position: 0% 50%; }
 }
 
 .theme-dali-rose #level-finish button {
   background: var(--btn-bg);
-  border: 1.5px solid var(--btn-border);
+  border: var(--btn-border);
   color: var(--color-text-accent);
+  box-shadow: var(--btn-shadow);
 }
 
 .theme-dali-rose #level-finish button:hover {
   background: var(--btn-hover-bg);
   transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 78, 105, 0.15);
 }
 
+/* NEW: Themed confetti */
+/* 新增: 主题化礼花 */
+.theme-dali-rose .confetti-piece {
+  box-shadow: 0 0 8px rgba(255,255,255,.35);
+  opacity: .95;
+}
 
 .theme-renaissance {
   --bg-base: linear-gradient(135deg, #fdf7f3, #f9f3eb);          /* 米白背景 */
@@ -1788,7 +1879,7 @@ body.bg-default::before {
   background: var(--card-bg)
   border: 2px solid var(--card-border);
   color: var(--text-primary);
-  box-shadow: 0 4px 12px rgba(160,82,45,.25);
+  box-shadow: 0 4px 12px rgba(160,82,45,.45);
 }
 
 /* 三消后消退（沿用你的 .vanishing） */
