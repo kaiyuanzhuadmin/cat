@@ -2279,7 +2279,7 @@ const CARD_ICONS = [
 ];
 const LEVELS = [
   // Level 1 now has more cards to ensure a visible heart shape can be formed.
-  {num: 1, visible: 15, total: 48, stack: 1, rows: 3, cols: 5, overlap: 20, targetScore: 25, totalDisplaySets: 12},
+  {num: 1, visible: 15, total: 30, stack: 1, rows: 3, cols: 5, overlap: 20, targetScore: 25, totalDisplaySets: 12},
   {num: 2, visible: 15, total: 123, stack: 2, rows: 3, cols: 5, overlap: 20, targetScore: 100, totalDisplaySets: 30}
 ];
 const TEMP_LIMIT = 7;
@@ -4467,8 +4467,8 @@ function autoCollectStep() {
       if (!game.noShuffleCodePromptShown) {
         game.noShuffleCodePromptShown = true;
         showRiskModal(
-          '当前无可三消，且洗牌次数为 0。<br>请输入兑换码获取洗牌次数，例如：<b>haogege</b>，<b>或者去问他</b>。',
-          'warning'
+          '当前无可消除，请手动尝试。<br>输入兑换码可获取洗牌次数，如：<b>haogege</b>，<b>或者去问他</b>。',
+          'info'
         );
         setTimeout(() => { try { codeInput && codeInput.focus(); } catch(e){} }, 80);
       }
