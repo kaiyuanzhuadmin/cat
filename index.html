@@ -15,6 +15,8 @@
   <link rel="preload" href="mao.webp" as="image">
   <link rel="preload" href="aimao.mp4" as="video">
   <link rel="preload" href="cat1.webp" as="image">
+  <link rel="preload" href="rose.webp" as="image">
+  <link rel="preload" href="lily.webp" as="image">
   <link rel="preload" href="js/index.js" as="script">
   <link rel="preload" href="run.gif" as="image">
   <link rel="preload" href="kaa.mp3" as="audio">
@@ -367,17 +369,32 @@
       -moz-user-select: none;
       -ms-user-select: none;
     }
-    body::before {
-      content: "";
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100%;
-      height: 100%;
-      background: var(--bg-base) url('cat1.webp') no-repeat center center;
-      background-size: cover;
-      z-index: -2;
-    }
+body::before {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  /* 默认图片被移除，背景现在由JS控制的class来决定 */
+  background-color: var(--bg-base);
+  background-repeat: no-repeat;
+  background-position: center center;
+  background-size: cover;
+  z-index: -1;
+  /* 添加一个平滑的过渡效果 */
+  transition: background-image 0.5s ease-in-out;
+}
+
+/* 第一关背景：《沉思的玫瑰》 */
+body.bg-level-1::before {
+  background-image: url('rose.webp');
+}
+
+/* 第二关背景：《睡莲》 */
+body.bg-level-2::before {
+  background-image: url('lily.webp');
+}
     body::after {
       content: "";
       position: fixed;
@@ -1501,31 +1518,216 @@
   --btn-border: #b8860b;
   --btn-hover-bg: #e9d9c6;
 }
-
-.theme-starry-night {
-  /* 背景采用星夜画布质感色调：深蓝和点缀黄 */
-  --bg-base: radial-gradient(circle at 30% 30%, #1f2a3b, #0e1830); /* 旋涡底色 */
-  
-  /* 半透明面板，如画布上的光晕星球 */
-  --panel-bg: rgba(32, 48, 77, 0.65);
-  --panel-border: #f4d35e; /* 明亮星光边框 */
-
-  /* 卡片设为油画质感深蓝，搭配柔黄的光影投影 */
-  --card-bg: #7187a3; 
-  --card-border: transparent; /* 取消实体边框，使用阴影替代 */
-  --card-shadow: 0 6px 14px rgba(244, 211, 94, 0.35);
-
-  /* 文本色为柔白与星光黄形成对比 */
-  --text-primary: #fffaf3;
-  --text-accent: #f4d35e;
-
-  /* 按钮为亮蓝底，hover呈现淡黄亮晕 */
-  --btn-bg: #3a5f9b;
-  --btn-border: transparent;
-  --btn-hover-bg: #4b6fa9;
-
-  /* 额外点缀：可在卡片 hover 时加入轻微旋涡动画或晕染效果 */
+body.bg-default::before {
+  background-image: url('cat1.webp');
 }
+.theme-dali-rose {
+  /* -- Color & Style Variables -- */
+  /* -- 颜色与样式变量 -- */
+
+  /* Background colors inspired by the painting's sky and sand */
+  /* 背景色：灵感源于画作的天空与沙地 */
+  --color-sky-light: #d4e7f5;
+  --color-sky-deep: #a5c9e4;
+  --color-sand: #e4d7c6;
+
+  /* Rose colors for the cards */
+  /* 玫瑰色：用于卡片 */
+  --color-rose-bright: #d14a61;
+  --color-rose-deep: #b83b50;
+  --color-rose-highlight: rgba(255, 255, 255, 0.15);
+  --color-rose-glow: rgba(224, 80, 110, 0.55);
+
+  /* UI and Text colors */
+  /* UI及文本颜色 */
+  --color-text-primary: #4a4e69;
+  --color-text-accent: #6a5676;
+  --color-shadow: rgba(74, 78, 105, 0.2);
+  --color-panel-border: rgba(255, 255, 255, 0.4);
+
+  /* -- Main Background -- */
+  /* -- 主背景 -- */
+  --bg-base: linear-gradient(to bottom, var(--color-sky-light) 0%, var(--color-sky-deep) 60%, var(--color-sand) 95%);
+
+  /* -- Panel Styles (for frosted glass effect) -- */
+  /* -- 面板样式 (用于毛玻璃效果) -- */
+  --panel-bg: rgba(255, 255, 255, 0.35);
+  --panel-border: var(--color-panel-border);
+  --panel-shadow: 0 8px 24px var(--color-shadow);
+
+  /* -- Card Styles -- */
+  /* -- 卡片样式 -- */
+  --card-bg: linear-gradient(160deg, var(--color-rose-bright), var(--color-rose-deep));
+  --card-border: 1px solid rgba(255, 255, 255, 0.2);
+  --card-shadow: 0 6px 16px rgba(120, 50, 60, 0.3);
+  --card-hover-shadow: 0 10px 22px rgba(120, 50, 60, 0.4);
+  --card-selected-shadow: 0 0 0 4px var(--color-rose-glow);
+
+  /* -- Button Styles -- */
+  /* -- 按钮样式 -- */
+  --btn-bg: rgba(255, 255, 255, 0.5);
+  --btn-border: var(--color-panel-border);
+  --btn-hover-bg: rgba(255, 255, 255, 0.7);
+}
+
+/* -- Apply Theme to Game Elements -- */
+/* -- 将主题应用于游戏元素 -- */
+
+/* General text colors */
+/* 通用文本颜色 */
+.theme-dali-rose #progress-info,
+.theme-dali-rose .score-display,
+.theme-dali-rose .target-display,
+.theme-dali-rose #footer {
+  color: var(--color-text-primary);
+  text-shadow: 0 1px 1px rgba(255, 255, 255, 0.5);
+}
+
+/* Main containers with frosted glass effect */
+/* 具有毛玻璃效果的主容器 */
+.theme-dali-rose #card-stack-area,
+.theme-dali-rose #display-area,
+.theme-dali-rose #temp-area {
+  background: var(--panel-bg);
+  border: 1.5px solid var(--panel-border);
+  box-shadow: var(--panel-shadow);
+  backdrop-filter: blur(12px) saturate(1.2);
+  border-radius: 18px;
+}
+
+/* Rose-colored cards */
+/* 玫瑰色卡片 */
+.theme-dali-rose .card,
+.theme-dali-rose .temp-card,
+.theme-dali-rose .flying-card {
+  background: var(--card-bg);
+  border: var(--card-border);
+  box-shadow: var(--card-shadow);
+  color: white; /* Text on cards should be light */
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
+}
+
+/* Add a subtle shine to the cards */
+/* 为卡片添加微妙的光泽 */
+.theme-dali-rose .card::before,
+.theme-dali-rose .temp-card::before,
+.theme-dali-rose .flying-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(145deg, var(--color-rose-highlight) 0%, transparent 40%);
+  pointer-events: none;
+}
+
+/* Card hover effect */
+/* 卡片悬停效果 */
+.theme-dali-rose .card:not(.disabled):not(.matched):hover {
+  transform: translateY(-5px) scale(1.03);
+  box-shadow: var(--card-hover-shadow);
+}
+
+/* Selected card effect */
+/* 选中卡片的效果 */
+.theme-dali-rose .card.selected {
+  box-shadow: var(--card-selected-shadow), var(--card-hover-shadow);
+  transform: scale(1.05) rotate(-3deg);
+}
+
+/* Matched card effect */
+/* 已匹配卡片的效果 */
+.theme-dali-rose .card.matched,
+.theme-dali-rose .temp-card.matched {
+  opacity: 0.1;
+  transform: scale(0.9);
+}
+
+/* Napping card overlay */
+/* 打盹卡片的遮罩 */
+.theme-dali-rose .card.napping::before {
+  background: rgba(74, 78, 105, 0.3) !important;
+}
+
+/* Temp area slot styling */
+/* 暂存区槽位样式 */
+.theme-dali-rose .temp-slot {
+  background: rgba(255, 255, 255, 0.2);
+  border: 1px dashed rgba(255, 255, 255, 0.6);
+  box-shadow: inset 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Tools bar buttons */
+/* 工具栏按钮 */
+.theme-dali-rose #tools-bar button {
+  background: var(--btn-bg);
+  border: 1.5px solid var(--btn-border);
+  color: var(--color-text-accent);
+  box-shadow: 0 2px 8px rgba(74, 78, 105, 0.1);
+}
+
+.theme-dali-rose #tools-bar button:hover {
+  background: var(--btn-hover-bg);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(74, 78, 105, 0.15);
+}
+
+.theme-dali-rose #tools-bar button:disabled {
+  background: rgba(230, 230, 230, 0.4);
+  color: rgba(74, 78, 105, 0.4);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+/* Restart button special style */
+/* 重开按钮特殊样式 */
+.theme-dali-rose #restart-btn {
+    background: rgba(255, 230, 235, 0.6);
+    border-color: rgba(210, 74, 97, 0.4);
+    color: #b83b50;
+}
+.theme-dali-rose #restart-btn:hover {
+    background: rgba(255, 230, 235, 0.8);
+}
+
+/* Level Finish Screen */
+/* 关卡完成界面 */
+.theme-dali-rose #level-finish {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(15px) saturate(1.5);
+  border: 2px solid var(--color-panel-border);
+  color: var(--color-text-primary);
+}
+
+.theme-dali-rose #level-finish-text {
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--color-text-accent), var(--color-rose-deep), var(--color-text-accent));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  background-size: 200% 100%;
+  animation: textShimmer 4s ease-in-out infinite;
+  text-shadow: none;
+}
+
+@keyframes textShimmer {
+  0%, 100% { background-position: 200% 50%; }
+  50% { background-position: 0% 50%; }
+}
+
+.theme-dali-rose #level-finish button {
+  background: var(--btn-bg);
+  border: 1.5px solid var(--btn-border);
+  color: var(--color-text-accent);
+}
+
+.theme-dali-rose #level-finish button:hover {
+  background: var(--btn-hover-bg);
+  transform: translateY(-2px);
+}
+
 
 .theme-renaissance {
   --bg-base: linear-gradient(135deg, #fdf7f3, #f9f3eb);          /* 米白背景 */
@@ -1764,7 +1966,7 @@
   <link rel="stylesheet" href="font/iconfont.css">
   <link rel="stylesheet" href="css/style.css">
 </head>
-<body>
+<body class="bg-default">
 <!-- HTML 结构保持不变 -->
 <div id="game-container">
   <div id="loading-screen">
@@ -4494,9 +4696,20 @@ function scheduleAutoCollectAfterIdle() {
 }
 function applyTheme(level) {
   const container = document.getElementById('game-container');
-  container.classList.remove('theme-starry-night', 'theme-renaissance');
-  if (level === 1)      container.classList.add('theme-starry-night');
-  else if (level === 2) container.classList.add('theme-renaissance');
+  const bodyEl = document.body; // 获取body元素
+
+  // 移除旧的class
+  container.classList.remove('theme-dali-rose', 'theme-renaissance');
+  bodyEl.classList.remove('bg-level-1', 'bg-level-2');
+
+  if (level === 1) {
+    bodyEl.classList.remove('bg-default');
+    container.classList.add('theme-dali-rose');
+    bodyEl.classList.add('bg-level-1'); // 应用第一关背景
+  } else if (level === 2) {
+    container.classList.add('theme-renaissance');
+    bodyEl.classList.add('bg-level-2'); // 应用第二关背景
+  }
 }
 </script>
 </body>
