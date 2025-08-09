@@ -1615,16 +1615,37 @@ body.bg-default::before {
 
 /* NEW: Card stack lid styling */
 /* 新增: 卡片堆叠区盖子样式 */
+/* 达利《沉思的玫瑰》主题 - 卡片盖子 */
 .theme-dali-rose #card-stack-lid {
-  background: linear-gradient(180deg, rgba(255,255,255,.6), rgba(255,255,255,.35));
-  border: var(--panel-border);
-  color: var(--color-text-primary);
-  text-shadow: 0 1px 0 rgba(255,255,255,.4);
-  backdrop-filter: var(--panel-backdrop-filter);
-  -webkit-backdrop-filter: var(--panel-backdrop-filter);
+  /*
+    更新为更淡雅的天空蓝色调，下半部分平滑渐变为白色。
+    径向渐变模拟玫瑰的柔和光芒，线性渐变则创造出清澈的天空效果。
+  */
+  background: radial-gradient(circle at 50% 80%, rgba(255, 204, 219, 0.6) 0%, rgba(255, 204, 219, 0) 50%),
+              linear-gradient(180deg, #e0f0ff 0%, #ffffff 100%);
+  
+  /* 边框和玻璃拟态效果保持不变，提供梦幻感 */
+  border: var(--panel-border, 1px solid rgba(0, 0, 0, 0.1));
+  backdrop-filter: var(--panel-backdrop-filter, blur(10px) saturate(1.5));
+  -webkit-backdrop-filter: var(--panel-backdrop-filter, blur(10px) saturate(1.5));
+  
+  /* 添加内部阴影，模拟微光，同时调整颜色以适应浅色背景 */
+  box-shadow: inset 0 0 15px rgba(0, 0, 0, 0.1);
+  
+  /* 文本颜色调整为深色，以确保在浅色背景上的可读性 */
+  color: #1f4277;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+  
+  /* 增加过渡效果，使交互更平滑 */
+  transition: all 0.3s ease;
 }
 
-/* Rose-colored cards */
+/* 添加一个微妙的悬停效果，提升用户体验 */
+.theme-dali-rose #card-stack-lid:hover {
+  transform: translateY(-5px); /* 向上移动一点 */
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2), 0 8px 25px rgba(0, 0, 0, 0.2);
+}
+
 /* 玫瑰色卡片 */
 .theme-dali-rose .card,
 .theme-dali-rose .temp-card,
