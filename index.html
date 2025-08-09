@@ -757,7 +757,6 @@ body.bg-level-2::before {
       transition: transform 0.15s ease-out, box-shadow 0.15s ease-out, opacity 0.2s, border-color 0.15s;
       z-index: 1;
       overflow: hidden;
-      color: var(--text-primary);
     }
 	.card:hover {
       transform: translateY(-4px);
@@ -871,7 +870,6 @@ body.bg-level-2::before {
       position: absolute;
       transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
       box-sizing: border-box;
-      color: var(--text-primary);;
     }
     .temp-card.matched {
       opacity: 0.05;
@@ -890,7 +888,6 @@ body.bg-level-2::before {
       transition-property: top, left, transform;
       transition-timing-function: ease-out;
       overflow: hidden;
-      color: var(--text-primary);
     }
 
     /* ... 其他所有CSS样式保持不变 ... */
@@ -1531,14 +1528,10 @@ body.bg-default::before {
 */
 
 /*
-  Theme: Dali Rose (Enhanced)
-  Author: Gemini
   Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose". 
                This version incorporates advanced CSS techniques inferred from a
                renaissance-themed stylesheet, adding depth, texture, and more
                dynamic interactions while preserving the original color story.
-  主题：达利玫瑰（增强版）
-  作者：Gemini
   描述：一个增强版主题，灵感来源于萨尔瓦多·达利的《沉思的玫瑰》。
         此版本借鉴了文艺复兴风格主题中的高级CSS技巧，在保留原有色彩故事的同时，
         增加了深度、纹理和更丰富的动态交互效果。
@@ -1553,13 +1546,13 @@ body.bg-default::before {
   --color-sky-deep: #a5c9e4;
   --color-sand: #e4d7c6;
 
-  /* 玫瑰色：用于卡片 - 颜色已减淡 */
-  --color-rose-bright: #e7aab6; /* Lighter shade of rose */
-  --color-rose-deep: #d88997; /* Lighter deep rose */
-  --color-rose-highlight: rgba(255, 255, 255, 0.25); /* Slightly more prominent highlight */
-  --color-rose-glow: rgba(230, 150, 165, 0.65); /* Softer, more ethereal glow */
+/* 🌹 红玫瑰色调：以花瓣深红为主，带柔光与雾化感 */
+--color-rose-bright: #e87a89;       /* 鲜艳明亮的红玫瑰亮色 */
+--color-rose-deep: #b41e3c;         /* 深层花瓣色调，情绪浓烈 */
+--color-rose-highlight: rgba(255, 240, 245, 0.1);    /* 粉雾高光，模拟柔焦光晕 */
+--color-rose-glow: #d46a7e;         /* 带梦幻感的玫瑰发光色 */
 
-  /* UI and Text colors */
+
   /* UI及文本颜色 */
   --color-text-primary: #4a4e69;
   --color-text-accent: #6a5676;
@@ -1691,7 +1684,7 @@ body.bg-default::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(175, 140, 200, 0.5) !important; /* 更深、与主题协调的半透明暗色 */
+  background: rgba(200, 200, 200, 0.3) !important; /* 更深、与主题协调的半透明暗色 */
   border-radius: inherit; /* 继承父级卡片的圆角 */
   transition: background 0.5s ease;
 }
@@ -1824,8 +1817,9 @@ body.bg-default::before {
   --bg-base: linear-gradient(135deg, #fdf7f3, #f9f3eb);          /* 米白背景 */
   --panel-bg: rgba(250, 240, 230, 0.6);                          /* 面板半透 */
   --panel-border: #d4b8a8;                                       /* 米棕边框 */
-  --card-shadow: 0 6px 14px rgba(250, 180, 190, 0.35);         /* 粉红渐层 */
-  --card-shadow: 0 6px 14px rgba(250, 180, 190, 0.35);           /* 粉光晕 */
+  --rose-shadow: rgba(255, 230, 238, 0.8);
+  --card-shadow: 0 6px 14px var(--rose-shadow);
+  --card-bg: rgba(255, 251, 254, 1);
   --text-primary: #5f4b57;
   --text-accent: #c98596;
   --btn-bg: #f8e8ea;
@@ -1907,13 +1901,10 @@ body.bg-default::before {
 }
 /* 卡片整体：柔雾渐层 + 抽象纸感纹理 */
 .theme-renaissance .card {
-  background:
-    linear-gradient(180deg, #fdfcf9, #f7f1e8),
-    repeating-linear-gradient(45deg, rgba(255, 255, 255, 0.07) 0 2px, transparent 2px 6px),
-    repeating-linear-gradient(-45deg, rgba(240, 220, 230, 0.06) 0 3px, transparent 3px 6px);
-  box-shadow: 0 4px 10px rgba(190, 160, 180, 0.18);
+  box-shadow: var(--card-shadow);
   border-radius: 10px;
   border: none;
+  color: var(--card-bg);
   transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
 }
 .theme-renaissance .card:hover {
@@ -1934,7 +1925,21 @@ body.bg-default::before {
   border-radius: 10px;
   border: none;
 }
+.theme-renaissance .card.disabled::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(200, 200, 200, 0.6) !important; /* 更深、与主题协调的半透明暗色 */
+  border-radius: inherit; /* 继承父级卡片的圆角 */
+  transition: background 0.5s ease;
+}
 
+.theme-renaissance .card.disabled > *:not(.disabled::before) {
+    opacity: 0.3 !important; /* 使卡片内容更暗，对比更强 */
+}
 /* 悬停浮起：无边框，仅轻柔浮动与光晕 */
 .theme-renaissance .card:not(.disabled):not(.matched):hover {
   transform: translateY(-6px) scale(1.04) rotate(1.5deg);
