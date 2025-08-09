@@ -3749,6 +3749,7 @@ function eventCuriousPaw() {
 }
 
 function eventGiftOffering() {
+    if (autoCollectActive ||!autoCollectPaused) return;
     const tools = ['undo', 'hint', 'shuffle', 'revive']; // Added revive to tools list for random event
     const toolNames = { undo: '撤销', hint: '提示', shuffle: '洗牌', revive: '复活卡' }; // Added revive tool name
     const randomTool = tools[Math.floor(Math.random() * tools.length)];
