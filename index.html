@@ -3316,7 +3316,15 @@ function startGame(level) {
         card.style.animationDelay = '';
     });
     game.lock = false;
-}, 3000);
+    setTimeout(() => {
+      // 检查是否仍在游戏状态，防止 gift 被送到无效界面
+      const levelFinishVisible = document.getElementById('level-finish').style.display === 'flex';
+      const gameOverVisible = document.getElementById('game-over').style.display === 'flex';
+      if (!levelFinishVisible && !gameOverVisible) {
+        eventGiftOffering(); // 🎁送出礼物
+      }
+    }, 10000); // 10秒后触发
+}, 3500);
 
   if (game.bgmOn) playBgm(true);
   positionCatWalker();
