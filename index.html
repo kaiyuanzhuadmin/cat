@@ -2401,22 +2401,34 @@ function randBetween(a, b) { return a + Math.random() * (b - a); }
 
 async function initAudio() {
     try {
-        if (!audioContext) {
+        // 如果 context 已关闭或不存在，则必须创建一个新的
+        if (!audioContext || audioContext.state === 'closed') {
+            console.log('AudioContext 已关闭或未创建，正在初始化一个新的。');
             audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            clickSoundBuffer = null; // 为新的 context 强制重新加载音频 buffer
+            clickAudioFailed = false; // 重置失败标志
         }
+
+        // 如果 context 被挂起（例如，由于浏览器自动播放策略），尝试恢复它
         if (audioContext.state === 'suspended') {
+            console.log('AudioContext 已挂起，尝试恢复。');
             await audioContext.resume();
         }
-        if (!clickSoundBuffer) {
+
+        // 如果此 context 还没有加载过音频 buffer，并且之前没有失败过，则加载它
+        if (!clickSoundBuffer && !clickAudioFailed) {
             const response = await fetch('kaa.mp3');
             const arrayBuffer = await response.arrayBuffer();
+            // 使用现在保证可用的 context 来解码音频数据
             clickSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
         }
     } catch (e) {
-        console.error("Web Audio API failed for click sound (kaa.mp3). Falling back to HTML5 Audio.", e);
+        console.error("Web Audio API 初始化失败 (kaa.mp3)，将回退到 HTML5 Audio。", e);
         clickAudioFailed = true;
+        audioContext = null; // 失败时置空，防止后续出错
     }
 }
+
 function toggleAutoCollect() {
   if (autoCollectActive) {
     // 如果正在运行，则暂停
@@ -2469,21 +2481,32 @@ function playBgm(on) {
   }
 }
 
-function playClickSound() {
+async function playClickSound() {
     if (!game.bgmOn) return;
+
+    // 关键改动：在播放任何声音之前，始终确保音频上下文是准备好的。
+    // 这使得该功能具有自我修复能力。
+    await initAudio();
+
     if (clickAudioFailed) {
         const clickAudio = new Audio('kaa.mp3');
-        clickAudio.play().catch(e => console.error("HTML5 Audio fallback for click sound failed:", e));
-    } else {
-        if (!clickSoundBuffer || !audioContext) return;
-        try {
-            const source = audioContext.createBufferSource();
-            source.buffer = clickSoundBuffer;
-            source.connect(audioContext.destination);
-            source.start(0);
-        } catch (e) {
-            console.error("Failed to play click sound via Web Audio API:", e);
-        }
+        clickAudio.play().catch(e => console.error("HTML5 Audio 回退播放失败:", e));
+        return;
+    }
+    
+    // 在尝试初始化后，再次检查所有条件是否满足
+    if (!clickSoundBuffer || !audioContext || audioContext.state !== 'running') {
+        console.error("AudioContext 未运行或 buffer 未加载，无法播放声音。");
+        return;
+    }
+
+    try {
+        const source = audioContext.createBufferSource();
+        source.buffer = clickSoundBuffer;
+        source.connect(audioContext.destination);
+        source.start(0);
+    } catch (e) {
+        console.error("通过 Web Audio API 播放点击音效失败:", e);
     }
 }
 
@@ -4000,15 +4023,17 @@ document.addEventListener('DOMContentLoaded', function() {
 
 document.addEventListener('visibilitychange', () => {
     if (document.hidden) {
+        // 当标签页被隐藏时，暂停背景音乐
         playBgm(false);
     } else {
-        if (audioContext && audioContext.state === 'suspended') {
-            audioContext.resume().catch(e => console.error("AudioContext resume failed on visibility change.", e));
-        }
-        // 解决 nap 状态残留
+        // 当标签页恢复可见时，确保 Web Audio 上下文是可用的
+        initAudio();
+
+        // 恢复 nap 状态的逻辑保持不变
         if (game && game.board) {
             game.board.forEach(card => { card.isNapping = false; });
         }
+        // 重新渲染游戏，确保 nap 状态的视觉效果被移除
         renderAll();
     }
 });
