@@ -5595,7 +5595,7 @@
       autoCollectIdleWatcher = setInterval(() => {
         if (autoCollectPaused && autoCollectActive) {
           const now = Date.now();
-          if (now - lastManualClickTime > 2000) {
+          if (now - lastManualClickTime > 1000) {
             autoCollectPaused = false;
             showMessage("自动收集已恢复");
             showBlinkingCat(); // ← 添加这一行
@@ -5661,7 +5661,7 @@
             // --- 核心修改 ---
             // 调用 shuffleStep 时，传入 true 来标记这是自动洗牌
             shuffleStep(true);
-          }, 200);
+          }, 100);
         } else {
           if (!game.noShuffleCodePromptShown) {
             game.noShuffleCodePromptShown = true;
