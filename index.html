@@ -1842,7 +1842,20 @@
     }
 
     :root {
-      /* 通用 */
+      --font-base-dynamic: calc(18 / 430 * 100vw);
+
+      /* 语义层级（现在所有字体大小都基于动态基准值进行缩放） */
+      --fz-xs: calc(var(--font-base-dynamic) * 0.85);
+      --fz-s: var(--font-base-dynamic);
+      --fz-m: calc(var(--font-base-dynamic) * 1.15);
+      --fz-l: calc(var(--font-base-dynamic) * 1.35);
+      --fz-xl: calc(var(--font-base-dynamic) * 1.8);
+
+      /* 行高与字距 */
+      --lh-tight: 1.45;
+      --lh-normal: 2.35;
+      --ls-tight: 0.02em;
+      /* 通用样式变量保持不变 */
       --bg-base: #f7f0e8;
       --panel-bg: rgba(240, 230, 210, 0.6);
       --panel-border: #b8860b;
