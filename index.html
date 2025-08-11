@@ -3847,8 +3847,6 @@
         game.lock = false;
         updateWigglingCatVisibility();
         updateAutoCollectStatus();
-        updateWigglingCatVisibility();
-        updateAutoCollectStatus();
         tryResumeAutoCollect();
         if (
           autoCollectActive &&
@@ -5345,29 +5343,6 @@
       };
     }
 
-    function debounce(func, delay) {
-      let timeout;
-      return function () {
-        const context = this;
-        const args = arguments;
-        clearTimeout(timeout);
-        timeout = setTimeout(() => func.apply(context, args), delay);
-      };
-    }
-    // 自动收集主循环
-    function startAutoCollect() {
-      if (autoCollectCount <= 0 || autoCollectActive) return;
-
-      // 第一次点击时启用自动收集
-      game.autoCollectEnabled = true;
-
-      // 显示启用提示
-      showMessage("已启用自动收集功能", "#3e5a2b");
-      autoCollectActive = true;
-      updateAutoCollectStatus();
-      autoCollectStep();
-      startAutoCollectIdleWatcher();
-    }
     function startAutoCollectIdleWatcher() {
       if (autoCollectIdleWatcher) return; // 防止重复启动
       autoCollectIdleWatcher = setInterval(() => {
@@ -5590,57 +5565,6 @@
       attemptAutoShuffleOrPrompt();
     }
 
-    // 新增：安全点击检查函数
-    function isSafeToClickCard(cardId) {
-      const unMatchedTempCards = game.temp.filter((c) => !c.matched).length;
-      if (unMatchedTempCards >= TEMP_LIMIT) return false;
-
-      // 获取当前temp区的图标分布
-      const tempIcons = {};
-      game.temp
-        .filter((c) => !c.matched)
-        .forEach((c) => {
-          tempIcons[c.icon] = (tempIcons[c.icon] || 0) + 1;
-        });
-
-      // 获取要点击的卡片
-      const cardToClick = game.board.find((c) => c.id === cardId);
-      if (!cardToClick) return false;
-
-      // 模拟添加这张卡后的状态
-      const updatedTempIcons = { ...tempIcons };
-      updatedTempIcons[cardToClick.icon] =
-        (updatedTempIcons[cardToClick.icon] || 0) + 1;
-
-      // 检查是否会形成三消
-      if (Object.values(updatedTempIcons).some((count) => count >= 3))
-        return true;
-
-      // 如果加入后会达到倒数1个格
-      if (unMatchedTempCards + 1 >= TEMP_LIMIT - 1) {
-        // 检查剩余可点击卡片中是否有机会形成三消
-        const remainingClickableCards = game.board.filter(
-          (c) =>
-            !c.matched && isCardClickable(c, game.board) && c.id !== cardId
-        );
-
-        // 检查每个图标是否有形成三消的可能
-        for (const [icon, count] of Object.entries(updatedTempIcons)) {
-          const neededForTriple = 3 - count;
-          if (neededForTriple <= 0) continue;
-          const availableMatches = remainingClickableCards.filter(
-            (c) => c.icon === icon
-          ).length;
-          if (availableMatches >= neededForTriple) return true;
-        }
-
-        // 如果没有找到任何可能的三消组合
-        return false;
-      }
-
-      // 如果还有足够空间，则允许点击
-      return true;
-    }
     // 查找display-area优先三消（可用temp区卡片补足，返回需点击的board卡id数组）
     function findAnyTriple() {
       let tempCounts = {};
@@ -5656,29 +5580,6 @@
         }
       });
 
-      for (const [icon, ids] of Object.entries(boardIcons)) {
-        const tempCount = tempCounts[icon] || 0;
-        const needCount = 3 - tempCount;
-        if (needCount > 0 && ids.length >= needCount) {
-          return ids.slice(0, needCount);
-        }
-      }
-      return null;
-    }
-
-    // 查找任意三消（可用temp区补足）
-    function findAnyTriple() {
-      let tempCounts = {};
-      game.temp.forEach((c) => {
-        if (!c.matched) tempCounts[c.icon] = (tempCounts[c.icon] || 0) + 1;
-      });
-      let boardIcons = {};
-      game.board.forEach((c) => {
-        if (!c.matched && isCardClickable(c, game.board)) {
-          if (!boardIcons[c.icon]) boardIcons[c.icon] = [];
-          boardIcons[c.icon].push(c.id);
-        }
-      });
       for (const [icon, ids] of Object.entries(boardIcons)) {
         const tempCount = tempCounts[icon] || 0;
         const needCount = 3 - tempCount;
@@ -5759,15 +5660,7 @@
         modal.style.display = "none";
       }
     }
-    function willAddCardFail(card) {
-      let tempSim = game.temp.filter((c) => !c.matched).map((c) => c.icon);
-      tempSim.push(card.icon);
-      if (tempSim.length < TEMP_LIMIT) return false;
-      let counts = {};
-      tempSim.forEach((icon) => (counts[icon] = (counts[icon] || 0) + 1));
-      if (Object.values(counts).some((cnt) => cnt >= 3)) return false;
-      return true;
-    }
+
     function showBlinkingCat() {
       const cat = document.getElementById("blinking-cat");
       if (!cat) return;
