@@ -874,7 +874,7 @@
 			      box-shadow: 0 2px 8px rgba(160, 82, 45, 0.3);
 			      cursor: default;
 			      position: absolute;
-			      transition: opacity 0.2s, border-color 0.2s, box-shadow 0.2s;
+			      transition: transform 140ms ease, opacity 140ms ease;
 			      box-sizing: border-box;
 			    }
 			    .temp-card.matched {
@@ -3112,6 +3112,13 @@
 				return true; // No card is blocking it, so it's on the top layer and clickable.
 			}
 
+// 下一个可用的暂存槽位（队列语义）
+function getNextTempIndex() {
+  const used = game.temp.filter(c => !c.matched).length;
+  if (used >= TEMP_LIMIT) return -1;
+  return used; // 0..6，从左到右依次进入
+}
+
 			// MODIFIED: clickCard function with robust state checking
 			function clickCard(id, isAuto = false) {
 				// 如果是玩家手动点击，并且自动收集正在运行，则暂停它
@@ -3182,30 +3189,20 @@
 					borderWidth: `${game.cardDimensions.borderWidth}px`,
 				});
 				clickedCardEl.style.visibility = "hidden";
-				const tempForPositionCalculation = [
-					...game.temp.filter((c) => !c.matched),
-					{ icon: cardData.icon, id: cardData.id },
-				];
-				tempForPositionCalculation.sort(
-					(a, b) => a.icon.localeCompare(b.icon) || a.id - b.id
-				);
-				const endSlotIndex = tempForPositionCalculation.findIndex(
-					(c) => c.id === id
-				);
-				const tempSlots = document.querySelectorAll(
-					"#temp-area .temp-slot"
-				);
-				if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
-					if (flyingCard.parentNode) flyingCard.remove();
-					cardData.matched = false;
-					cardData.isFlying = false;
-					game.flyingCardCount--;
-					clickedCardEl.style.visibility = "visible";
-					game.lock = false;
-					if (isAuto) tryResumeAutoCollect();
-					return;
-				}
-				const endRect = tempSlots[endSlotIndex].getBoundingClientRect();
+				// 新逻辑——队列：下一个空位（左→右）
+const tempSlots = document.querySelectorAll("#temp-area .temp-slot");
+const endSlotIndex = getNextTempIndex();
+if (endSlotIndex < 0 || endSlotIndex >= tempSlots.length) {
+  if (flyingCard.parentNode) flyingCard.remove();
+  cardData.matched = false;
+  cardData.isFlying = false;
+  game.flyingCardCount--;
+  clickedCardEl.style.visibility = "visible";
+  game.lock = false;
+  if (isAuto) tryResumeAutoCollect();
+  return;
+}
+const endRect = tempSlots[endSlotIndex].getBoundingClientRect();
 				const tempSlotStyle = window.getComputedStyle(
 					tempSlots[endSlotIndex]
 				);
@@ -3246,10 +3243,7 @@
 						id: cardData.id,
 						matched: false,
 					});
-					game.temp.sort(
-						(a, b) => a.icon.localeCompare(b.icon) || a.id - b.id
-					);
-
+game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id); 
 					renderTemp();
 					renderBoard();
 					updateAutoCollectStatus(); // 更新按钮状态
