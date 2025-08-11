@@ -3243,7 +3243,6 @@ const endRect = tempSlots[endSlotIndex].getBoundingClientRect();
 						id: cardData.id,
 						matched: false,
 					});
-game.temp.sort((a, b) => a.icon.localeCompare(b.icon) || a.id - b.id); 
 					renderTemp();
 					renderBoard();
 					updateAutoCollectStatus(); // 更新按钮状态
