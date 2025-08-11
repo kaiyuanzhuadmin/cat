@@ -181,14 +181,29 @@
       }
     }
 
-.card-floating-in {
-  animation: fade-in-scale-glow 0.6s ease-out forwards;
-}
-@keyframes fade-in-scale-glow {
-  0% { transform: scale(0.8); opacity: 0; box-shadow: none; }
-  50% { transform: scale(1.05); opacity: 1; box-shadow: 0 0 12px rgba(200,160,230,0.2); }
-  100% { transform: scale(1); opacity: 1; box-shadow: 0 0 8px rgba(160,130,190,0.1); }
-}
+    .card-floating-in {
+      animation: fade-in-scale-glow 0.6s ease-out forwards;
+    }
+
+    @keyframes fade-in-scale-glow {
+      0% {
+        transform: scale(0.8);
+        opacity: 0;
+        box-shadow: none;
+      }
+
+      50% {
+        transform: scale(1.05);
+        opacity: 1;
+        box-shadow: 0 0 12px rgba(200, 160, 230, 0.2);
+      }
+
+      100% {
+        transform: scale(1);
+        opacity: 1;
+        box-shadow: 0 0 8px rgba(160, 130, 190, 0.1);
+      }
+    }
 
     @keyframes lid-open {
       0% {
@@ -1848,12 +1863,12 @@
 
     :root {
       /*
-          以 iPhone 15 Pro Max 的屏幕宽度 (430px) 为基准进行字体缩放。
-          我们将基准字号 --fz-s 在 430px 宽度下设置为 18px。
-          计算公式为: (基准字号 / 基准宽度) * 100vw
-          即: (18 / 430) * 100vw
-          这会生成一个与屏幕宽度成正比的动态基准字号。
-        */
+                以 iPhone 15 Pro Max 的屏幕宽度 (430px) 为基准进行字体缩放。
+                我们将基准字号 --fz-s 在 430px 宽度下设置为 18px。
+                计算公式为: (基准字号 / 基准宽度) * 100vw
+                即: (18 / 430) * 100vw
+                这会生成一个与屏幕宽度成正比的动态基准字号。
+              */
       --font-base-dynamic: calc(18 / 430 * 100vw);
 
       /* 语义层级（现在所有字体大小都基于动态基准值进行缩放） */
@@ -1881,11 +1896,11 @@
     }
 
     /*
-        针对 iPhone 11 (414px) 及类似尺寸屏幕的优化。
-        在这些设备上，头部信息栏的字体可能会过大导致换行。
-        我们通过这个媒体查询，将该区域的字体从 --fz-m 降为 --fz-s，
-        使其与“分数”和“目标”的字体大小保持一致，从而解决拥挤和换行问题。
-      */
+              针对 iPhone 11 (414px) 及类似尺寸屏幕的优化。
+              在这些设备上，头部信息栏的字体可能会过大导致换行。
+              我们通过这个媒体查询，将该区域的字体从 --fz-m 降为 --fz-s，
+              使其与“分数”和“目标”的字体大小保持一致，从而解决拥挤和换行问题。
+            */
     @media (max-width: 420px) {
       #progress-info {
         font-size: var(--fz-s);
@@ -1899,23 +1914,23 @@
     }
 
     /*
-                      Theme: Dali Rose (Enhanced)
-                      Author: Gemini
-                      Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
-                                   This version incorporates advanced CSS techniques inferred from a
-                                   renaissance-themed stylesheet, adding depth, texture, and more
-                                   dynamic interactions while preserving the original color story.
-                    */
+                            Theme: Dali Rose (Enhanced)
+                            Author: Gemini
+                            Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
+                                         This version incorporates advanced CSS techniques inferred from a
+                                         renaissance-themed stylesheet, adding depth, texture, and more
+                                         dynamic interactions while preserving the original color story.
+                          */
 
     /*
-                      Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
-                                   This version incorporates advanced CSS techniques inferred from a
-                                   renaissance-themed stylesheet, adding depth, texture, and more
-                                   dynamic interactions while preserving the original color story.
-                      描述：一个增强版主题，灵感来源于萨尔瓦多·达利的《沉思的玫瑰》。
-                            此版本借鉴了文艺复兴风格主题中的高级CSS技巧，在保留原有色彩故事的同时，
-                            增加了深度、纹理和更丰富的动态交互效果。
-                    */
+                            Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
+                                         This version incorporates advanced CSS techniques inferred from a
+                                         renaissance-themed stylesheet, adding depth, texture, and more
+                                         dynamic interactions while preserving the original color story.
+                            描述：一个增强版主题，灵感来源于萨尔瓦多·达利的《沉思的玫瑰》。
+                                  此版本借鉴了文艺复兴风格主题中的高级CSS技巧，在保留原有色彩故事的同时，
+                                  增加了深度、纹理和更丰富的动态交互效果。
+                          */
     .theme-dali-rose {
       /* -- Color & Style Variables -- */
       /* -- 颜色与样式变量 -- */
@@ -2002,9 +2017,9 @@
     /* 达利《沉思的玫瑰》主题 - 卡片盖子 */
     .theme-dali-rose #card-stack-lid {
       /*
-                        更新为更淡雅的天空蓝色调，下半部分平滑渐变为白色。
-                        径向渐变模拟玫瑰的柔和光芒，线性渐变则创造出清澈的天空效果。
-                      */
+                              更新为更淡雅的天空蓝色调，下半部分平滑渐变为白色。
+                              径向渐变模拟玫瑰的柔和光芒，线性渐变则创造出清澈的天空效果。
+                            */
       background: radial-gradient(circle at 50% 80%, rgba(255, 204, 219, 0.6) 0%, rgba(255, 204, 219, 0) 50%),
         linear-gradient(180deg, #e0f0ff 0%, #ffffff 100%);
 
@@ -2314,9 +2329,9 @@
     /* 文艺复兴主题 - 卡片盖子 */
     .theme-renaissance #card-stack-lid {
       /*
-                        更新为淡紫色到白色的渐变背景。
-                        径向渐变模拟柔和的光晕，线性渐变则创造出从淡紫色到白色的平滑过渡。
-                      */
+                              更新为淡紫色到白色的渐变背景。
+                              径向渐变模拟柔和的光晕，线性渐变则创造出从淡紫色到白色的平滑过渡。
+                            */
       background: radial-gradient(circle at 50% 80%, rgba(224, 204, 255, 0.6) 0%, rgba(224, 204, 255, 0) 50%),
         linear-gradient(180deg, #e6e6fa 0%, #ffffff 100%);
 
@@ -2347,7 +2362,7 @@
 
     /* 卡片整体：柔雾渐层 + 抽象纸感纹理 */
     .theme-renaissance .card {
-	  color: var(--text-primary) !important;
+      color: var(--text-primary) !important;
       box-shadow: var(--card-shadow);
       border-radius: 10px;
       border: none;
@@ -2367,7 +2382,7 @@
 
     .theme-renaissance .temp-card,
     .theme-renaissance .flying-card {
-	  color: var(--text-primary) !important;
+      color: var(--text-primary) !important;
       background: var(--card-bg);
       box-shadow: var(--card-shadow);
       border: none;
@@ -3208,286 +3223,328 @@
     // =================================================================================
     // START OF MODIFICATION: Refined heart shape layout logic for centering and consistency.
     // =================================================================================
-//更优雅、可扩展的心形布局
-// 直接替换你现有的 repositionCardsAndLayout(cardsToPlace, levelConfig)
-function repositionCardsAndLayout(cardsToPlace, levelConfig) {
-  // ——— 美学/密度/遮挡（亲密距离版） ———
-  const HEART_SETTINGS = {
-    RING_COUNT_MIN: 4,
-    RING_COUNT_MAX: 8,
-    RING_INNER_SCALE: 0.52,   // 内层更收束
-    EDGE_SPACING_FACTOR: 0.88, // 外轮廓更紧致（环上相邻卡片更近）
-    GRID_SPACING_X: 0.86,     // 内区六角网格更密
-    GRID_SPACING_Y: 0.80,
-    JITTER_PX: 0.06,          // 轻微抖动，保留手工质感
-    MIN_DIST_FACTOR: 0.88,    // 蓝噪点最小距离（相对卡片宽）
-    OVERLAP_TASTE: 0.12       // 轻度遮挡倾向，制造温柔层次
-  };
+    //更优雅、可扩展的心形布局
+    // 直接替换你现有的 repositionCardsAndLayout(cardsToPlace, levelConfig)
+    function repositionCardsAndLayout(cardsToPlace, levelConfig) {
+      // ——— 美学/密度/遮挡（亲密距离版） ———
+      const HEART_SETTINGS = {
+        RING_COUNT_MIN: 4,
+        RING_COUNT_MAX: 8,
+        RING_INNER_SCALE: 0.52, // 内层更收束
+        EDGE_SPACING_FACTOR: 0.88, // 外轮廓更紧致（环上相邻卡片更近）
+        GRID_SPACING_X: 0.86, // 内区六角网格更密
+        GRID_SPACING_Y: 0.8,
+        JITTER_PX: 0.06, // 轻微抖动，保留手工质感
+        MIN_DIST_FACTOR: 0.88, // 蓝噪点最小距离（相对卡片宽）
+        OVERLAP_TASTE: 0.12, // 轻度遮挡倾向，制造温柔层次
+      };
 
-  // 关卡心形整体缩放：L1 稍小，L2 正常
-  const currentLevel = levelConfig?.num ?? game?.level ?? 1;
-  const LEVEL_HEART_SCALE = {
-    1: 0.92, // 第一关“稍微小一点”
-    2: 1.00  // 第二关正常
-  };
-  const heartGlobalScale = LEVEL_HEART_SCALE[currentLevel] ?? 1.0;
+      // 关卡心形整体缩放：L1 稍小，L2 正常
+      const currentLevel = levelConfig?.num ?? game?.level ?? 1;
+      const LEVEL_HEART_SCALE = {
+        1: 0.92, // 第一关“稍微小一点”
+        2: 1.0, // 第二关正常
+      };
+      const heartGlobalScale = LEVEL_HEART_SCALE[currentLevel] ?? 1.0;
 
-  // 1) 场景与卡片尺寸
-  const areaW = cardStackArea.offsetWidth;
-  const areaH = cardStackArea.offsetHeight;
-  calculateResponsiveSizes();
-  const cardW = game.cardDimensions.width;
-  const cardH = game.cardDimensions.height;
+      // 1) 场景与卡片尺寸
+      const areaW = cardStackArea.offsetWidth;
+      const areaH = cardStackArea.offsetHeight;
+      calculateResponsiveSizes();
+      const cardW = game.cardDimensions.width;
+      const cardH = game.cardDimensions.height;
 
-  // 2) 心形参数曲线
-  function heartXY(t) {
-    const x = 16 * Math.pow(Math.sin(t), 3);
-    const y = -(
-      13 * Math.cos(t) -
-      5 * Math.cos(2 * t) -
-      2 * Math.cos(3 * t) -
-      Math.cos(4 * t)
-    );
-    return { x, y };
-  }
-
-  // 3) 采样基础心形以获边界
-  function sampleBaseHeart(res = 720) {
-    const pts = [];
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    for (let i = 0; i <= res; i++) {
-      const t = (i / res) * Math.PI * 2;
-      const p = heartXY(t);
-      pts.push(p);
-      if (p.x < minX) minX = p.x;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.y > maxY) maxY = p.y;
-    }
-    return { pts, minX, maxX, minY, maxY };
-  }
-
-  const base = sampleBaseHeart(720);
-  const baseW = base.maxX - base.minX;
-  const baseH = base.maxY - base.minY;
-
-  // 给心形与容器留边距，避免贴边
-  const marginX = cardW * 1.4;
-  const marginY = cardH * 1.6;
-
-  // 基础缩放，再乘以关卡缩放
-  const scalePx =
-    Math.min((areaW - marginX) / baseW, (areaH - marginY) / baseH) *
-    heartGlobalScale;
-
-  const centerX = areaW / 2;
-  const centerY = areaH / 2;
-
-  // 将单位心形映射到容器像素
-  function mapToPx(p, s = 1) {
-    return {
-      x: centerX + p.x * scalePx * s,
-      y: centerY + p.y * scalePx * s
-    };
-  }
-
-  // 4) 心形曲线等弧长取点（相位支持）
-  function evenlySpacedOnHeart(scaleFactor, spacingPx, phase = 0) {
-    const dense = [];
-    const step = 0.005;
-    for (let t = 0; t < Math.PI * 2 + step; t += step) {
-      const tt = t + phase;
-      const p = heartXY(tt);
-      dense.push(mapToPx(p, scaleFactor));
-    }
-    const pts = [];
-    let acc = 0;
-    for (let i = 1; i < dense.length; i++) {
-      const a = dense[i - 1], b = dense[i];
-      const d = Math.hypot(b.x - a.x, b.y - a.y);
-      acc += d;
-      if (acc >= spacingPx) {
-        pts.push(b);
-        acc = 0;
+      // 2) 心形参数曲线
+      function heartXY(t) {
+        const x = 16 * Math.pow(Math.sin(t), 3);
+        const y = -(
+          13 * Math.cos(t) -
+          5 * Math.cos(2 * t) -
+          2 * Math.cos(3 * t) -
+          Math.cos(4 * t)
+        );
+        return { x, y };
       }
-    }
-    return pts;
-  }
 
-  // 5) 点在多边形内部（射线法），用于内区填充
-  const outlinePx = base.pts.map(p => mapToPx(p, 1));
-  function pointInPolygon(px, py, poly) {
-    let inside = false;
-    for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
-      const xi = poly[i].x, yi = poly[i].y;
-      const xj = poly[j].x, yj = poly[j].y;
-      const intersect =
-        (yi > py) !== (yj > py) &&
-        px < ((xj - xi) * (py - yi)) / ((yj - yi) + 0.00001) + xi;
-      if (intersect) inside = !inside;
-    }
-    return inside;
-  }
-
-  // 6) 六角网格内填充（用于心形内部）
-  function hexGridFill(scaleFactor, spacingX, spacingY) {
-    const pts = [];
-    const innerOutline = base.pts.map(p => mapToPx(p, scaleFactor));
-    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
-    innerOutline.forEach(p => {
-      if (p.x < minX) minX = p.x;
-      if (p.x > maxX) maxX = p.x;
-      if (p.y < minY) minY = p.y;
-      if (p.y > maxY) maxY = p.y;
-    });
-    let row = 0;
-    for (let y = minY; y <= maxY; y += spacingY) {
-      const offset = (row % 2) ? spacingX / 2 : 0;
-      for (let x = minX - spacingX; x <= maxX + spacingX; x += spacingX) {
-        const px = x + offset, py = y;
-        if (pointInPolygon(px, py, innerOutline)) pts.push({ x: px, y: py });
+      // 3) 采样基础心形以获边界
+      function sampleBaseHeart(res = 720) {
+        const pts = [];
+        let minX = Infinity,
+          maxX = -Infinity,
+          minY = Infinity,
+          maxY = -Infinity;
+        for (let i = 0; i <= res; i++) {
+          const t = (i / res) * Math.PI * 2;
+          const p = heartXY(t);
+          pts.push(p);
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        }
+        return { pts, minX, maxX, minY, maxY };
       }
-      row++;
-    }
-    return pts;
-  }
 
-  // 7) 自适应环数与容量
-  const N = cardsToPlace.length;
-  const targetEdgeSpacing = cardW * HEART_SETTINGS.EDGE_SPACING_FACTOR;
+      const base = sampleBaseHeart(720);
+      const baseW = base.maxX - base.minX;
+      const baseH = base.maxY - base.minY;
 
-  const outerDense = evenlySpacedOnHeart(1.0, targetEdgeSpacing);
-  const outerCapacity = outerDense.length;
+      // 给心形与容器留边距，避免贴边
+      const marginX = cardW * 1.4;
+      const marginY = cardH * 1.6;
 
-  const ringCountRaw = Math.round(
-    HEART_SETTINGS.RING_COUNT_MIN +
-      Math.min(1, Math.max(0, (N - outerCapacity) / (outerCapacity * 2))) *
-      (HEART_SETTINGS.RING_COUNT_MAX - HEART_SETTINGS.RING_COUNT_MIN)
-  );
-  const ringCount = Math.max(
-    HEART_SETTINGS.RING_COUNT_MIN,
-    Math.min(HEART_SETTINGS.RING_COUNT_MAX, ringCountRaw)
-  );
+      // 基础缩放，再乘以关卡缩放
+      const scalePx =
+        Math.min((areaW - marginX) / baseW, (areaH - marginY) / baseH) *
+        heartGlobalScale;
 
-  const innerScale = HEART_SETTINGS.RING_INNER_SCALE;
-  const ringShrink = ringCount > 1 ? (1 - innerScale) / (ringCount - 1) : 0;
+      const centerX = areaW / 2;
+      const centerY = areaH / 2;
 
-  // 8) 多环外轮廓（相位错开，产生柔和遮挡）
-  const rings = [];
-  for (let k = 0; k < ringCount; k++) {
-    const extra = HEART_SETTINGS.OVERLAP_TASTE * (k / Math.max(1, ringCount - 1));
-    const s = Math.max(0.35, 1 - k * ringShrink - extra);
-    const phase = (k * Math.PI) / (2.5 + Math.random() * 0.5);
-    const pts = evenlySpacedOnHeart(s, targetEdgeSpacing, phase);
-    rings.push({ scale: s, points: pts, ringIndex: k });
-  }
+      // 将单位心形映射到容器像素
+      function mapToPx(p, s = 1) {
+        return {
+          x: centerX + p.x * scalePx * s,
+          y: centerY + p.y * scalePx * s,
+        };
+      }
 
-  // 9) 内区填充
-  const gridSpacingX = cardW * HEART_SETTINGS.GRID_SPACING_X;
-  const gridSpacingY = cardH * HEART_SETTINGS.GRID_SPACING_Y;
-  const innerFillScale = Math.max(innerScale * 0.92, 0.45);
-  let innerPts = hexGridFill(innerFillScale, gridSpacingX, gridSpacingY);
+      // 4) 心形曲线等弧长取点（相位支持）
+      function evenlySpacedOnHeart(scaleFactor, spacingPx, phase = 0) {
+        const dense = [];
+        const step = 0.005;
+        for (let t = 0; t < Math.PI * 2 + step; t += step) {
+          const tt = t + phase;
+          const p = heartXY(tt);
+          dense.push(mapToPx(p, scaleFactor));
+        }
+        const pts = [];
+        let acc = 0;
+        for (let i = 1; i < dense.length; i++) {
+          const a = dense[i - 1],
+            b = dense[i];
+          const d = Math.hypot(b.x - a.x, b.y - a.y);
+          acc += d;
+          if (acc >= spacingPx) {
+            pts.push(b);
+            acc = 0;
+          }
+        }
+        return pts;
+      }
 
-  // 10) 汇总候选并蓝噪点筛选（保持最小距离，避免重叠）
-  const minDist = cardW * HEART_SETTINGS.MIN_DIST_FACTOR;
-  const jitterPx = cardW * HEART_SETTINGS.JITTER_PX;
+      // 5) 点在多边形内部（射线法），用于内区填充
+      const outlinePx = base.pts.map((p) => mapToPx(p, 1));
+      function pointInPolygon(px, py, poly) {
+        let inside = false;
+        for (let i = 0, j = poly.length - 1; i < poly.length; j = i++) {
+          const xi = poly[i].x,
+            yi = poly[i].y;
+          const xj = poly[j].x,
+            yj = poly[j].y;
+          const intersect =
+            yi > py !== yj > py &&
+            px < ((xj - xi) * (py - yi)) / (yj - yi + 0.00001) + xi;
+          if (intersect) inside = !inside;
+        }
+        return inside;
+      }
 
-  const candidates = [];
-  rings.forEach(r => {
-    r.points.forEach(p => candidates.push({ ...p, ringIndex: r.ringIndex, kind: 'ring' }));
-  });
-  innerPts.forEach(p => candidates.push({ ...p, ringIndex: ringCount, kind: 'inner' }));
+      // 6) 六角网格内填充（用于心形内部）
+      function hexGridFill(scaleFactor, spacingX, spacingY) {
+        const pts = [];
+        const innerOutline = base.pts.map((p) => mapToPx(p, scaleFactor));
+        let minX = Infinity,
+          maxX = -Infinity,
+          minY = Infinity,
+          maxY = -Infinity;
+        innerOutline.forEach((p) => {
+          if (p.x < minX) minX = p.x;
+          if (p.x > maxX) maxX = p.x;
+          if (p.y < minY) minY = p.y;
+          if (p.y > maxY) maxY = p.y;
+        });
+        let row = 0;
+        for (let y = minY; y <= maxY; y += spacingY) {
+          const offset = row % 2 ? spacingX / 2 : 0;
+          for (let x = minX - spacingX; x <= maxX + spacingX; x += spacingX) {
+            const px = x + offset,
+              py = y;
+            if (pointInPolygon(px, py, innerOutline))
+              pts.push({ x: px, y: py });
+          }
+          row++;
+        }
+        return pts;
+      }
 
-  // 容量兜底：不够则追加更内小环与更密网格
-  function ensureCapacity(targetCount) {
-    let guard = 0;
-    while (candidates.length < targetCount && guard < 6) {
-      guard++;
-      const addRingScale = Math.max((innerFillScale - 0.06), 0.40);
-      const added = evenlySpacedOnHeart(addRingScale, targetEdgeSpacing * 0.95, Math.random() * Math.PI);
-      added.forEach(p => candidates.push({ ...p, ringIndex: ringCount + guard, kind: 'ring+' }));
+      // 7) 自适应环数与容量
+      const N = cardsToPlace.length;
+      const targetEdgeSpacing = cardW * HEART_SETTINGS.EDGE_SPACING_FACTOR;
 
-      const gx = gridSpacingX * 0.94;
-      const gy = gridSpacingY * 0.94;
-      hexGridFill(innerFillScale * 0.98, gx, gy).forEach(p => {
-        candidates.push({ ...p, ringIndex: ringCount + guard, kind: 'inner+' });
+      const outerDense = evenlySpacedOnHeart(1.0, targetEdgeSpacing);
+      const outerCapacity = outerDense.length;
+
+      const ringCountRaw = Math.round(
+        HEART_SETTINGS.RING_COUNT_MIN +
+        Math.min(
+          1,
+          Math.max(0, (N - outerCapacity) / (outerCapacity * 2))
+        ) *
+        (HEART_SETTINGS.RING_COUNT_MAX - HEART_SETTINGS.RING_COUNT_MIN)
+      );
+      const ringCount = Math.max(
+        HEART_SETTINGS.RING_COUNT_MIN,
+        Math.min(HEART_SETTINGS.RING_COUNT_MAX, ringCountRaw)
+      );
+
+      const innerScale = HEART_SETTINGS.RING_INNER_SCALE;
+      const ringShrink =
+        ringCount > 1 ? (1 - innerScale) / (ringCount - 1) : 0;
+
+      // 8) 多环外轮廓（相位错开，产生柔和遮挡）
+      const rings = [];
+      for (let k = 0; k < ringCount; k++) {
+        const extra =
+          HEART_SETTINGS.OVERLAP_TASTE * (k / Math.max(1, ringCount - 1));
+        const s = Math.max(0.35, 1 - k * ringShrink - extra);
+        const phase = (k * Math.PI) / (2.5 + Math.random() * 0.5);
+        const pts = evenlySpacedOnHeart(s, targetEdgeSpacing, phase);
+        rings.push({ scale: s, points: pts, ringIndex: k });
+      }
+
+      // 9) 内区填充
+      const gridSpacingX = cardW * HEART_SETTINGS.GRID_SPACING_X;
+      const gridSpacingY = cardH * HEART_SETTINGS.GRID_SPACING_Y;
+      const innerFillScale = Math.max(innerScale * 0.92, 0.45);
+      let innerPts = hexGridFill(innerFillScale, gridSpacingX, gridSpacingY);
+
+      // 10) 汇总候选并蓝噪点筛选（保持最小距离，避免重叠）
+      const minDist = cardW * HEART_SETTINGS.MIN_DIST_FACTOR;
+      const jitterPx = cardW * HEART_SETTINGS.JITTER_PX;
+
+      const candidates = [];
+      rings.forEach((r) => {
+        r.points.forEach((p) =>
+          candidates.push({ ...p, ringIndex: r.ringIndex, kind: "ring" })
+        );
       });
-    }
-  }
-  ensureCapacity(N * 1.2);
+      innerPts.forEach((p) =>
+        candidates.push({ ...p, ringIndex: ringCount, kind: "inner" })
+      );
 
-  const placed = [];
-  const shuffledCandidates = candidates.slice().sort(() => Math.random() - 0.5);
+      // 容量兜底：不够则追加更内小环与更密网格
+      function ensureCapacity(targetCount) {
+        let guard = 0;
+        while (candidates.length < targetCount && guard < 6) {
+          guard++;
+          const addRingScale = Math.max(innerFillScale - 0.06, 0.4);
+          const added = evenlySpacedOnHeart(
+            addRingScale,
+            targetEdgeSpacing * 0.95,
+            Math.random() * Math.PI
+          );
+          added.forEach((p) =>
+            candidates.push({
+              ...p,
+              ringIndex: ringCount + guard,
+              kind: "ring+",
+            })
+          );
 
-  for (const c of shuffledCandidates) {
-    if (placed.length >= N) break;
-    let ok = true;
-    for (let i = 0; i < placed.length; i++) {
-      const p = placed[i];
-      if (Math.hypot(p.x - c.x, p.y - c.y) < minDist) { ok = false; break; }
-    }
-    if (ok) {
-      const jx = (Math.random() * 2 - 1) * jitterPx;
-      const jy = (Math.random() * 2 - 1) * jitterPx;
-      placed.push({ x: c.x + jx, y: c.y + jy, ringIndex: c.ringIndex });
-    }
-  }
-
-  // 放宽距离兜底
-  let relaxStep = 0;
-  while (placed.length < N && relaxStep < 3) {
-    relaxStep++;
-    for (const c of shuffledCandidates) {
-      if (placed.length >= N) break;
-      let ok = true;
-      for (let i = 0; i < placed.length; i++) {
-        const p = placed[i];
-        if (Math.hypot(p.x - c.x, p.y - c.y) < minDist * (1 - 0.12 * relaxStep)) { ok = false; break; }
+          const gx = gridSpacingX * 0.94;
+          const gy = gridSpacingY * 0.94;
+          hexGridFill(innerFillScale * 0.98, gx, gy).forEach((p) => {
+            candidates.push({
+              ...p,
+              ringIndex: ringCount + guard,
+              kind: "inner+",
+            });
+          });
+        }
       }
-      if (ok) placed.push({ x: c.x, y: c.y, ringIndex: c.ringIndex });
+      ensureCapacity(N * 1.2);
+
+      const placed = [];
+      const shuffledCandidates = candidates
+        .slice()
+        .sort(() => Math.random() - 0.5);
+
+      for (const c of shuffledCandidates) {
+        if (placed.length >= N) break;
+        let ok = true;
+        for (let i = 0; i < placed.length; i++) {
+          const p = placed[i];
+          if (Math.hypot(p.x - c.x, p.y - c.y) < minDist) {
+            ok = false;
+            break;
+          }
+        }
+        if (ok) {
+          const jx = (Math.random() * 2 - 1) * jitterPx;
+          const jy = (Math.random() * 2 - 1) * jitterPx;
+          placed.push({ x: c.x + jx, y: c.y + jy, ringIndex: c.ringIndex });
+        }
+      }
+
+      // 放宽距离兜底
+      let relaxStep = 0;
+      while (placed.length < N && relaxStep < 3) {
+        relaxStep++;
+        for (const c of shuffledCandidates) {
+          if (placed.length >= N) break;
+          let ok = true;
+          for (let i = 0; i < placed.length; i++) {
+            const p = placed[i];
+            if (
+              Math.hypot(p.x - c.x, p.y - c.y) <
+              minDist * (1 - 0.12 * relaxStep)
+            ) {
+              ok = false;
+              break;
+            }
+          }
+          if (ok) placed.push({ x: c.x, y: c.y, ringIndex: c.ringIndex });
+        }
+      }
+      // 最后兜底
+      while (placed.length < N) {
+        const idx = Math.floor(Math.random() * shuffledCandidates.length);
+        const c = shuffledCandidates[idx];
+        placed.push({ x: c.x, y: c.y, ringIndex: c.ringIndex });
+      }
+
+      // 11) 分配给卡片并输出
+      const cards = [...cardsToPlace];
+      shuffle(cards); // 使用你已有的 shuffle
+
+      // z顺序：按环层、再按 y（下方略压上方），stack 归一到 0..3
+      placed.sort((a, b) => a.ringIndex - b.ringIndex || a.y - b.y);
+      let zCounter = 0;
+      const out = [];
+
+      for (let i = 0; i < cards.length; i++) {
+        const c = cards[i];
+        const p = placed[i];
+        // 将 ringIndex 线性映射到 0..3，兼容你现有 stack 逻辑
+        const stackNorm = Math.min(
+          3,
+          Math.max(
+            0,
+            Math.floor((p.ringIndex / Math.max(1, ringCount - 1)) * 3)
+          )
+        );
+        out.push({
+          ...c,
+          x: Math.round(p.x - cardW / 2),
+          y: Math.round(p.y - cardH / 2),
+          z: zCounter++,
+          stack: stackNorm,
+        });
+      }
+
+      return out;
     }
-  }
-  // 最后兜底
-  while (placed.length < N) {
-    const idx = Math.floor(Math.random() * shuffledCandidates.length);
-    const c = shuffledCandidates[idx];
-    placed.push({ x: c.x, y: c.y, ringIndex: c.ringIndex });
-  }
-
-  // 11) 分配给卡片并输出
-  const cards = [...cardsToPlace];
-  shuffle(cards); // 使用你已有的 shuffle
-
-  // z顺序：按环层、再按 y（下方略压上方），stack 归一到 0..3
-  placed.sort((a, b) => (a.ringIndex - b.ringIndex) || (a.y - b.y));
-  let zCounter = 0;
-  const out = [];
-
-  for (let i = 0; i < cards.length; i++) {
-    const c = cards[i];
-    const p = placed[i];
-    // 将 ringIndex 线性映射到 0..3，兼容你现有 stack 逻辑
-    const stackNorm = Math.min(
-      3,
-      Math.max(
-        0,
-        Math.floor(
-          (p.ringIndex / Math.max(1, ringCount - 1)) * 3
-        )
-      )
-    );
-    out.push({
-      ...c,
-      x: Math.round(p.x - cardW / 2),
-      y: Math.round(p.y - cardH / 2),
-      z: zCounter++,
-      stack: stackNorm
-    });
-  }
-
-  return out;
-}
-
 
     function genLevel(levelIdx) {
       const lv = LEVELS[levelIdx - 1];
@@ -5055,14 +5112,14 @@ function repositionCardsAndLayout(cardsToPlace, levelConfig) {
           if (game.bgmOn) {
             playBgm(true);
           }
-          
+
           // 恢复 nap 状态（如果适用）
           if (game && game.board) {
             game.board.forEach((card) => {
               card.isNapping = false;
             });
           }
-          
+
           // 重新渲染游戏，确保 nap 状态的视觉效果被移除
           renderAll();
         }
