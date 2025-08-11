@@ -620,7 +620,7 @@
     }
 
     #progress-info {
-      font-size: var(--fz-m);
+      font-size: 1.55rem;
       font-weight: bold;
       display: flex;
       gap: 15px;
@@ -632,8 +632,6 @@
     .target-display {
       color: var(--text-primary);
       text-shadow: 0.5px 0.5px 0 rgba(255, 255, 255, 0.7);
-      white-space: nowrap;
-      letter-spacing: var(--ls-tight);
     }
 
     #music-toggle {
@@ -652,7 +650,7 @@
 
     .score-display,
     .target-display {
-      font-size: var(--fz-s);
+      font-size: 1.2rem;
       font-weight: bold;
     }
 
@@ -1135,7 +1133,7 @@
       border: 2px solid #b8860b;
       border-radius: 10px;
       border-color: var(--btn-border);
-      font-size: var(--fz-s);
+      font-size: 1.05rem;
       color: var(--text-accent);
       font-weight: bold;
       cursor: pointer;
@@ -1201,7 +1199,7 @@
 
     #code-bar button {
       padding: 7px 12px;
-      font-size: var(--fz-s);
+      font-size: 1.05rem;
       background: #e6f6d3;
       border: 2px solid #a0c388;
       border-radius: 9px;
@@ -1221,11 +1219,11 @@
     #message-bar {
       margin: 15px auto 0 auto;
       text-align: center;
-      font-size: var(--fz-s);
+      font-size: 1.1rem;
       color: #c0392b;
       min-height: 28px;
       font-weight: bold;
-      letter-spacing: var(--ls-tight);
+      letter-spacing: 1.2px;
     }
 
     #event-overlay {
@@ -1338,8 +1336,7 @@
     }
 
     #start-screen h1 {
-      font-size: clamp(28px, 7.5vw, 56px);
-      line-height: 1.1;
+      font-size: clamp(3rem, 12vw, 5rem);
       margin: 0 0 25px 0;
       letter-spacing: 3px;
       text-shadow: 2px 2px 0 #f7e9d7, 4px 4px 0 #b8860b;
@@ -1406,7 +1403,7 @@
 
     .loading-footer {
       color: #795548;
-      font-size: var(--fz-xs);
+      font-size: 0.85rem;
       position: absolute;
       bottom: 30px;
       left: 0;
@@ -1548,7 +1545,7 @@
       margin: 20px auto 20px auto;
       width: 100%;
       text-align: center;
-      font-size: var(--fz-s);
+      font-size: 1rem;
       color: #8B4513;
       letter-spacing: 1.5px;
       text-shadow: 0.5px 0.5px 0 rgba(255, 255, 255, 0.5);
@@ -1617,10 +1614,9 @@
 
     #level-finish-text {
       color: #3e2723;
-      font-size: var(--fz-l);
-      line-height: 1.2;
+      font-size: 1.2em;
       text-align: center;
-      margin-top: 30px;
+      margin-top: 20px;
       margin-bottom: 0px;
     }
 
@@ -1671,7 +1667,7 @@
     }
 
     .loading-title {
-      font-size: clamp(22px, 6vw, 40px);
+      font-size: 2.8rem;
       margin: 0 0 40px 0;
       color: #3e2723;
       letter-spacing: 3px;
@@ -1828,7 +1824,7 @@
 
       #level-finish,
       #game-over {
-        font-size: var(--fz-l);
+        font-size: 1.2rem;
         padding: 20px;
         box-sizing: border-box;
       }
@@ -1845,50 +1841,7 @@
       }
     }
 
-    @media (max-width: 400px) {
-      :root {
-        --font-max: 18px;
-        /* 原 18px -> 16px */
-        --font-vw: 2.8vw;
-        /* 让小屏更依赖视口缩放 */
-      }
-
-      /* 如果 #progress-info 区域仍拥挤，进一步细化 */
-      #progress-info {
-        font-size: var(--fz-s);
-      }
-    }
-
-    @media (orientation: landscape) {
-      #start-screen h1 {
-        font-size: clamp(38px, 6.5vw, 60px);
-      }
-
-      #level-finish-text {
-        font-size: calc(var(--fz-l) * 1.35);
-      }
-    }
-
     :root {
-      /* 基础字号（可随主题微调） */
-      --font-min: 17px;
-      /* 极小屏下限 */
-      --font-vw: 2.2vw;
-      /* 跟随视口的增长项 */
-      --font-max: 28px;
-      /* 大屏上限 */
-
-      /* 语义层级（在基础上乘以比例） */
-      --fz-xs: calc(clamp(var(--font-min), var(--font-vw), var(--font-max)) * 0.85);
-      --fz-s: clamp(var(--font-min), var(--font-vw), var(--font-max));
-      --fz-m: calc(clamp(var(--font-min), var(--font-vw), var(--font-max)) * 1.15);
-      --fz-l: calc(clamp(var(--font-min), var(--font-vw), var(--font-max)) * 1.35);
-      --fz-xl: calc(clamp(var(--font-min), var(--font-vw), var(--font-max)) * 1.8);
-
-      /* 行高与字距 */
-      --lh-tight: 1.45;
-      --lh-normal: 2.35;
-      --ls-tight: 0.02em;
       /* 通用 */
       --bg-base: #f7f0e8;
       --panel-bg: rgba(240, 230, 210, 0.6);
@@ -1907,23 +1860,23 @@
     }
 
     /*
-                          Theme: Dali Rose (Enhanced)
-                          Author: Gemini
-                          Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
-                                       This version incorporates advanced CSS techniques inferred from a
-                                       renaissance-themed stylesheet, adding depth, texture, and more
-                                       dynamic interactions while preserving the original color story.
-                        */
+                    Theme: Dali Rose (Enhanced)
+                    Author: Gemini
+                    Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
+                                 This version incorporates advanced CSS techniques inferred from a
+                                 renaissance-themed stylesheet, adding depth, texture, and more
+                                 dynamic interactions while preserving the original color story.
+                  */
 
     /*
-                          Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
-                                       This version incorporates advanced CSS techniques inferred from a
-                                       renaissance-themed stylesheet, adding depth, texture, and more
-                                       dynamic interactions while preserving the original color story.
-                          描述：一个增强版主题，灵感来源于萨尔瓦多·达利的《沉思的玫瑰》。
-                                此版本借鉴了文艺复兴风格主题中的高级CSS技巧，在保留原有色彩故事的同时，
-                                增加了深度、纹理和更丰富的动态交互效果。
-                        */
+                    Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
+                                 This version incorporates advanced CSS techniques inferred from a
+                                 renaissance-themed stylesheet, adding depth, texture, and more
+                                 dynamic interactions while preserving the original color story.
+                    描述：一个增强版主题，灵感来源于萨尔瓦多·达利的《沉思的玫瑰》。
+                          此版本借鉴了文艺复兴风格主题中的高级CSS技巧，在保留原有色彩故事的同时，
+                          增加了深度、纹理和更丰富的动态交互效果。
+                  */
     .theme-dali-rose {
       /* -- Color & Style Variables -- */
       /* -- 颜色与样式变量 -- */
@@ -2010,9 +1963,9 @@
     /* 达利《沉思的玫瑰》主题 - 卡片盖子 */
     .theme-dali-rose #card-stack-lid {
       /*
-                            更新为更淡雅的天空蓝色调，下半部分平滑渐变为白色。
-                            径向渐变模拟玫瑰的柔和光芒，线性渐变则创造出清澈的天空效果。
-                          */
+                      更新为更淡雅的天空蓝色调，下半部分平滑渐变为白色。
+                      径向渐变模拟玫瑰的柔和光芒，线性渐变则创造出清澈的天空效果。
+                    */
       background: radial-gradient(circle at 50% 80%, rgba(255, 204, 219, 0.6) 0%, rgba(255, 204, 219, 0) 50%),
         linear-gradient(180deg, #e0f0ff 0%, #ffffff 100%);
 
@@ -2322,9 +2275,9 @@
     /* 文艺复兴主题 - 卡片盖子 */
     .theme-renaissance #card-stack-lid {
       /*
-                            更新为淡紫色到白色的渐变背景。
-                            径向渐变模拟柔和的光晕，线性渐变则创造出从淡紫色到白色的平滑过渡。
-                          */
+                      更新为淡紫色到白色的渐变背景。
+                      径向渐变模拟柔和的光晕，线性渐变则创造出从淡紫色到白色的平滑过渡。
+                    */
       background: radial-gradient(circle at 50% 80%, rgba(224, 204, 255, 0.6) 0%, rgba(224, 204, 255, 0) 50%),
         linear-gradient(180deg, #e6e6fa 0%, #ffffff 100%);
 
@@ -3722,7 +3675,7 @@
           if (game.level === 1) {
             showLevelFinish("恭喜恭喜！第一关通关！");
           } else {
-            showLevelFinish("<p> 所有关卡全部通关！<br> 🎉 你太棒啦！🎉</p>");
+            showLevelFinish("<p> <p>所有关卡全部通关！<br> 🎉 你太棒啦！🎉");
           }
           confirmYes.textContent = originalYesText;
           confirmNo.style.display = originalNoDisplay;
