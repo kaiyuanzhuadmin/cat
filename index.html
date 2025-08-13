@@ -73,6 +73,8 @@
         }
       }
 
+      #pause-screen { z-index: 2600 !important; }
+
       #risk-modal .modal-content {
         animation: risk-modal-in 0.3s ease-out;
         min-width: 280px;
@@ -2999,27 +3001,31 @@
 
       async function initAudio() {
         try {
-          // 如果 context 已关闭或不存在，则必须创建一个新的
+          // 1. 如果 context 已关闭或不存在，则必须创建一个新的
           if (!audioContext || audioContext.state === "closed") {
             console.log("AudioContext 已关闭或未创建，正在初始化一个新的。");
+            // @ts-ignore
             audioContext = new (window.AudioContext ||
               window.webkitAudioContext)();
             clickSoundBuffer = null; // 为新的 context 强制重新加载音频 buffer
             clickAudioFailed = false; // 重置失败标志
           }
 
-          // 如果 context 被挂起（例如，由于浏览器自动播放策略），尝试恢复它
+          // 2. 如果 context 被挂起（例如，由于浏览器自动播放策略或进入后台），尝试恢复它
+          // 这是解决问题的关键步骤
           if (audioContext.state === "suspended") {
             console.log("AudioContext 已挂起，尝试恢复。");
             await audioContext.resume();
           }
 
-          // 如果此 context 还没有加载过音频 buffer，并且之前没有失败过，则加载它
+          // 3. 如果此 context 还没有加载过音频 buffer，并且之前没有失败过，则加载它
           if (!clickSoundBuffer && !clickAudioFailed) {
+            console.log("正在加载音频文件: kaa.mp3");
             const response = await fetch("kaa.mp3");
             const arrayBuffer = await response.arrayBuffer();
             // 使用现在保证可用的 context 来解码音频数据
             clickSoundBuffer = await audioContext.decodeAudioData(arrayBuffer);
+            console.log("音频文件加载并解码成功。");
           }
         } catch (e) {
           console.error(
@@ -3027,7 +3033,11 @@
             e
           );
           clickAudioFailed = true;
-          audioContext = null; // 失败时置空，防止后续出错
+          // 失败时彻底清空，防止后续出错
+          if (audioContext && audioContext.state !== "closed") {
+            audioContext.close();
+          }
+          audioContext = null;
         }
       }
 
@@ -3087,12 +3097,11 @@
       }
 
       async function playClickSound() {
-        if (!game.bgmOn) return;
-
         // 关键改动：在播放任何声音之前，始终确保音频上下文是准备好的。
         // 这使得该功能具有自我修复能力。
         await initAudio();
 
+        // 如果 Web Audio API 失败，则使用标准的 <audio> 标签作为后备方案
         if (clickAudioFailed) {
           const clickAudio = new Audio("kaa.mp3");
           clickAudio
@@ -5172,13 +5181,18 @@
           console.log("此设备不支持摇一摇功能。");
         }
 
-        document.addEventListener("visibilitychange", () => {
+        document.addEventListener("visibilitychange", async () => {
           if (document.hidden) {
             pauseGame();
+          } else {
+            // 回到前台时，仅准备音频，保持暂停框可见，等待玩家点击“继续游戏”
+            try {
+              await initAudio();
+            } catch (e) {}
+            // 友好提示（非必须）
+            showMessage("已暂停：点击“继续游戏”恢复", "#3e5a2b");
           }
-          // 注意：游戏不会在返回标签页时自动恢复，必须由玩家点击按钮
         });
-
         const feedbackDiv = document.createElement("div");
         feedbackDiv.style.cssText =
           "color: red; font-size: 12px; margin-top: 5px;";
@@ -6061,7 +6075,8 @@
         }
       }
       function pauseGame() {
-        // 检查游戏是否处于可暂停的状态（例如，不在开始、结束或关卡完成界面）
+        console.log("游戏已暂停。浏览器可能会挂起音频。");
+        // 检查游戏是否处于可暂停的状态
         const startScreenVisible =
           document.getElementById("start-screen").style.display !== "none";
         const levelFinishVisible =
@@ -6086,14 +6101,18 @@
         stopAutoCollect();
         stopAutoCollectIdleWatcher();
 
-        // 显示暂停界面
+        // 显示暂停界面，并确保立即应用样式
         pauseScreen.style.display = "flex";
+        // 强制浏览器立即重绘，以确保暂停框在页面卸载前显示
+        // 这通常通过读取一个会触发回流的属性来实现
+        pauseScreen.offsetHeight;
       }
 
       /**
        * 恢复游戏，隐藏暂停界面并重启所有计时器。
        */
       async function resumeGame() {
+        console.log("正在恢复游戏...");
         if (!game.isPaused) return;
 
         game.isPaused = false;
@@ -6101,7 +6120,7 @@
 
         // 在用户交互后重新初始化音频，并等待其完成
         await initAudio();
-
+        console.log("音频系统已检查并准备就绪。");
         if (game.bgmOn) {
           playBgm(true);
         }
@@ -6115,3 +6134,4 @@
     </script>
   </body>
 </html>
+
