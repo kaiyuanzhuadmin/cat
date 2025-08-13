@@ -1863,12 +1863,12 @@
 
     :root {
       /*
-                  以 iPhone 15 Pro Max 的屏幕宽度 (430px) 为基准进行字体缩放。
-                  我们将基准字号 --fz-s 在 430px 宽度下设置为 18px。
-                  计算公式为: (基准字号 / 基准宽度) * 100vw
-                  即: (18 / 430) * 100vw
-                  这会生成一个与屏幕宽度成正比的动态基准字号。
-                */
+                    以 iPhone 15 Pro Max 的屏幕宽度 (430px) 为基准进行字体缩放。
+                    我们将基准字号 --fz-s 在 430px 宽度下设置为 18px。
+                    计算公式为: (基准字号 / 基准宽度) * 100vw
+                    即: (18 / 430) * 100vw
+                    这会生成一个与屏幕宽度成正比的动态基准字号。
+                  */
       --font-base-dynamic: calc(18 / 430 * 100vw);
 
       /* 语义层级（现在所有字体大小都基于动态基准值进行缩放） */
@@ -1896,11 +1896,11 @@
     }
 
     /*
-                针对 iPhone 11 (414px) 及类似尺寸屏幕的优化。
-                在这些设备上，头部信息栏的字体可能会过大导致换行。
-                我们通过这个媒体查询，将该区域的字体从 --fz-m 降为 --fz-s，
-                使其与“分数”和“目标”的字体大小保持一致，从而解决拥挤和换行问题。
-              */
+                  针对 iPhone 11 (414px) 及类似尺寸屏幕的优化。
+                  在这些设备上，头部信息栏的字体可能会过大导致换行。
+                  我们通过这个媒体查询，将该区域的字体从 --fz-m 降为 --fz-s，
+                  使其与“分数”和“目标”的字体大小保持一致，从而解决拥挤和换行问题。
+                */
     @media (max-width: 420px) {
       #progress-info {
         font-size: var(--fz-s);
@@ -1914,23 +1914,23 @@
     }
 
     /*
-                              Theme: Dali Rose (Enhanced)
-                              Author: Gemini
-                              Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
-                                           This version incorporates advanced CSS techniques inferred from a
-                                           renaissance-themed stylesheet, adding depth, texture, and more
-                                           dynamic interactions while preserving the original color story.
-                            */
+                                Theme: Dali Rose (Enhanced)
+                                Author: Gemini
+                                Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
+                                             This version incorporates advanced CSS techniques inferred from a
+                                             renaissance-themed stylesheet, adding depth, texture, and more
+                                             dynamic interactions while preserving the original color story.
+                              */
 
     /*
-                              Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
-                                           This version incorporates advanced CSS techniques inferred from a
-                                           renaissance-themed stylesheet, adding depth, texture, and more
-                                           dynamic interactions while preserving the original color story.
-                              描述：一个增强版主题，灵感来源于萨尔瓦多·达利的《沉思的玫瑰》。
-                                    此版本借鉴了文艺复兴风格主题中的高级CSS技巧，在保留原有色彩故事的同时，
-                                    增加了深度、纹理和更丰富的动态交互效果。
-                            */
+                                Description: An enhanced theme inspired by Salvador Dalí's "The Meditative Rose".
+                                             This version incorporates advanced CSS techniques inferred from a
+                                             renaissance-themed stylesheet, adding depth, texture, and more
+                                             dynamic interactions while preserving the original color story.
+                                描述：一个增强版主题，灵感来源于萨尔瓦多·达利的《沉思的玫瑰》。
+                                      此版本借鉴了文艺复兴风格主题中的高级CSS技巧，在保留原有色彩故事的同时，
+                                      增加了深度、纹理和更丰富的动态交互效果。
+                              */
     .theme-dali-rose {
       /* -- Color & Style Variables -- */
       /* -- 颜色与样式变量 -- */
@@ -2017,9 +2017,9 @@
     /* 达利《沉思的玫瑰》主题 - 卡片盖子 */
     .theme-dali-rose #card-stack-lid {
       /*
-                                更新为更淡雅的天空蓝色调，下半部分平滑渐变为白色。
-                                径向渐变模拟玫瑰的柔和光芒，线性渐变则创造出清澈的天空效果。
-                              */
+                                  更新为更淡雅的天空蓝色调，下半部分平滑渐变为白色。
+                                  径向渐变模拟玫瑰的柔和光芒，线性渐变则创造出清澈的天空效果。
+                                */
       background: radial-gradient(circle at 50% 80%, rgba(255, 204, 219, 0.6) 0%, rgba(255, 204, 219, 0) 50%),
         linear-gradient(180deg, #e0f0ff 0%, #ffffff 100%);
 
@@ -2329,9 +2329,9 @@
     /* 文艺复兴主题 - 卡片盖子 */
     .theme-renaissance #card-stack-lid {
       /*
-                                更新为淡紫色到白色的渐变背景。
-                                径向渐变模拟柔和的光晕，线性渐变则创造出从淡紫色到白色的平滑过渡。
-                              */
+                                  更新为淡紫色到白色的渐变背景。
+                                  径向渐变模拟柔和的光晕，线性渐变则创造出从淡紫色到白色的平滑过渡。
+                                */
       background: radial-gradient(circle at 50% 80%, rgba(224, 204, 255, 0.6) 0%, rgba(224, 204, 255, 0) 50%),
         linear-gradient(180deg, #e6e6fa 0%, #ffffff 100%);
 
@@ -5650,37 +5650,6 @@
       })();
       const spaceLeft = TEMP_LIMIT - currentTempCount;
 
-      // 辅助：无可三消时尝试自动洗牌；若无次数则提示输入兑换码
-      function attemptAutoShuffleOrPrompt() {
-        if (game.toolUses.shuffle > 0) {
-          game.toolUses.shuffle--;
-          updateToolButtons();
-          showMessage("无三消，自动洗牌一次", "#3e5a2b");
-
-          setTimeout(() => {
-            // --- 核心修改 ---
-            // 调用 shuffleStep 时，传入 true 来标记这是自动洗牌
-            shuffleStep(true);
-          }, 100);
-        } else {
-          if (!game.noShuffleCodePromptShown) {
-            game.noShuffleCodePromptShown = true;
-            showRiskModal(
-              "当前无可消除，且洗牌次数已用尽。<br>输入兑换码可获取洗牌次数。<br>如：Haogege，或者去问他。",
-              "info"
-            );
-            setTimeout(() => {
-              try {
-                codeInput && codeInput.focus();
-              } catch (e) { }
-            }, 80);
-          }
-          stopAutoCollect();
-          updateAutoCollectStatus();
-          return;
-        }
-      }
-
       // 智能可行性检查：是否存在“在容量限制内能完成的三消路径”
       const hasCapacityFeasibleTriple = (() => {
         const icons = new Set([
@@ -5811,10 +5780,9 @@
         return;
       }
 
-      // 🛑 无任何安全操作：再尝试洗牌或提示
+      // 无任何安全操作：再尝试洗牌或提示
       attemptAutoShuffleOrPrompt();
     }
-
     // 查找display-area优先三消（可用temp区卡片补足，返回需点击的board卡id数组）
     function findAnyTriple() {
       let tempCounts = {};
@@ -6014,6 +5982,34 @@
         setTimeout(() => {
           attemptAutoShuffleOrPrompt();
         }, 200);
+      }
+    }
+    function attemptAutoShuffleOrPrompt() {
+      if (game.toolUses.shuffle > 0) {
+        game.toolUses.shuffle--;
+        updateToolButtons();
+        showMessage("无三消，自动洗牌一次", "#3e5a2b");
+
+        setTimeout(() => {
+          // 调用 shuffleStep 时，传入 true 来标记这是自动洗牌
+          shuffleStep(true);
+        }, 100);
+      } else {
+        if (!game.noShuffleCodePromptShown) {
+          game.noShuffleCodePromptShown = true;
+          showRiskModal(
+            "当前无可消除，且洗牌次数已用尽。<br>输入兑换码可获取洗牌次数。<br>如：haogege，或者去问他。",
+            "info"
+          );
+          setTimeout(() => {
+            try {
+              codeInput && codeInput.focus();
+            } catch (e) { }
+          }, 80);
+        }
+        stopAutoCollect();
+        updateAutoCollectStatus();
+        return;
       }
     }
   </script>
