@@ -2737,7 +2737,18 @@
       </div>
     </div>
   </div>
-
+  <div id="pause-screen" class="modal-overlay" style="display: none; z-index: 2600;">
+    <div class="modal-content">
+      <h2 style="font-size: 1.8rem; color: #5d4037; margin-bottom: 15px;">
+        游戏已暂停
+      </h2>
+      <p style="margin-bottom: 25px;">休息一下，稍后继续！</p>
+      <button id="resume-btn"
+        style="padding: 12px 35px; font-size: 1.25rem; background: #e6f6d3; border: 2px solid #a0c388; border-radius: 12px; color: #3e5a2b; cursor: pointer;">
+        继续游戏
+      </button>
+    </div>
+  </div>
   <div id="confirm-modal" class="modal-overlay">
     <div class="modal-content">
       <p id="confirm-msg">你确定吗？</p>
@@ -2870,6 +2881,8 @@
     const eventTextEl = eventMessageBox.querySelector(".event-text");
     const autoCollectBtn = document.getElementById("auto-collect-btn");
     const autoCollectCountEl = document.getElementById("auto-collect-count");
+    const pauseScreen = document.getElementById("pause-screen");
+    const resumeBtn = document.getElementById("resume-btn");
 
     // 游戏状态和工具函数保持不变
     let autoCollectCount = 0;
@@ -2910,6 +2923,7 @@
       isNewLevel: false,
       lock: false,
       flyingCardCount: 0,
+      isPaused: false,
       cardDimensions: {
         width: 0,
         height: 0,
@@ -5093,6 +5107,7 @@
     }
 
     // Event Listeners
+    resumeBtn.addEventListener("click", resumeGame);
     document.addEventListener("DOMContentLoaded", function () {
       // Prevent copy, paste, and cut
       ["copy", "paste", "cut"].forEach((event) => {
@@ -5110,27 +5125,9 @@
 
       document.addEventListener("visibilitychange", () => {
         if (document.hidden) {
-          // 当标签页被隐藏时，暂停背景音乐
-          playBgm(false);
-        } else {
-          // 当标签页恢复可见时
-          initAudio(); // 确保 Web Audio 上下文可用
-
-          // 如果音乐开关是打开的，则恢复播放
-          if (game.bgmOn) {
-            playBgm(true);
-          }
-
-          // 恢复 nap 状态（如果适用）
-          if (game && game.board) {
-            game.board.forEach((card) => {
-              card.isNapping = false;
-            });
-          }
-
-          // 重新渲染游戏，确保 nap 状态的视觉效果被移除
-          renderAll();
+          pauseGame();
         }
+        // 注意：游戏不会在返回标签页时自动恢复，必须由玩家点击按钮
       });
 
       const feedbackDiv = document.createElement("div");
@@ -6011,6 +6008,58 @@
         updateAutoCollectStatus();
         return;
       }
+    }
+    function pauseGame() {
+      // 检查游戏是否处于可暂停的状态（例如，不在开始、结束或关卡完成界面）
+      const startScreenVisible =
+        document.getElementById("start-screen").style.display !== "none";
+      const levelFinishVisible =
+        document.getElementById("level-finish").style.display === "flex";
+      const gameOverVisible =
+        document.getElementById("game-over").style.display === "flex";
+
+      if (
+        game.isPaused ||
+        startScreenVisible ||
+        levelFinishVisible ||
+        gameOverVisible
+      ) {
+        return; // 如果游戏已暂停或在不可暂停的界面，则不执行任何操作
+      }
+
+      game.isPaused = true;
+      playBgm(false); // 暂停背景音乐
+      stopRandomEvents();
+      stopCurtainRandomToggle();
+      stopDecorationUpdates();
+      stopAutoCollect();
+      stopAutoCollectIdleWatcher();
+
+      // 显示暂停界面
+      pauseScreen.style.display = "flex";
+    }
+
+    /**
+     * 恢复游戏，隐藏暂停界面并重启所有计时器。
+     */
+    function resumeGame() {
+      if (!game.isPaused) return;
+
+      game.isPaused = false;
+      pauseScreen.style.display = "none";
+
+      // 在用户交互后重新初始化音频，以符合浏览器策略
+      initAudio();
+
+      if (game.bgmOn) {
+        playBgm(true);
+      }
+
+      // 重启各种游戏事件计时器
+      startRandomEvents();
+      startCurtainRandomToggle();
+      startDecorationUpdates();
+      tryResumeAutoCollect(); // 尝试恢复自动收集（如果之前是开启的）
     }
   </script>
 </body>
