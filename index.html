@@ -2368,12 +2368,14 @@
       }
 
       /* 卡片整体：柔雾渐层 + 抽象纸感纹理 */
-      .theme-renaissance .card {
+      .theme-renaissance .card,
+      .theme-renaissance .temp-card,
+      .flying-card.theme-renaissance {
         color: var(--text-primary) !important;
-        box-shadow: var(--card-shadow);
-        border-radius: 10px;
-        border: none;
         background: var(--card-bg);
+        box-shadow: var(--card-shadow);
+        border: none;
+        border-radius: 10px; /* 统一圆角 */
         transition: transform 0.15s ease-out, box-shadow 0.15s ease-out;
       }
 
@@ -2385,14 +2387,6 @@
       .theme-renaissance .card.matched {
         opacity: 0.08;
         transform: scale(0.95);
-      }
-
-      .theme-renaissance .temp-card,
-      .theme-renaissance .flying-card {
-        color: var(--text-primary) !important;
-        background: var(--card-bg);
-        box-shadow: var(--card-shadow);
-        border: none;
       }
 
       .theme-renaissance .card.disabled::before {
@@ -6118,9 +6112,23 @@
         game.isPaused = false;
         pauseScreen.style.display = "none";
 
+        // --- 核心修改：强制关闭并重置音频 ---
+        console.log("正在强制重置点击音效...");
+        // 1. 如果存在一个活跃的 AudioContext，就关闭它
+        if (audioContext && audioContext.state !== "closed") {
+          await audioContext.close();
+          console.log("旧的 AudioContext 已关闭。");
+        }
+        // 2. 清空相关变量，确保 initAudio 会执行完整的重新加载流程
+        audioContext = null;
+        clickSoundBuffer = null;
+        clickAudioFailed = false; // 同时重置失败状态
+        // --- 修改结束 ---
+
         // 在用户交互后重新初始化音频，并等待其完成
         await initAudio();
-        console.log("音频系统已检查并准备就绪。");
+        console.log("音频系统已重新加载并准备就绪。");
+        
         if (game.bgmOn) {
           playBgm(true);
         }
